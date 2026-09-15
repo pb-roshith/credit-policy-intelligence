@@ -1,6 +1,6 @@
 # Run the Credit Policy Intelligence Platform
 
-Requires Node.js 18+ and Python 3.10+.
+Requires Node.js 18+, Python 3.10+, and PostgreSQL.
 
 ## 1. First-time setup and run
 
@@ -27,7 +27,7 @@ npm run dev
 Open PowerShell in the project folder and start the backend:
 
 ```powershell
-cd backend
+cd "C:\Users\2863775\Documents\credit policy intelligence\backend"
 .\.venv\Scripts\Activate.ps1
 python -m uvicorn main:app --reload --port 8000
 ```
@@ -42,3 +42,13 @@ npm run dev
 Open **http://localhost:5173**.
 
 API documentation: **http://localhost:8000/docs**
+
+## Default administrator
+
+The administrator login and PostgreSQL connection are configured in
+`backend/.env`. The local development defaults are `admin` / `Admin@123456`,
+with PostgreSQL at `postgresql://postgres:root@localhost:5432/credit_policy_intelligence`.
+On first startup, the backend creates the database named in `DATABASE_URL` if it
+does not exist. The configured PostgreSQL user must have permission to create
+databases for that first run.
+Change both passwords before deploying or sharing the application.
