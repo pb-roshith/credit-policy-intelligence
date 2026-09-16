@@ -7,6 +7,7 @@ def public_credit_request(row: dict) -> dict:
         "borrower_id": row["borrower_id"],
         "borrower_name": row["borrower_name"],
         "industry": row["industry"],
+        "geography": row["geography"],
         "exposure": row["exposure"],
         "facility": row["facility"],
         "rating": row["rating"],

@@ -2,33 +2,41 @@ from fastapi import APIRouter, Depends, HTTPException
 from ..schemas import CreateExceptionRequest, ExceptionAction
 from ..security import current_user
 from ..database import db_connection, initialize_user_store
-from datetime import date, timedelta
+from datetime import date
 import json
 from ..services.exception_rationale import generate_exception_rationale
 
 router = APIRouter()
 
+WORKFLOW_STEPS = ["Detected", "Reviewed", "Approved", "Remediated", "Closed"]
+
+
+def _workflow_for_status(status: str) -> list[dict]:
+    current_by_status = {
+        "Active": "Reviewed",
+        "Pending Approval": "Approved",
+        "Remediation": "Remediated",
+    }
+    current = current_by_status.get(status)
+    if status == "Closed":
+        return [{"name": name, "status": "Done"} for name in WORKFLOW_STEPS]
+    current_index = WORKFLOW_STEPS.index(current)
+    return [
+        {"name": name, "status": "Done" if index < current_index else "Current" if index == current_index else "Pending"}
+        for index, name in enumerate(WORKFLOW_STEPS)
+    ]
+
 @router.get("/api/exceptions")
 def exception_registry(status: str | None = None, _: dict = Depends(current_user)):
     initialize_user_store()
     with db_connection() as connection:
-        requests = connection.execute("SELECT credit_request_number, industry, exposure FROM credit_requests ORDER BY credit_request_number LIMIT 10").fetchall()
-        types = [("Leverage", "CP-4.2"), ("Collateral", "COL-2.1"), ("Concentration", "RAF-3.5"), ("Covenant", "CP-6.4"), ("Delegation", "DEL-3.1")]
-        for index, request in enumerate(requests, 1):
-            kind, clause = types[index % len(types)]
-            connection.execute("""INSERT INTO credit_request_exceptions
-                (exception_id, credit_request_number, exception_type, clause_code, severity, exposure, owner, due_date, status, description, rationale, workflow, history)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb) ON CONFLICT (exception_id) DO NOTHING""", (
-                f"EX-{8820 + index}", request["credit_request_number"], kind, clause, ["High", "Medium", "Low"][index % 3], request["exposure"],
-                ["S. Chen", "M. Ruiz", "A. Patel", "J. Okafor"][index % 4], date.today() + timedelta(days=14 + index), ["Pending Approval", "Active", "Remediation"][index % 3],
-                f"User-raised exception for {request['credit_request_number']} requiring policy review.",
-                json.dumps({"why_detected": f"The {request['industry']} request was flagged against the applicable policy threshold.", "business_justification": "The business requires the facility to support near-term operating and investment needs.", "risk_implication": "Approval without controls may increase credit, concentration, and expected-loss exposure.", "recommended_remediation": "Obtain documented approval, add monitoring conditions, and review at the next covenant checkpoint.", "escalation_required": "Escalate if the exception remains open beyond the due date."}),
-                json.dumps([{"name": "Detected", "status": "Done"}, {"name": "Reviewed", "status": "Done"}, {"name": "Approved", "status": "Current"}, {"name": "Remediated", "status": "Pending"}, {"name": "Closed", "status": "Pending"}]),
-                json.dumps([{"date": str(date.today()), "event": "Detected by Compliance Review", "actor": "AI Compliance Agent"}])))
         query = "SELECT exception_id AS id, credit_request_number, exception_type AS type, clause_code AS clause, severity, exposure, owner, due_date AS due, status, description, rationale, workflow, history FROM credit_request_exceptions"
         params = ()
         if status: query += " WHERE status = %s"; params = (status,)
-        return [dict(row) for row in connection.execute(query + " ORDER BY exception_id", params).fetchall()]
+        result = [dict(row) for row in connection.execute(query + " ORDER BY exception_id", params).fetchall()]
+        for item in result:
+            item["workflow"] = _workflow_for_status(item["status"])
+        return result
 
 
 @router.post("/api/exceptions", status_code=201)
@@ -64,11 +72,7 @@ def create_exception(payload: CreateExceptionRequest, user: dict = Depends(curre
         "due_date": due_date, "status": payload.status,
     }
     rationale = generate_exception_rationale(dict(proposal), exception_context, stored_review["review"] if stored_review else None)
-    workflow = [
-        {"name": "Detected", "status": "Done"}, {"name": "Reviewed", "status": "Current"},
-        {"name": "Approved", "status": "Pending"}, {"name": "Remediated", "status": "Pending"},
-        {"name": "Closed", "status": "Pending"},
-    ]
+    workflow = _workflow_for_status(payload.status)
     history = [{"date": str(date.today()), "event": "Exception created from Compliance Review", "actor": user["user_id"]}]
     with db_connection() as connection:
         connection.execute("SELECT pg_advisory_xact_lock(hashtext('credit_request_exceptions'))")
@@ -93,10 +97,24 @@ def create_exception(payload: CreateExceptionRequest, user: dict = Depends(curre
 @router.post("/api/exceptions/{exception_id}/action")
 def exception_action(exception_id: str, payload: ExceptionAction, _: dict = Depends(current_user)):
     initialize_user_store()
-    new_status = {"approve": "Remediation", "escalate": "Pending Approval", "close": "Closed"}[payload.action]
+    new_status = {
+        "approve": "Remediation",
+        "escalate": "Pending Approval",
+        "remediate": "Closed",
+        "close": "Closed",
+    }[payload.action]
+    workflow = _workflow_for_status(new_status)
     with db_connection() as connection:
-        item = connection.execute("SELECT history FROM credit_request_exceptions WHERE exception_id=%s", (exception_id,)).fetchone()
+        item = connection.execute("SELECT status, history FROM credit_request_exceptions WHERE exception_id=%s", (exception_id,)).fetchone()
         if not item: raise HTTPException(status_code=404, detail="Exception not found")
+        allowed = {
+            "approve": {"Active", "Pending Approval"},
+            "escalate": {"Active"},
+            "remediate": {"Remediation"},
+            "close": {"Remediation"},
+        }
+        if item["status"] not in allowed[payload.action]:
+            raise HTTPException(status_code=409, detail=f"Cannot {payload.action} an exception in {item['status']} status")
         history = item["history"] + [{"date": str(date.today()), "event": f"{payload.action.title()}d exception", "actor": payload.actor}]
-        connection.execute("UPDATE credit_request_exceptions SET status=%s, history=%s::jsonb, updated_at=CURRENT_TIMESTAMP WHERE exception_id=%s", (new_status, json.dumps(history), exception_id))
+        connection.execute("UPDATE credit_request_exceptions SET status=%s, workflow=%s::jsonb, history=%s::jsonb, updated_at=CURRENT_TIMESTAMP WHERE exception_id=%s", (new_status, json.dumps(workflow), json.dumps(history), exception_id))
         return {"exception_id": exception_id, "action": payload.action, "status": new_status, "actor": payload.actor}

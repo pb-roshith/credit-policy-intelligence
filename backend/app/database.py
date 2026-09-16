@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 from contextvars import ContextVar
-from hashlib import sha256
 from threading import Lock
 
 from fastapi import HTTPException
@@ -11,6 +10,7 @@ from psycopg.rows import dict_row
 from .config import ADMIN_USER_ID, DATABASE_URL
 
 data_schema = ContextVar("data_schema", default="credit_data")
+account_user_id = ContextVar("account_user_id", default=None)
 _initialized_schemas = set()
 _initialization_lock = Lock()
 
@@ -52,13 +52,17 @@ def ensure_database_exists():
         ) from error
 
 
-def user_schema(user_id: str) -> str:
-    return "user_" + sha256(user_id.encode("utf-8")).hexdigest()[:56]
-
-
 def db_connection():
     connection = psycopg.connect(DATABASE_URL, row_factory=dict_row)
     try:
+        owner = account_user_id.get()
+        if owner is not None:
+            if not owner or owner == '__legacy_unassigned__':
+                raise HTTPException(status_code=403, detail='Account data access is unavailable')
+            connection.execute(sql.SQL('SET LOCAL app.user_id TO {}').format(sql.Literal(owner)))
+            connection.execute('SET LOCAL ROLE credit_user_runtime')
+            connection.execute('SET LOCAL search_path TO "user"')
+            return connection
         connection.execute(sql.SQL("SET LOCAL search_path TO {}").format(
             sql.Identifier(data_schema.get())
         ))
@@ -80,11 +84,28 @@ def shared_policy_connection():
 
 
 def initialize_user_store():
-    schema = data_schema.get()
+    from .user_store import (
+        ensure_credit_request_geography,
+        initialize_dashboard_insights,
+        initialize_decision_scenarios,
+        migrate_user_store,
+        remove_seeded_exceptions,
+    )
     with _initialization_lock:
-        if schema not in _initialized_schemas:
-            init_credit_request_db()
-            _initialized_schemas.add(schema)
+        if 'user' not in _initialized_schemas:
+            migrate_user_store()
+            ensure_credit_request_geography()
+            initialize_dashboard_insights()
+            initialize_decision_scenarios()
+            remove_seeded_exceptions()
+            _initialized_schemas.add('user')
+    if account_user_id.get() is not None:
+        with db_connection() as connection:
+            connection.execute("""INSERT INTO approval_authority_rules
+                (rule_order, maximum_post_approval_exposure, authority_name, authority_rank)
+                VALUES (1,25000000,'Credit Officer',1), (2,75000000,'Senior Credit Officer',2),
+                (3,150000000,'Credit Committee',3), (4,NULL,'Executive Committee',4)
+                ON CONFLICT (user_id, rule_order) DO NOTHING""")
 
 
 def init_auth_db():
@@ -171,6 +192,16 @@ def init_credit_request_db():
         connection.execute("ALTER TABLE credit_requests ADD COLUMN IF NOT EXISTS collateral_coverage NUMERIC(7,2) NOT NULL DEFAULT 0")
         connection.execute("ALTER TABLE credit_requests ADD COLUMN IF NOT EXISTS recommended_pricing_bps INTEGER NOT NULL DEFAULT 325")
         connection.execute("ALTER TABLE credit_requests ADD COLUMN IF NOT EXISTS recommended_tenor_years SMALLINT NOT NULL DEFAULT 7")
+        connection.execute("ALTER TABLE credit_requests ADD COLUMN IF NOT EXISTS geography VARCHAR(80) NOT NULL DEFAULT 'Unknown'")
+        connection.execute("""
+            UPDATE credit_requests SET geography = CASE MOD(HASHTEXT(credit_request_number::text)::bigint + 2147483648, 10)
+                WHEN 0 THEN 'US Northeast' WHEN 1 THEN 'US Southeast'
+                WHEN 2 THEN 'US Midwest' WHEN 3 THEN 'US West' WHEN 4 THEN 'Canada'
+                WHEN 5 THEN 'United Kingdom' WHEN 6 THEN 'Europe'
+                WHEN 7 THEN 'Middle East & Africa' WHEN 8 THEN 'Asia Pacific'
+                ELSE 'Latin America' END
+            WHERE geography = 'Unknown' OR BTRIM(geography) = ''
+        """)
         connection.execute("""
             CREATE TABLE IF NOT EXISTS borrower_exposure_history (
                 exposure_record_id BIGSERIAL PRIMARY KEY,
@@ -256,6 +287,10 @@ def init_credit_request_db():
         connection.execute(
             "ALTER TABLE policy_ai_configuration "
             "ADD COLUMN IF NOT EXISTS mistral_compliance_agent_id TEXT"
+        )
+        connection.execute(
+            "ALTER TABLE policy_ai_configuration "
+            "ADD COLUMN IF NOT EXISTS mistral_portfolio_agent_id TEXT"
         )
         connection.execute("""
             CREATE TABLE IF NOT EXISTS ai_compliance_reviews (
@@ -504,7 +539,7 @@ def resolve_borrower(connection, name: str, borrower_id: int | None = None) -> i
         return row["borrower_id"]
     return connection.execute("""
         INSERT INTO borrower (borrower_name) VALUES (%s)
-        ON CONFLICT (LOWER(BTRIM(borrower_name))) DO UPDATE
+        ON CONFLICT (user_id, LOWER(BTRIM(borrower_name))) DO UPDATE
         SET borrower_name = borrower.borrower_name
         RETURNING borrower_id
     """, (name,)).fetchone()["borrower_id"]

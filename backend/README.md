@@ -42,10 +42,32 @@ Policy-to-policy mappings are stored as symmetric pairs in `credit_data.policy_r
 Policy Copilot uses the configured Mistral agent and its attached document library for retrieval-grounded chat. `POST /api/policy-copilot/chat` starts a stored Mistral conversation or appends to the supplied conversation ID, returning an answer and citations mapped to Policy Library IDs. The selected-policy controls endpoint is `GET /api/policies/{policy_id}/controls`.
 # User data isolation
 
-Authenticated API calls use a separate PostgreSQL schema for each canonical user ID for credit requests, borrowers, exposure history, compliance results, and AI reviews. Policy Intelligence is shared through `credit_data`, including policy documents, controls, relationships, generation jobs, and AI library/agent configuration. Authentication and administration tables remain in `public`.
+All account credit data is stored in the single PostgreSQL schema `"user"`.
+Every table includes `user_id`; primary keys, unique indexes, and foreign keys
+include ownership so existing request numbers and borrower IDs are preserved.
+Authenticated connections set the canonical user ID for the transaction and use
+the restricted `credit_user_runtime` role. PostgreSQL row-level security enforces
+account isolation for reads and writes, including administrator accounts.
 
-Schemas are initialized automatically on first authenticated use. Request numbers and borrower IDs are local to each account. Policy generation writes to the common `generated_policies` directory and every authenticated role reads the same Policy Intelligence library.
+Policy Intelligence remains shared in `credit_data`. Authentication and
+administration tables remain in `public`. Preserved historical account-local
+policy tables in `"user"` are archival; policy APIs use the shared catalog.
 
-Existing policy records in `credit_data` are the shared Policy Intelligence catalog. Legacy credit-request records there remain outside user accounts because their ownership cannot be established. Account-specific credit-data maintenance must explicitly set `app.database.data_schema` to `user_schema(canonical_user_id)` before opening connections.
+The backend runs the idempotent migration at startup. To run it explicitly:
+`python -m app.user_store` from `backend`. PostgreSQL 15 or newer is required.
+The migration database role needs schema/table creation and role-management
+permissions. Stop older backend processes before migration and start the updated
+backend afterward; older code must not continue writing to account schemas.
 
-Restart the backend to activate this change. Run isolation integration checks with `python -m unittest discover -s tests -v` from `backend`; these use and remove randomly named test-user schemas in the configured database.
+Migration copies all tables from each known `user_<hash>` schema, retains IDs,
+verifies all copied column values in both directions, validates foreign keys,
+and removes the old schemas in one transaction. Unknown owners or unexpected
+tables abort the migration. Existing unowned credit data from `credit_data` is
+also preserved under the reserved owner `__legacy_unassigned__`; its original
+copy remains in `credit_data` and is not exposed to signed-in accounts.
+
+For account-specific maintenance, set `app.database.account_user_id` to the
+canonical user ID before calling `db_connection()` and reset the context token
+when finished. Shared policy maintenance uses `shared_policy_connection()`.
+Run `python -m unittest discover -s tests -v` for integration checks; cleanup
+removes only rows owned by randomly named test accounts.

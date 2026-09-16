@@ -42,8 +42,13 @@ import {
   Factory,
 } from "lucide-react";
 import { API, apiRequest } from "../api/client";
-import { EXCEPTIONS, META, POLICY_TYPE_ORDER, policyDisplayName } from "../config";
+import { META, POLICY_TYPE_ORDER, policyDisplayName } from "../config";
 import { AuthField, Badge, Bars, Card, DataTable, Heading, Insight, LineChart, Metric, NO_CLIPBOARD, PasswordPolicy, SecretInput, money } from "../components/ui";
+
+const GEOGRAPHIES = [
+  "US Northeast", "US Southeast", "US Midwest", "US West", "Canada",
+  "United Kingdom", "Europe", "Middle East & Africa", "Asia Pacific", "Latin America",
+];
 
 function StageExposure({ label, value, percent, tone }) {
   return (
@@ -87,6 +92,7 @@ function creditRequestRow(row) {
     row.compliance_score,
     row.recommended_pricing_bps,
     row.recommended_tenor_years,
+    row.geography,
   ];
 }
 
@@ -107,7 +113,7 @@ function RequestAssistant({ request }) {
         </div>
       </div>
       <h3>Request overview</h3>
-      <p>{request[5]} request for {request[7]}, with current exposure of {request[3]}, collateral coverage of {request[4]}, and rating {request[6]}.</p>
+      <p>{request[5]} request for {request[7]} in {request[12]}, with current exposure of {request[3]}, collateral coverage of {request[4]}, and rating {request[6]}.</p>
       <h3>Recommended structure</h3>
       <p>{request[10]} basis points pricing with a {request[11]}-year tenor.</p>
       <h3>Policy assessment</h3>
@@ -145,6 +151,7 @@ export default function Requests({ session, notify }) {
   const [form, setForm] = useState({
     borrower_name: "",
     industry: "Manufacturing",
+    geography: "US Northeast",
     facility: "Term Loan",
     rating: "BB",
     requested_amount: 1_000_000,
@@ -237,6 +244,7 @@ export default function Requests({ session, notify }) {
             <div className="credit-form-note form-wide"><Sparkles size={16} /><span>Exposure is calculated from borrower history. Applicable policy checks, approval authority, pricing, tenor, and the compliance score are derived automatically.</span></div>
             <label><span>Borrower name</span><input required value={form.borrower_name} onChange={(event) => updateForm("borrower_name", event.target.value)} /></label>
             <label><span>Industry</span><input required value={form.industry} onChange={(event) => updateForm("industry", event.target.value)} /></label>
+            <label><span>Geography</span><select required value={form.geography} onChange={(event) => updateForm("geography", event.target.value)}>{GEOGRAPHIES.map((geography) => <option key={geography}>{geography}</option>)}</select></label>
             <label><span>Facility</span><input required value={form.facility} onChange={(event) => updateForm("facility", event.target.value)} /></label>
             <label><span>Rating</span><input required maxLength="12" value={form.rating} onChange={(event) => updateForm("rating", event.target.value)} /></label>
             <label><span>Requested amount ($)</span><input required type="number" min="1" step="1" value={form.requested_amount} onChange={(event) => updateForm("requested_amount", event.target.value)} /></label>
@@ -306,6 +314,7 @@ export default function Requests({ session, notify }) {
             headers={[
               "Borrower",
               "Industry",
+              "Geography",
               "Exposure",
               "Collateral Coverage",
               "Facility",
@@ -326,16 +335,18 @@ export default function Requests({ session, notify }) {
               ) : i === 1 ? (
                 r[2]
               ) : i === 2 ? (
-                r[3]
+                r[12]
               ) : i === 3 ? (
-                r[4]
+                r[3]
               ) : i === 4 ? (
-                r[5]
+                r[4]
               ) : i === 5 ? (
-                <Badge tone="rating">{r[6]}</Badge>
+                r[5]
               ) : i === 6 ? (
-                r[7]
+                <Badge tone="rating">{r[6]}</Badge>
               ) : i === 7 ? (
+                r[7]
+              ) : i === 8 ? (
                 <Badge>{r[8]}</Badge>
               ) : (
                 <span

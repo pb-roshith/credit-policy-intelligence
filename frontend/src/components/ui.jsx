@@ -58,9 +58,9 @@ export function Metric({
         </span>
       </div>
       <strong>{value}</strong>
-      <small className={good ? "positive" : "negative"}>
+      {change != null && <small className={good ? "positive" : "negative"}>
         {down ? <TrendingDown size={12} /> : <TrendingUp size={12} />} {change}
-      </small>
+      </small>}
     </div>
   );
 }
@@ -143,7 +143,7 @@ export function Legend() {
 
 export function StageExposure({ label, value, percent, tone }) {
   return (
-    <div className="stage-item">
+    <div className="stage-item" tabIndex={0} title={`${label}: ${value}`}>
       <div>
         <span>{label}</span>
         <Badge tone={tone}>{value}</Badge>

@@ -62,7 +62,7 @@ def generate_borrower_exposure_history(payload: GenerateBorrowerExposureRequest,
                         reporting_month, original_exposure, scheduled_payment, actual_payment,
                         outstanding_exposure, days_past_due, payment_status
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (borrower_id, facility_reference, reporting_month) DO UPDATE SET
+                    ON CONFLICT (user_id, borrower_id, facility_reference, reporting_month) DO UPDATE SET
                         original_exposure = EXCLUDED.original_exposure,
                         scheduled_payment = EXCLUDED.scheduled_payment,
                         actual_payment = EXCLUDED.actual_payment,

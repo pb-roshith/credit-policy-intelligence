@@ -68,6 +68,7 @@ function ComplianceCount({ icon: Icon, label, value, tone }) {
 }
 export default function Exceptions({ session, notify }) {
   const [tab, setTab] = useState("All"), [selected, setSelected] = useState(null), [exceptions, setExceptions] = useState([]), [loading, setLoading] = useState(true), [loadError, setLoadError] = useState(""), [query, setQuery] = useState(() => sessionStorage.getItem("exceptionRegistrySearch") || "");
+  const [acting, setActing] = useState(false);
   useEffect(() => {
     apiRequest("/api/exceptions", {}, session.token)
       .then((data) => {
@@ -81,9 +82,30 @@ export default function Exceptions({ session, notify }) {
   }, [session.token]);
   const filtered = exceptions.filter((item) => (tab === "All" || item.status === tab) && item.credit_request_number.toLowerCase().includes(query.trim().toLowerCase()));
   const rows = filtered.map((x) => [x.id, x.credit_request_number, x.type, x.clause, x.severity, `$${Math.round(x.exposure / 1000000)}M`, x.owner, String(x.due), x.status]);
-  const row = selected || exceptions[0];
+  const row = filtered.find((item) => item.id === selected?.id) || filtered[0] || null;
+  const chooseTab = (nextTab) => {
+    setTab(nextTab);
+    const next = exceptions.find((item) => nextTab === "All" || item.status === nextTab) || null;
+    setSelected(next);
+  };
+  const runAction = async (action) => {
+    if (!row || acting) return;
+    setActing(true);
+    try {
+      await apiRequest(`/api/exceptions/${row.id}/action`, { method: "POST", body: JSON.stringify({ action }) }, session.token);
+      const updated = await apiRequest("/api/exceptions", {}, session.token);
+      setExceptions(updated);
+      setSelected(updated.find((item) => item.id === row.id) || null);
+      setTab(action === "approve" ? "Remediation" : action === "remediate" ? "Closed" : action === "escalate" ? "Pending Approval" : tab);
+      notify(`${row.id} ${action === "remediate" ? "remediated and closed" : `${action}d`}`);
+    } catch (error) {
+      notify(`Could not ${action} ${row.id}: ${error.message}`);
+    } finally {
+      setActing(false);
+    }
+  };
   if (loading) return <><Heading page="exceptions" /><div className="compliance-empty"><Database size={28} /><h3>Loading exception registry</h3><p>Reading exceptions and workflow details from PostgreSQL...</p></div></>;
-  if (!row) return <><Heading page="exceptions" /><div className="compliance-empty"><Database size={28} /><h3>{loadError ? "Could not load exception registry" : "No exceptions found"}</h3><p>{loadError || "Create credit requests to populate the exception registry."}</p></div></>;
+  if (!exceptions.length) return <><Heading page="exceptions" /><div className="compliance-empty"><Database size={28} /><h3>{loadError ? "Could not load exception registry" : "No exceptions found"}</h3><p>{loadError || "Create credit requests to populate the exception registry."}</p></div></>;
   return (
     <>
       <Heading page="exceptions" />
@@ -92,7 +114,7 @@ export default function Exceptions({ session, notify }) {
           (x) => (
             <button
               className={tab === x ? "active" : ""}
-              onClick={() => setTab(x)}
+              onClick={() => chooseTab(x)}
               key={x}
             >
               {x}
@@ -133,7 +155,7 @@ export default function Exceptions({ session, notify }) {
             }
           />
         </Card>
-        <Card
+        {!row ? <Card className="exception-detail" title="No matching exceptions"><div className="compliance-empty"><Filter size={26} /><p>No records match the selected status and search.</p></div></Card> : <Card
           className="exception-detail"
           title={row.id}
           action={<Badge>{row.severity}</Badge>}
@@ -168,24 +190,16 @@ export default function Exceptions({ session, notify }) {
             {row.rationale.escalation_required}
           </Rationale>
           <div className="button-row">
-            <button
-              className="btn primary"
-              onClick={async () => { await apiRequest(`/api/exceptions/${row.id}/action`, { method: "POST", body: JSON.stringify({ action: "approve" }) }, session.token); notify(`${row.id} approved`); setExceptions(await apiRequest("/api/exceptions", {}, session.token)); }}
-            >
-              Approve
-            </button>
-            <button
-              className="btn secondary"
-              onClick={async () => { await apiRequest(`/api/exceptions/${row.id}/action`, { method: "POST", body: JSON.stringify({ action: "escalate" }) }, session.token); notify(`${row.id} escalated`); setExceptions(await apiRequest("/api/exceptions", {}, session.token)); }}
-            >
-              Escalate
-            </button>
+            {(row.status === "Active" || row.status === "Pending Approval") && <button className="btn primary" disabled={acting} onClick={() => runAction("approve")}>{acting ? "Updating..." : "Approve"}</button>}
+            {row.status === "Remediation" && <button className="btn primary" disabled={acting} onClick={() => runAction("remediate")}>{acting ? "Updating..." : "Remediate"}</button>}
+            {row.status === "Active" && <button className="btn secondary" disabled={acting} onClick={() => runAction("escalate")}>Escalate</button>}
+            {row.status === "Closed" && <span className="workflow-complete"><CheckCircle2 size={15} /> Workflow complete</span>}
           </div>
           <h3>Workflow History</h3>
           <div className="history">
             {row.history.map((event, index) => <p key={`${event.date}-${index}`}>{event.date} - {event.event} ({event.actor})</p>)}
           </div>
-        </Card>
+        </Card>}
       </div>
     </>
   );

@@ -1,5 +1,5 @@
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 class SecurityAnswer(BaseModel):
     question: str = Field(min_length=3, max_length=200)
@@ -40,8 +40,26 @@ class DecisionRequest(BaseModel):
     collateral_coverage: float = Field(default=100, ge=0, le=200)
     tenor_years: int = Field(default=5, ge=1, le=30)
 
+
+class ScenarioRunRequest(BaseModel):
+    scenario_name: str = Field(min_length=1, max_length=120)
+    facility_amount: float = Field(ge=25, le=150, description="USD millions")
+    collateral_coverage: float = Field(ge=50, le=130, description="Percent")
+    risk_rating: Literal["BBB", "BB+", "BB-", "B+"]
+    pricing_bps: int = Field(ge=100, le=600)
+    tenor_years: int = Field(ge=1, le=12)
+    covenants: Literal["Full", "Partial", "None"]
+
+    @field_validator("scenario_name")
+    @classmethod
+    def clean_scenario_name(cls, value: str) -> str:
+        cleaned = " ".join(value.split())
+        if not cleaned:
+            raise ValueError("Scenario name is required")
+        return cleaned
+
 class ExceptionAction(BaseModel):
-    action: Literal["approve", "escalate", "close"]
+    action: Literal["approve", "escalate", "remediate", "close"]
     actor: str = "Sarah Chen"
 
 
@@ -59,6 +77,18 @@ class GenerateCreditRequestsRequest(BaseModel):
     count: int = Field(ge=1, le=100)
 
 
+class GenerateExceptionsRequest(BaseModel):
+    credit_request_numbers: list[str] = Field(min_length=1, max_length=1000)
+
+    @field_validator("credit_request_numbers")
+    @classmethod
+    def clean_credit_request_numbers(cls, values: list[str]) -> list[str]:
+        cleaned = list(dict.fromkeys(value.strip().upper() for value in values if value.strip()))
+        if not cleaned:
+            raise ValueError("Select at least one credit request")
+        return cleaned
+
+
 class GenerateBorrowerExposureRequest(BaseModel):
     records_per_borrower: int = Field(ge=1, le=10)
 
@@ -70,6 +100,16 @@ class GeneratePolicyControlsRequest(BaseModel):
 class PolicyCopilotRequest(BaseModel):
     question: str = Field(min_length=2, max_length=2000)
     conversation_id: str | None = Field(default=None, max_length=160)
+
+
+class PortfolioChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4000)
+
+
+class PortfolioChatRequest(BaseModel):
+    question: str = Field(min_length=2, max_length=2000)
+    history: list[PortfolioChatMessage] = Field(default_factory=list, max_length=20)
 
 
 class ComplianceReviewRequest(BaseModel):
@@ -90,6 +130,11 @@ class CreateCreditRequest(BaseModel):
     borrower_id: int | None = Field(default=None, gt=0)
     borrower_name: str = Field(min_length=2, max_length=160)
     industry: str = Field(min_length=2, max_length=80)
+    geography: Literal[
+        "US Northeast", "US Southeast", "US Midwest", "US West", "Canada",
+        "United Kingdom", "Europe", "Middle East & Africa", "Asia Pacific",
+        "Latin America",
+    ]
     facility: str = Field(min_length=2, max_length=80)
     rating: str = Field(min_length=1, max_length=12)
     requested_amount: int = Field(gt=0)

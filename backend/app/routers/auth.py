@@ -45,7 +45,7 @@ def register(payload: RegisterRequest):
     questions = [entry.question.strip() for entry in payload.security_answers]
     if len({question.casefold() for question in questions}) != 3:
         raise HTTPException(status_code=422, detail="Security questions must be different")
-    if payload.user_id.casefold() == ADMIN_USER_ID.casefold():
+    if payload.user_id.casefold() in {ADMIN_USER_ID.casefold(), '__legacy_unassigned__'}:
         raise HTTPException(status_code=409, detail="User ID is not available")
     stored_questions = [
         {"question": entry.question.strip(), "answer_hash": hash_secret(normalize_answer(entry.answer))}

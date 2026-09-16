@@ -42,7 +42,7 @@ import {
   Factory,
 } from "lucide-react";
 import { API, apiRequest } from "../api/client";
-import { EXCEPTIONS, META, POLICY_TYPE_ORDER, policyDisplayName } from "../config";
+import { META, POLICY_TYPE_ORDER, policyDisplayName } from "../config";
 import { AuthField, Badge, Bars, Card, DataTable, DEFAULT_PASSWORD_POLICY, Heading, Insight, LineChart, Metric, NO_CLIPBOARD, PasswordPolicy, SecretInput, money } from "../components/ui";
 
 export default function AdminDashboard({ session, onLogout }) {

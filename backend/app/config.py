@@ -2,38 +2,6 @@ import os
 from pathlib import Path
 import threading
 
-EXCEPTIONS = [
-    {
-        "id": "EX-8821",
-        "type": "Leverage",
-        "clause": "CP-4.2",
-        "severity": "High",
-        "exposure": 85000000,
-        "owner": "S. Chen",
-        "due": "2026-08-05",
-        "status": "Pending Approval"
-    },
-    {
-        "id": "EX-8822",
-        "type": "Collateral",
-        "clause": "COL-2.1",
-        "severity": "High",
-        "exposure": 62000000,
-        "owner": "M. Ruiz",
-        "due": "2026-07-28",
-        "status": "Active"
-    },
-    {
-        "id": "EX-8823",
-        "type": "Concentration",
-        "clause": "RAF-3.5",
-        "severity": "Medium",
-        "exposure": 140000000,
-        "owner": "A. Patel",
-        "due": "2026-08-12",
-        "status": "Remediation"
-    }
-]
 BORROWER_PREFIXES = ["Apex", "Beacon", "Crescent", "Evergreen", "Frontier", "Granite", "Horizon", "Meridian", "Northstar", "Summit"]
 BORROWER_SUFFIXES = ["Industries", "Holdings", "Logistics", "Energy", "Foods", "Systems", "Aviation", "Chemicals", "Technologies", "Infrastructure"]
 INDUSTRY_FACILITIES = [
@@ -44,6 +12,17 @@ INDUSTRY_FACILITIES = [
     ("Chemicals", "Term Loan"), ("Mining", "Reserve Based"),
 ]
 RATINGS = ["A-", "BBB+", "BBB", "BBB-", "BB+", "BB", "BB-", "B+"]
+GEOGRAPHIES = [
+    "US Northeast", "US Southeast", "US Midwest", "US West", "Canada",
+    "United Kingdom", "Europe", "Middle East & Africa", "Asia Pacific",
+    "Latin America",
+]
+GEOGRAPHY_RISK = {
+    "US Northeast": "Low", "US Southeast": "Low", "US Midwest": "Low",
+    "US West": "Low", "Canada": "Low", "United Kingdom": "Low",
+    "Europe": "Medium", "Asia Pacific": "Medium",
+    "Middle East & Africa": "High", "Latin America": "High",
+}
 REQUEST_STATUSES = ["In Review", "Escalated", "Approved", "Pending", "Declined"]
 BASE_DIR = Path(__file__).resolve().parent.parent
 

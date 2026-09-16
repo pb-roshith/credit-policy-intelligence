@@ -42,7 +42,7 @@ import {
   Factory,
 } from "lucide-react";
 import { API, apiRequest } from "../api/client";
-import { EXCEPTIONS, META, POLICY_TYPE_ORDER, policyDisplayName } from "../config";
+import { META, POLICY_TYPE_ORDER, policyDisplayName } from "../config";
 import { AuthField, Badge, Bars, Card, DataTable, Heading, Insight, LineChart, Metric, NO_CLIPBOARD, PasswordPolicy, SecretInput, money } from "../components/ui";
 
 export default function DataManufacturing({ session, notify }) {
@@ -52,6 +52,9 @@ export default function DataManufacturing({ session, notify }) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [policyJob, setPolicyJob] = useState(null);
+  const [creditRequests, setCreditRequests] = useState([]);
+  const [selectedRequests, setSelectedRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
 
   useEffect(() => {
     apiRequest("/api/data-manufacturing/policy-pdfs/status", {}, session.token)
@@ -75,8 +78,44 @@ export default function DataManufacturing({ session, notify }) {
     return () => clearInterval(timer);
   }, [policyJob?.job_id, policyJob?.status, session.token]);
 
+  useEffect(() => {
+    if (menuItem !== "exceptions") return undefined;
+    let active = true;
+    const controller = new AbortController();
+    setLoadingRequests(true);
+    setError("");
+    apiRequest("/api/requests", { signal: controller.signal }, session.token)
+      .then((items) => { if (active) setCreditRequests(items); })
+      .catch((requestError) => { if (active) setError(requestError.message); })
+      .finally(() => { if (active) setLoadingRequests(false); });
+    return () => { active = false; controller.abort(); };
+  }, [menuItem, session.token]);
+
   const generate = async (event) => {
     event.preventDefault();
+    if (menuItem === "exceptions") {
+      if (!selectedRequests.length) {
+        setError("Select at least one credit request.");
+        return;
+      }
+      setGenerating(true);
+      setError("");
+      try {
+        const response = await apiRequest(
+          "/api/data-manufacturing/exceptions",
+          { method: "POST", body: JSON.stringify({ credit_request_numbers: selectedRequests }) },
+          session.token,
+        );
+        setResult(response);
+        setSelectedRequests([]);
+        notify(response.message);
+      } catch (requestError) {
+        setError(requestError.message);
+      } finally {
+        setGenerating(false);
+      }
+      return;
+    }
     if (menuItem === "policy-pdfs") {
       setGenerating(true);
       setError("");
@@ -181,6 +220,20 @@ export default function DataManufacturing({ session, notify }) {
           </button>
           <button
             type="button"
+            className={menuItem === "exceptions" ? "active" : ""}
+            onClick={() => {
+              setMenuItem("exceptions");
+              setSelectedRequests([]);
+              setResult(null);
+              setError("");
+            }}
+          >
+            <AlertTriangle size={17} />
+            <span>Generate Exceptions</span>
+            <ChevronRight size={15} />
+          </button>
+          <button
+            type="button"
             className={menuItem === "policy-controls" ? "active" : ""}
             onClick={() => {
               setMenuItem("policy-controls");
@@ -210,7 +263,7 @@ export default function DataManufacturing({ session, notify }) {
         {menuItem === "credit-requests" && (
           <Card title="Generate Credit Requests" action={<Factory size={17} />}>
             <form className="manufacturing-form" onSubmit={generate}>
-              <p>Create synthetic records containing all nine Credit Request fields. Records are inserted directly into <code>credit_data.credit_requests</code>.</p>
+              <p>Create synthetic credit requests with geography assigned across supported regions. Records are inserted directly into the account's <code>credit_requests</code> table.</p>
               <label>
                 <span>Number of credit requests</span>
                 <input
@@ -277,6 +330,70 @@ export default function DataManufacturing({ session, notify }) {
                   <Play size={15} />
                   {generating ? "Generating..." : "Generate Exposure History"}
                 </button>
+              </div>
+            </form>
+          </Card>
+        )}
+        {menuItem === "exceptions" && (
+          <Card title="Generate Exceptions" action={<AlertTriangle size={17} />}>
+            <form className="manufacturing-form exception-generator" onSubmit={generate}>
+              <p>Select one or more existing credit requests. One account-scoped exception will be generated for each selection and displayed in Exception Management.</p>
+              <div className="exception-selection-head">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={creditRequests.length > 0 && selectedRequests.length === creditRequests.length}
+                    onChange={(event) => setSelectedRequests(event.target.checked ? creditRequests.map((item) => item.credit_request_number) : [])}
+                    disabled={!creditRequests.length || loadingRequests || generating}
+                  />
+                  <span>Select all credit requests</span>
+                </label>
+                <strong>{selectedRequests.length} selected</strong>
+              </div>
+              <div className="exception-request-list" role="group" aria-label="Credit requests available for exception generation">
+                {loadingRequests && <div className="data-message">Loading credit requests...</div>}
+                {!loadingRequests && !creditRequests.length && !error && <div className="data-message">No credit requests are available. Generate credit requests first.</div>}
+                {!loadingRequests && creditRequests.map((item) => {
+                  const checked = selectedRequests.includes(item.credit_request_number);
+                  return (
+                    <label className={checked ? "selected" : ""} key={item.credit_request_number}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={generating}
+                        onChange={() => setSelectedRequests((current) => checked
+                          ? current.filter((number) => number !== item.credit_request_number)
+                          : [...current, item.credit_request_number])}
+                      />
+                      <span>
+                        <strong>{item.credit_request_number}</strong>
+                        <small>{item.borrower_name}</small>
+                      </span>
+                      <span>{item.industry}</span>
+                      <span>{money(Number(item.exposure) / 1000000)}</span>
+                      <Badge>{item.status}</Badge>
+                    </label>
+                  );
+                })}
+              </div>
+              {error && <div className="data-message error">{error}</div>}
+              {result && !error && (
+                <div className="generation-result">
+                  <CheckCircle2 size={18} />
+                  <span>{result.message}. They are now available in Exception Management.</span>
+                </div>
+              )}
+              <div className="manufacturing-actions">
+                <button className="btn primary" type="submit" disabled={generating || loadingRequests || !selectedRequests.length}>
+                  <Play size={15} />
+                  {generating ? "Generating..." : `Generate Exceptions (${selectedRequests.length})`}
+                </button>
+                {result && (
+                  <button className="btn secondary" type="button" onClick={() => { location.hash = "exceptions"; }}>
+                    View Exception Management
+                    <ArrowRight size={15} />
+                  </button>
+                )}
               </div>
             </form>
           </Card>

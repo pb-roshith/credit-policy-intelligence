@@ -1,6 +1,7 @@
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from psycopg.errors import UniqueViolation
+from ..config import GEOGRAPHY_RISK
 from ..database import db_connection, resolve_borrower
 from ..schemas import CreateCreditRequest
 from ..security import current_user
@@ -29,7 +30,7 @@ def credit_requests(status: str | None = None, _: dict = Depends(current_user)):
             FROM latest_borrower_exposure
             GROUP BY borrower_id
         )
-        SELECT cr.credit_request_number, cr.borrower_id, cr.borrower_name, cr.industry,
+        SELECT cr.credit_request_number, cr.borrower_id, cr.borrower_name, cr.industry, cr.geography,
                COALESCE(be.exposure, cr.exposure) AS exposure, cr.facility,
                cr.rating, cr.requested_amount, cr.status, cr.compliance_score,
                cr.collateral_coverage, cr.recommended_pricing_bps, cr.recommended_tenor_years
@@ -76,8 +77,7 @@ def create_credit_request(payload: CreateCreditRequest, user: dict = Depends(cur
             values["credit_request_number"] = f"CR-{next_number:05d}"
             values["exposure"] = derived_exposure or 0
             post_approval_exposure = values["exposure"] + values["requested_amount"]
-            industry = payload.industry.strip().casefold()
-            geography_risk = "Low" if industry in {"manufacturing", "healthcare", "technology", "energy", "consumer"} else "Medium" if industry in {"transportation", "chemicals", "commercial re", "aviation"} else "High"
+            geography_risk = GEOGRAPHY_RISK[payload.geography]
             concentration_utilization = round(post_approval_exposure / 150_000_000 * 100, 2)
             required_authority = connection.execute("""
                 SELECT authority_name FROM approval_authority_rules
@@ -109,10 +109,10 @@ def create_credit_request(payload: CreateCreditRequest, user: dict = Depends(cur
             values["recommended_tenor_years"] = 3 if facility in {"bridge", "construction"} else 5 if facility == "revolver" else 7
             row = connection.execute("""
                 INSERT INTO credit_requests (
-                    credit_request_number, borrower_id, borrower_name, industry, exposure, facility,
+                    credit_request_number, borrower_id, borrower_name, industry, geography, exposure, facility,
                     rating, requested_amount, status, compliance_score
                     , collateral_coverage, recommended_pricing_bps, recommended_tenor_years
-                ) VALUES (%(credit_request_number)s, %(borrower_id)s, %(borrower_name)s, %(industry)s,
+                ) VALUES (%(credit_request_number)s, %(borrower_id)s, %(borrower_name)s, %(industry)s, %(geography)s,
                           %(exposure)s, %(facility)s, %(rating)s, %(requested_amount)s,
                           %(status)s, %(compliance_score)s, %(collateral_coverage)s,
                           %(recommended_pricing_bps)s, %(recommended_tenor_years)s)
