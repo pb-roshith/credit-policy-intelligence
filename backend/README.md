@@ -2,11 +2,11 @@
 
 Run with `uvicorn main:app --reload --port 8000` from this directory. API docs are available at `/docs`.
 
-Set `DATABASE_URL` in `.env` to the desired PostgreSQL database. On first startup,
-the backend connects to the `postgres` maintenance database and creates the
-configured database when it is missing. The configured PostgreSQL role therefore
-needs `CREATEDB` permission for the first run; later runs only require normal
-access to the application database.
+Set `DATABASE_URL` in `.env` to the desired PostgreSQL database. On startup, the
+backend idempotently creates the database (when missing), schemas, tables,
+indexes, runtime role, row-level-security policies, and default password policy.
+The configured PostgreSQL role needs `CREATEDB` and `CREATEROLE` plus schema and
+table creation permissions for the first run. Existing tables and data are kept.
 
 The backend is organized by responsibility:
 
@@ -17,11 +17,12 @@ The backend is organized by responsibility:
 - `app/scripts/` contains administrative commands that are run with `python -m`.
 - `app/database.py`, `app/security.py`, `app/schemas.py`, and `app/config.py` contain shared infrastructure.
 
-Borrowers are stored in `credit_data.borrower` with a stable `borrower_id` and a unique trimmed, case-insensitive name. Request creation accepts an optional `borrower_id`; when supplied, its name must match. Otherwise the name resolves or creates the borrower. Request responses include the borrower ID.
+Borrowers are stored in `"user".borrower` with a stable `borrower_id` and a unique
+trimmed, case-insensitive name per account. Request creation accepts an optional
+`borrower_id`; when supplied, its name must match. Otherwise the name resolves or
+creates the borrower. Request responses include the borrower ID.
 
 Credit request numbers are unique in `credit_requests`. Exposure history uses borrower ID, facility reference, and reporting month; it no longer stores credit request numbers. Repeated generation updates matching monthly records. Exposure calculations sum the latest balance for each facility, including zero balances for repaid facilities.
-
-`migrations/001_borrower_reset.sql` is a destructive, one-time reset for the previous local schema, applied on 2026-09-10 at the user's request. It clears borrower, request, exposure, financial-history, compliance, and policy-evaluation records. Do not rerun it to start the application. Startup does not seed demo borrowers.
 
 Set `MISTRAL_API_KEY` in `backend/.env` for server-side use. The environment file is ignored by Git.
 
@@ -50,24 +51,8 @@ the restricted `credit_user_runtime` role. PostgreSQL row-level security enforce
 account isolation for reads and writes, including administrator accounts.
 
 Policy Intelligence remains shared in `credit_data`. Authentication and
-administration tables remain in `public`. Preserved historical account-local
-policy tables in `"user"` are archival; policy APIs use the shared catalog.
+administration tables remain in `public`; policy APIs use the shared catalog.
 
-The backend runs the idempotent migration at startup. To run it explicitly:
-`python -m app.user_store` from `backend`. PostgreSQL 15 or newer is required.
-The migration database role needs schema/table creation and role-management
-permissions. Stop older backend processes before migration and start the updated
-backend afterward; older code must not continue writing to account schemas.
-
-Migration copies all tables from each known `user_<hash>` schema, retains IDs,
-verifies all copied column values in both directions, validates foreign keys,
-and removes the old schemas in one transaction. Unknown owners or unexpected
-tables abort the migration. Existing unowned credit data from `credit_data` is
-also preserved under the reserved owner `__legacy_unassigned__`; its original
-copy remains in `credit_data` and is not exposed to signed-in accounts.
-
-For account-specific maintenance, set `app.database.account_user_id` to the
-canonical user ID before calling `db_connection()` and reset the context token
-when finished. Shared policy maintenance uses `shared_policy_connection()`.
-Run `python -m unittest discover -s tests -v` for integration checks; cleanup
-removes only rows owned by randomly named test accounts.
+The deployed database uses PostgreSQL 15 or newer. Account data is protected by
+row-level security through the restricted `credit_user_runtime` role. Shared
+policy maintenance uses `shared_policy_connection()`.

@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import BASE_DIR, MISTRAL_API_KEY, MISTRAL_POLICY_MODEL, POLICY_OUTPUT_DIR
-from app.database import db_connection, ensure_database_exists, init_auth_db, init_credit_request_db, initialize_user_store
+from app.database import initialize_database
 from app.routers import auth, compliance, controls, dashboard, decision, exceptions, policies, requests
 from app.manufacture_data import credit_requests, exposure_history, policy_controls, policy_pdfs
+
+initialize_database()
 
 app = FastAPI(title="TCS Credit Policy Intelligence API", version="2.0.0")
 app.add_middleware(
@@ -13,11 +14,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-ensure_database_exists()
-init_auth_db()
-init_credit_request_db()
-initialize_user_store()
 
 for router in (
     auth.router,

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from ..schemas import CreateExceptionRequest, ExceptionAction
 from ..security import current_user
-from ..database import db_connection, initialize_user_store
+from ..database import db_connection
 from datetime import date
 import json
 from ..services.exception_rationale import generate_exception_rationale
@@ -28,7 +28,6 @@ def _workflow_for_status(status: str) -> list[dict]:
 
 @router.get("/api/exceptions")
 def exception_registry(status: str | None = None, _: dict = Depends(current_user)):
-    initialize_user_store()
     with db_connection() as connection:
         query = "SELECT exception_id AS id, credit_request_number, exception_type AS type, clause_code AS clause, severity, exposure, owner, due_date AS due, status, description, rationale, workflow, history FROM credit_request_exceptions"
         params = ()
@@ -41,7 +40,6 @@ def exception_registry(status: str | None = None, _: dict = Depends(current_user
 
 @router.post("/api/exceptions", status_code=201)
 def create_exception(payload: CreateExceptionRequest, user: dict = Depends(current_user)):
-    initialize_user_store()
     request_number = payload.credit_request_number.strip().upper()
     try:
         due_date = date.fromisoformat(payload.due_date)
@@ -96,7 +94,6 @@ def create_exception(payload: CreateExceptionRequest, user: dict = Depends(curre
 
 @router.post("/api/exceptions/{exception_id}/action")
 def exception_action(exception_id: str, payload: ExceptionAction, _: dict = Depends(current_user)):
-    initialize_user_store()
     new_status = {
         "approve": "Remediation",
         "escalate": "Pending Approval",

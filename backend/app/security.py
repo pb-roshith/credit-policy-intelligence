@@ -7,7 +7,7 @@ import secrets
 from fastapi import Header, HTTPException
 from starlette.concurrency import run_in_threadpool
 from .config import SESSIONS
-from .database import db_connection, account_user_id, initialize_user_store
+from .database import db_connection, account_user_id, ensure_account_defaults
 
 def hash_secret(value: str, salt: bytes | None = None) -> str:
     salt = salt or secrets.token_bytes(16)
@@ -102,7 +102,7 @@ async def current_user(authorization: str | None = Header(default=None)):
     _, session = resolve_session(authorization)
     scope = account_user_id.set(session["user"]["user_id"])
     try:
-        await run_in_threadpool(initialize_user_store)
+        await run_in_threadpool(ensure_account_defaults)
         yield session["user"]
     finally:
         account_user_id.reset(scope)

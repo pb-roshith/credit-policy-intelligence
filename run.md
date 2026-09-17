@@ -48,7 +48,8 @@ API documentation: **http://localhost:8000/docs**
 The administrator login and PostgreSQL connection are configured in
 `backend/.env`. The local development defaults are `admin` / `Admin@123456`,
 with PostgreSQL at `postgresql://postgres:root@localhost:5432/credit_policy_intelligence`.
-On first startup, the backend creates the database named in `DATABASE_URL` if it
-does not exist. The configured PostgreSQL user must have permission to create
-databases for that first run.
+On first startup, the backend creates the configured database and all required
+schemas, tables, indexes, roles, and security policies when they are missing.
+The PostgreSQL user in `DATABASE_URL` must have `CREATEDB` and `CREATEROLE`
+permissions for initial setup. Existing data is not deleted on later starts.
 Change both passwords before deploying or sharing the application.
