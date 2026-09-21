@@ -91,6 +91,7 @@ export default function Simulator({ notify, session }) {
             Scenario Name
             <input
               type="text"
+              autoComplete="off"
               value={scenarioName}
               maxLength={120}
               onChange={(event) => {

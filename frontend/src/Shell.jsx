@@ -41,13 +41,14 @@ import {
   EyeOff,
   Factory,
 } from "lucide-react";
-import { API, apiRequest } from "./api/client";
+import { apiRequest } from "./api/client";
 import { META } from "./config";
 import AuthScreen from "./pages/AuthScreen";
 import AdminDashboard from "./pages/AdminDashboard";
 import Compliance from "./pages/Compliance";
 import Dashboard from "./pages/Dashboard";
 import DataManufacturing from "./pages/DataManufacturing";
+import Observability from "./pages/Observability";
 import Exceptions from "./pages/Exceptions";
 import Policy from "./pages/Policy";
 import Portfolio from "./pages/Portfolio";
@@ -63,6 +64,7 @@ const NAV = [
   ["exceptions", "Exception Management", AlertTriangle],
   ["simulator", "Decision Simulator", SlidersHorizontal],
   ["portfolio", "Portfolio Analytics", BarChart3],
+  ["observability", "Observability", Activity],
   ["manufacturing", "Data Manufacturing", Factory],
 ];
 
@@ -70,7 +72,7 @@ export default function Shell() {
   const [session, setSession] = useState(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem("cpi-session"));
-      return saved?.token && saved?.user?.role ? saved : null;
+      return saved?.user?.role ? saved : null;
     } catch {
       return null;
     }
@@ -88,6 +90,11 @@ export default function Shell() {
     [collapsed, setCollapsed] = useState(false),
     [mobile, setMobile] = useState(false),
     [toast, setToast] = useState(""),
+    [authMessage] = useState(() => {
+      const message = sessionStorage.getItem("cpi-auth-message");
+      sessionStorage.removeItem("cpi-auth-message");
+      return message;
+    }),
     [summary, setSummary] = useState({});
   useEffect(() => {
     const handler = () => {
@@ -95,13 +102,13 @@ export default function Shell() {
       setPage(validPage(next) ? next : "dashboard");
     };
     addEventListener("hashchange", handler);
-    if (session?.token) {
+    if (session) {
       apiRequest("/api/summary", {}, session.token)
         .then(setSummary)
         .catch(returnToLogin);
     }
     return () => removeEventListener("hashchange", handler);
-  }, [session?.token]);
+  }, [session?.user?.user_id]);
   useEffect(() => {
     if (!session?.expires_at) return undefined;
     const remaining = new Date(session.expires_at).getTime() - Date.now();
@@ -129,24 +136,26 @@ export default function Shell() {
     exceptions: Exceptions,
     simulator: Simulator,
     portfolio: Portfolio,
+    observability: Observability,
     profile: UserProfile,
   }[page];
   const authenticated = (data) => {
     sessionStorage.setItem("cpi-session", JSON.stringify(data));
     setSession(data);
   };
-  const logout = () => {
-    const token = session?.token;
-    if (token) {
-      fetch(`${API}/api/auth/logout`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        keepalive: true,
-      }).catch(() => {});
+  const logout = async () => {
+    if (!window.confirm("Are you sure you want to log out?")) return;
+    if (session) {
+      try {
+        await apiRequest("/api/auth/logout", { method: "POST", keepalive: true });
+      } catch {
+        // Local logout must still complete when the server cannot be reached.
+      }
     }
+    sessionStorage.setItem("cpi-auth-message", "You have been logged out successfully.");
     returnToLogin();
   };
-  if (!session) return <AuthScreen key="login" onAuthenticated={authenticated} />;
+  if (!session) return <AuthScreen key="login" initialMessage={authMessage} onAuthenticated={authenticated} />;
   if (session.user.role === "admin") return <AdminDashboard session={session} onLogout={logout} />;
   const displayRole = session.user.role.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
   return (
@@ -220,4 +229,3 @@ export default function Shell() {
     </div>
   );
 }
-

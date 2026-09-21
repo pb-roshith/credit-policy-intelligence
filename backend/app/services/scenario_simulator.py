@@ -5,6 +5,7 @@ from mistralai.client import Mistral
 from ..config import MISTRAL_API_KEY, MISTRAL_POLICY_MODEL
 from ..database import shared_policy_connection
 from ..manufacture_data.policy_generation_service import _json_object, _response_text
+from ..telemetry import observe_ai
 
 
 PD_BY_RATING = {"BBB": 0.015, "BB+": 0.03, "BB-": 0.055, "B+": 0.09}
@@ -119,7 +120,7 @@ class ScenarioRecommendationAgent:
                     updated_at = CURRENT_TIMESTAMP''', (agent.id,))
             return agent.id
 
-    def run(self, inputs: dict, results: dict, improved_inputs: dict, improved_results: dict) -> tuple[str, list[str]]:
+    def run(self, inputs: dict, results: dict, improved_inputs: dict, improved_results: dict, user_id: str) -> tuple[str, list[str]]:
         try:
             agent_id = self._agent_id()
             context = {
@@ -129,12 +130,13 @@ class ScenarioRecommendationAgent:
                 "improved_case_results": improved_results,
                 "units": "Monetary values are USD millions; concentration is percent.",
             }
-            with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=90000) as client:
-                response = client.beta.conversations.start(
-                    agent_id=agent_id,
-                    store=False,
-                    inputs="Recommend scenario mitigants from this JSON:\n" + json.dumps(context),
-                )
+            with observe_ai("Decision Simulator", "scenario_recommendations", user_id) as telemetry:
+                with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=90000) as client:
+                    response = client.beta.conversations.start(
+                        agent_id=agent_id, store=False,
+                        inputs="Recommend scenario mitigants from this JSON:\n" + json.dumps(context),
+                    )
+                telemetry["response"] = response
             generated = _json_object(_response_text(response))
             recommendations = generated.get("recommendations")
             if (not isinstance(recommendations, list) or not 3 <= len(recommendations) <= 5

@@ -7,6 +7,7 @@ from ..manufacture_data.policy_generation_service import _json_object, _response
 from ..schemas import ComplianceCopilotRequest, ComplianceReviewRequest
 from ..security import current_user
 from ..services.compliance_agent import GenerativeComplianceReviewAgent, latest_stored_compliance_review
+from ..telemetry import observe_ai
 
 router = APIRouter()
 
@@ -58,10 +59,12 @@ User question: {payload.question}
 Return only valid JSON: {{"answer":"clear, concise answer grounded in the table"}}
 """.strip()
     try:
-        with Mistral(api_key=MISTRAL_API_KEY) as client:
-            response = client.beta.conversations.start(
-                agent_id=stored["agent_id"], inputs=prompt, store=False,
-            )
+        with observe_ai("Compliance Review", "compliance_copilot", user["user_id"], payload.credit_request_number.strip().upper()) as telemetry:
+            with Mistral(api_key=MISTRAL_API_KEY) as client:
+                response = client.beta.conversations.start(
+                    agent_id=stored["agent_id"], inputs=prompt, store=False,
+                )
+            telemetry["response"] = response
         answer = str(_json_object(_response_text(response)).get("answer", "")).strip()
     except Exception as error:
         raise HTTPException(status_code=502, detail=f"Compliance Copilot failed: {error}") from error

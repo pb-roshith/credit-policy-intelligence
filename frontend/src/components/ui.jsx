@@ -241,7 +241,7 @@ export function SecretInput(props) {
   const [visible, setVisible] = useState(false);
   return (
     <div className="secret-input">
-      <input {...props} {...NO_CLIPBOARD} type={visible ? "text" : "password"} />
+      <input {...props} {...NO_CLIPBOARD} autoComplete="off" type={visible ? "text" : "password"} />
       <button
         type="button"
         onClick={() => setVisible((current) => !current)}

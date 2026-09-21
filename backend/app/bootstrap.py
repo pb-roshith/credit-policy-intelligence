@@ -21,6 +21,7 @@ ACCOUNT_TABLES = (
     "credit_request_exceptions",
     "dashboard_insights",
     "decision_scenarios",
+    "ai_observability_spans",
 )
 
 
@@ -106,10 +107,80 @@ def _create_public_tables(connection) -> None:
             actor VARCHAR(64) NOT NULL,
             action VARCHAR(80) NOT NULL,
             target VARCHAR(128),
+            source_ip VARCHAR(45),
+            event_type VARCHAR(16) NOT NULL DEFAULT 'event',
+            outcome VARCHAR(16) NOT NULL DEFAULT 'success',
+            severity VARCHAR(16) NOT NULL DEFAULT 'info',
+            error_code VARCHAR(80),
             details TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    connection.execute(
+        "ALTER TABLE public.administrative_logs ADD COLUMN IF NOT EXISTS source_ip VARCHAR(45)"
+    )
+    for definition in (
+        "event_type VARCHAR(16) NOT NULL DEFAULT 'event'",
+        "outcome VARCHAR(16) NOT NULL DEFAULT 'success'",
+        "severity VARCHAR(16) NOT NULL DEFAULT 'info'",
+        "error_code VARCHAR(80)",
+    ):
+        connection.execute(
+            "ALTER TABLE public.administrative_logs ADD COLUMN IF NOT EXISTS " + definition
+        )
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS public.user_logs (
+            event_id BIGSERIAL PRIMARY KEY,
+            source_ip VARCHAR(45),
+            action_owner_id VARCHAR(64) NOT NULL,
+            action VARCHAR(80) NOT NULL,
+            resource_id VARCHAR(128),
+            event_type VARCHAR(16) NOT NULL DEFAULT 'event',
+            outcome VARCHAR(16) NOT NULL DEFAULT 'success',
+            severity VARCHAR(16) NOT NULL DEFAULT 'info',
+            error_code VARCHAR(80),
+            details TEXT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    for definition in (
+        "event_type VARCHAR(16) NOT NULL DEFAULT 'event'",
+        "outcome VARCHAR(16) NOT NULL DEFAULT 'success'",
+        "severity VARCHAR(16) NOT NULL DEFAULT 'info'",
+        "error_code VARCHAR(80)",
+    ):
+        connection.execute(
+            "ALTER TABLE public.user_logs ADD COLUMN IF NOT EXISTS " + definition
+        )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS user_logs_created_at_idx "
+        "ON public.user_logs (created_at DESC, event_id DESC)"
+    )
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS public.sessions (
+            token_hash CHAR(64) PRIMARY KEY,
+            csrf_token_hash CHAR(64) NOT NULL,
+            user_id VARCHAR(64) NOT NULL,
+            role VARCHAR(32) NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMPTZ NOT NULL
+        )
+    """)
+    connection.execute(
+        "ALTER TABLE public.sessions ADD COLUMN IF NOT EXISTS csrf_token_hash CHAR(64)"
+    )
+    connection.execute(
+        "UPDATE public.sessions SET csrf_token_hash = token_hash WHERE csrf_token_hash IS NULL"
+    )
+    connection.execute(
+        "ALTER TABLE public.sessions ALTER COLUMN csrf_token_hash SET NOT NULL"
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON public.sessions (LOWER(user_id))"
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS sessions_expires_at_idx ON public.sessions (expires_at)"
+    )
 
 
 def _create_shared_tables(connection) -> None:
@@ -430,6 +501,31 @@ def _create_account_tables(connection) -> None:
     connection.execute("""
         CREATE UNIQUE INDEX IF NOT EXISTS decision_scenarios_name_unique
         ON "user".decision_scenarios (user_id, LOWER(BTRIM(scenario_name)))
+    """)
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS "user".ai_observability_spans (
+            span_id VARCHAR(16) NOT NULL,
+            trace_id VARCHAR(32) NOT NULL,
+            user_id VARCHAR(64) NOT NULL DEFAULT NULLIF(current_setting('app.user_id', true), ''),
+            feature VARCHAR(80) NOT NULL,
+            operation VARCHAR(120) NOT NULL,
+            model VARCHAR(120),
+            target VARCHAR(160),
+            status VARCHAR(16) NOT NULL CHECK (status IN ('success','failed')),
+            latency_ms NUMERIC(14,3) NOT NULL CHECK (latency_ms >= 0),
+            input_tokens BIGINT,
+            output_tokens BIGINT,
+            total_tokens BIGINT,
+            error_type VARCHAR(160),
+            error_message TEXT,
+            started_at TIMESTAMPTZ NOT NULL,
+            ended_at TIMESTAMPTZ NOT NULL,
+            PRIMARY KEY (user_id, span_id)
+        )
+    """)
+    connection.execute("""
+        CREATE INDEX IF NOT EXISTS ai_observability_spans_started_idx
+        ON "user".ai_observability_spans (user_id, started_at DESC)
     """)
 
 

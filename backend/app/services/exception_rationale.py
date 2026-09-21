@@ -5,6 +5,7 @@ from mistralai.client import Mistral
 
 from ..config import MISTRAL_API_KEY, MISTRAL_POLICY_MODEL
 from ..manufacture_data.policy_generation_service import _json_object
+from ..telemetry import observe_ai
 
 
 def _chat_response_text(response) -> str:
@@ -24,7 +25,7 @@ def _chat_response_text(response) -> str:
     return str(content or "").strip()
 
 
-def generate_exception_rationale(proposal: dict, exception: dict, compliance_review: dict | None) -> dict:
+def generate_exception_rationale(proposal: dict, exception: dict, compliance_review: dict | None, user_id: str) -> dict:
     if not MISTRAL_API_KEY:
         raise HTTPException(status_code=503, detail="MISTRAL_API_KEY is not configured")
 
@@ -57,13 +58,18 @@ Return only valid JSON with exactly these string fields:
 }}
 """.strip()
     try:
-        with Mistral(api_key=MISTRAL_API_KEY) as client:
-            response = client.chat.complete(
-                model=MISTRAL_POLICY_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-                response_format={"type": "json_object"},
-            )
+        with observe_ai(
+            "Exception Management", "exception_rationale", user_id,
+            str(proposal.get("credit_request_number", "")) or None,
+        ) as telemetry:
+            with Mistral(api_key=MISTRAL_API_KEY) as client:
+                response = client.chat.complete(
+                    model=MISTRAL_POLICY_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.1,
+                    response_format={"type": "json_object"},
+                )
+            telemetry["response"] = response
         generated = _json_object(_chat_response_text(response))
     except Exception as error:
         raise HTTPException(status_code=502, detail=f"Mistral exception rationale generation failed: {error}") from error

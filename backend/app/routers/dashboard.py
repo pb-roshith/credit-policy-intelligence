@@ -202,4 +202,4 @@ def portfolio(_: dict = Depends(current_user)):
 def portfolio_chat(payload: PortfolioChatRequest, user: dict = Depends(current_user)):
     snapshot = portfolio(user)
     history = [message.model_dump() for message in payload.history]
-    return PortfolioChatAgent().run(snapshot, payload.question.strip(), history)
+    return PortfolioChatAgent().run(snapshot, payload.question.strip(), history, user["user_id"])

@@ -242,11 +242,11 @@ export default function Requests({ session, notify }) {
         >
           <form className="credit-request-form" onSubmit={submitCreditRequest}>
             <div className="credit-form-note form-wide"><Sparkles size={16} /><span>Exposure is calculated from borrower history. Applicable policy checks, approval authority, pricing, tenor, and the compliance score are derived automatically.</span></div>
-            <label><span>Borrower name</span><input required value={form.borrower_name} onChange={(event) => updateForm("borrower_name", event.target.value)} /></label>
-            <label><span>Industry</span><input required value={form.industry} onChange={(event) => updateForm("industry", event.target.value)} /></label>
+            <label><span>Borrower name</span><input required autoComplete="off" value={form.borrower_name} onChange={(event) => updateForm("borrower_name", event.target.value)} /></label>
+            <label><span>Industry</span><input required autoComplete="off" value={form.industry} onChange={(event) => updateForm("industry", event.target.value)} /></label>
             <label><span>Geography</span><select required value={form.geography} onChange={(event) => updateForm("geography", event.target.value)}>{GEOGRAPHIES.map((geography) => <option key={geography}>{geography}</option>)}</select></label>
-            <label><span>Facility</span><input required value={form.facility} onChange={(event) => updateForm("facility", event.target.value)} /></label>
-            <label><span>Rating</span><input required maxLength="12" value={form.rating} onChange={(event) => updateForm("rating", event.target.value)} /></label>
+            <label><span>Facility</span><input required autoComplete="off" value={form.facility} onChange={(event) => updateForm("facility", event.target.value)} /></label>
+            <label><span>Rating</span><input required autoComplete="off" maxLength="12" value={form.rating} onChange={(event) => updateForm("rating", event.target.value)} /></label>
             <label><span>Requested amount ($)</span><input required type="number" min="1" step="1" value={form.requested_amount} onChange={(event) => updateForm("requested_amount", event.target.value)} /></label>
             <label><span>Collateral coverage (%)</span><input required type="number" min="0" max="500" step="0.01" value={form.collateral_coverage} onChange={(event) => updateForm("collateral_coverage", event.target.value)} /></label>
             <label><span>Status</span><select value={form.status} onChange={(event) => updateForm("status", event.target.value)}><option>Pending</option><option>In Review</option><option>Escalated</option><option>Approved</option><option>Declined</option></select></label>
@@ -282,6 +282,7 @@ export default function Requests({ session, notify }) {
             <label className="request-search">
               <Search size={16} />
               <input
+                autoComplete="off"
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);

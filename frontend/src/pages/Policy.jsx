@@ -397,6 +397,7 @@ function PolicyCopilot({ session, onSelectPolicy }) {
       {chatError && <div className="data-message error">{chatError}</div>}
       <form className="chat-input" onSubmit={sendQuestion}>
         <input
+          autoComplete="off"
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           placeholder="Ask a policy question..."

@@ -40,6 +40,7 @@ def load_env_file():
 load_env_file()
 ADMIN_USER_ID = os.getenv("ADMIN_USER_ID", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "ChangeMe!12345")
+SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").strip().lower() in {"1", "true", "yes", "on"}
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:root@localhost:5432/credit_policy_intelligence")
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "")
 MISTRAL_POLICY_MODEL = os.getenv("MISTRAL_POLICY_MODEL", "mistral-medium-latest")
@@ -47,7 +48,6 @@ POLICY_OUTPUT_DIR = BASE_DIR / "generated_policies"
 POLICY_SOURCE_DIR = BASE_DIR / "policy doc"
 POLICY_JOB_LOCK = threading.Lock()
 COMPLIANCE_AGENT_LOCK = threading.Lock()
-SESSIONS: dict[str, dict] = {}
 SECURITY_QUESTIONS = [
     "What was the name of your first school?",
     "What is the name of the city where you were born?",

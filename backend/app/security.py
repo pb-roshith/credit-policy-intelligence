@@ -4,9 +4,9 @@ import hmac
 import json
 import re
 import secrets
-from fastapi import Header, HTTPException
+from fastapi import HTTPException, Request
 from starlette.concurrency import run_in_threadpool
-from .config import SESSIONS
+from .config import ADMIN_USER_ID
 from .database import db_connection, account_user_id, ensure_account_defaults
 
 def hash_secret(value: str, salt: bytes | None = None) -> str:
@@ -46,11 +46,29 @@ def password_errors(password: str, user_id: str) -> list[str]:
     return [message for passed, message in checks if not passed]
 
 
-def write_admin_log(actor: str, action: str, target: str | None = None, details: str | None = None):
+def write_admin_log(actor: str, action: str, target: str | None = None,
+                    details: str | None = None, source_ip: str | None = None,
+                    event_type: str = "event", outcome: str = "success",
+                    severity: str = "info", error_code: str | None = None):
     with db_connection() as connection:
         connection.execute(
-            "INSERT INTO public.administrative_logs (actor, action, target, details) VALUES (%s, %s, %s, %s)",
-            (actor, action, target, details),
+            "INSERT INTO public.administrative_logs "
+            "(actor, action, target, source_ip, event_type, outcome, severity, error_code, details) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            (actor, action, target, source_ip, event_type, outcome, severity, error_code, details),
+        )
+
+
+def write_user_log(action_owner_id: str, action: str, resource_id: str | None = None,
+                   details: str | None = None, source_ip: str | None = None,
+                   event_type: str = "event", outcome: str = "success",
+                   severity: str = "info", error_code: str | None = None):
+    with db_connection() as connection:
+        connection.execute(
+            "INSERT INTO public.user_logs "
+            "(source_ip, action_owner_id, action, resource_id, event_type, outcome, severity, error_code, details) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            (source_ip, action_owner_id, action, resource_id, event_type, outcome, severity, error_code, details),
         )
 
 
@@ -68,38 +86,87 @@ def public_user(row: dict) -> dict:
         "created_at": row["created_at"],
     }
 
-def resolve_session(authorization: str | None) -> tuple[str, dict]:
-    if not authorization or not authorization.startswith("Bearer "):
+
+def _session_token_hash(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+def resolve_session(request: Request) -> tuple[str, dict]:
+    token = request.cookies.get("cpi_session")
+    if not token:
         raise HTTPException(status_code=401, detail="Authentication required")
-    token = authorization[7:]
-    session = SESSIONS.get(token)
-    if not session:
-        raise HTTPException(status_code=401, detail="Session is invalid or expired")
-    if datetime.now(timezone.utc) >= session["expires_at"]:
-        SESSIONS.pop(token, None)
-        raise HTTPException(status_code=401, detail="Session expired. Please sign in again")
+    token_hash = _session_token_hash(token)
+    with db_connection() as connection:
+        stored = connection.execute(
+            "SELECT user_id, role, expires_at, csrf_token_hash FROM public.sessions "
+            "WHERE token_hash = %s AND expires_at > CURRENT_TIMESTAMP",
+            (token_hash,),
+        ).fetchone()
+        if not stored:
+            connection.execute("DELETE FROM public.sessions WHERE token_hash = %s", (token_hash,))
+            raise HTTPException(status_code=401, detail="Session is invalid or expired")
+        if request.method not in {"GET", "HEAD", "OPTIONS"}:
+            csrf_token = request.headers.get("X-CSRF-Token", "")
+            if not csrf_token or not hmac.compare_digest(_session_token_hash(csrf_token), stored["csrf_token_hash"]):
+                raise HTTPException(status_code=403, detail="Request verification failed")
+
+        if stored["role"] == "admin":
+            if not hmac.compare_digest(stored["user_id"].casefold(), ADMIN_USER_ID.casefold()):
+                connection.execute("DELETE FROM public.sessions WHERE token_hash = %s", (token_hash,))
+                raise HTTPException(status_code=401, detail="Session is invalid or expired")
+            user = {"user_id": ADMIN_USER_ID, "role": "admin", "status": "active", "locked": False}
+        else:
+            row = connection.execute(
+                "SELECT * FROM public.users WHERE LOWER(user_id) = LOWER(%s)",
+                (stored["user_id"],),
+            ).fetchone()
+            if not row or row["status"] != "approved" or row["locked"] or row["role"] != stored["role"]:
+                connection.execute("DELETE FROM public.sessions WHERE token_hash = %s", (token_hash,))
+                raise HTTPException(status_code=401, detail="Session is invalid or expired")
+            user = public_user(row)
+    session = {"user": user, "expires_at": stored["expires_at"]}
     return token, session
 
 
 def create_session(user: dict) -> dict:
     token = secrets.token_urlsafe(32)
+    csrf_token = secrets.token_urlsafe(32)
     duration = 15 if user["role"] == "admin" else 30
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=duration)
-    SESSIONS[token] = {"user": user, "expires_at": expires_at}
-    return {"token": token, "user": user, "expires_at": expires_at.isoformat(), "session_minutes": duration}
+    with db_connection() as connection:
+        connection.execute("DELETE FROM public.sessions WHERE expires_at <= CURRENT_TIMESTAMP")
+        connection.execute(
+            "DELETE FROM public.sessions WHERE LOWER(user_id) = LOWER(%s)",
+            (user["user_id"],),
+        )
+        connection.execute(
+            "INSERT INTO public.sessions (token_hash, csrf_token_hash, user_id, role, expires_at) VALUES (%s, %s, %s, %s, %s)",
+            (_session_token_hash(token), _session_token_hash(csrf_token), user["user_id"], user["role"], expires_at),
+        )
+    return {"token": token, "csrf_token": csrf_token, "user": user, "expires_at": expires_at.isoformat(), "session_minutes": duration}
 
 
-def current_admin(authorization: str | None = Header(default=None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Administrator authentication required")
-    _, session = resolve_session(authorization)
+def revoke_session(token: str) -> dict | None:
+    with db_connection() as connection:
+        return connection.execute(
+            "DELETE FROM public.sessions WHERE token_hash = %s RETURNING user_id, role",
+            (_session_token_hash(token),),
+        ).fetchone()
+
+
+def revoke_user_sessions(user_id: str) -> None:
+    with db_connection() as connection:
+        connection.execute("DELETE FROM public.sessions WHERE LOWER(user_id) = LOWER(%s)", (user_id,))
+
+
+def current_admin(request: Request):
+    _, session = resolve_session(request)
     if session["user"]["role"] != "admin":
         raise HTTPException(status_code=403, detail="Administrator access required")
     return session["user"]
 
 
-async def current_user(authorization: str | None = Header(default=None)):
-    _, session = resolve_session(authorization)
+async def current_user(request: Request):
+    _, session = resolve_session(request)
     scope = account_user_id.set(session["user"]["user_id"])
     try:
         await run_in_threadpool(ensure_account_defaults)

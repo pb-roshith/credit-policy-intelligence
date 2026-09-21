@@ -6,6 +6,7 @@ from mistralai.client import Mistral
 from ..config import MISTRAL_API_KEY, MISTRAL_POLICY_MODEL
 from ..database import shared_policy_connection
 from ..manufacture_data.policy_generation_service import _response_text
+from ..telemetry import observe_ai
 
 
 class PortfolioChatAgent:
@@ -49,7 +50,7 @@ class PortfolioChatAgent:
             """, (agent.id,))
             return agent.id
 
-    def run(self, snapshot: dict, question: str, history: list[dict]) -> dict:
+    def run(self, snapshot: dict, question: str, history: list[dict], user_id: str) -> dict:
         transcript = "\n".join(
             f"{item['role'].title()}: {item['content']}" for item in history[-20:]
         ) or "No previous messages."
@@ -69,12 +70,10 @@ is an accounting or regulatory result. Return plain text only.
 """.strip()
         try:
             agent_id = self._agent_id()
-            with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=90000) as client:
-                response = client.beta.conversations.start(
-                    agent_id=agent_id,
-                    inputs=prompt,
-                    store=False,
-                )
+            with observe_ai("Portfolio Analytics", "portfolio_copilot", user_id) as telemetry:
+                with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=90000) as client:
+                    response = client.beta.conversations.start(agent_id=agent_id, inputs=prompt, store=False)
+                telemetry["response"] = response
             answer = _response_text(response).strip()
         except HTTPException:
             raise

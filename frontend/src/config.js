@@ -40,6 +40,10 @@ export const META = {
     "Portfolio Analytics",
     "Enterprise-wide policy breach, exception, and risk analytics.",
   ],
+  observability: [
+    "Observability",
+    "Monitor OpenTelemetry traces, latency, and token usage for every AI feature.",
+  ],
   profile: [
     "My Profile",
     "View your account details and securely update your password.",

@@ -52,6 +52,7 @@ export default function AdminDashboard({ session, onLogout }) {
   const [savingPolicy, setSavingPolicy] = useState(false);
   const [userPages, setUserPages] = useState({ pending: 1, locked: 1, active: 1 });
   const [logs, setLogs] = useState({ logs: [], page: 1, pages: 1, total: 0 });
+  const [userLogs, setUserLogs] = useState({ logs: [], page: 1, pages: 1, total: 0 });
   const loadUsers = () => apiRequest("/api/admin/users", {}, session.token)
     .then((data) => setUsers(data.users))
     .catch((error) => setMessage({ type: "error", text: error.message }));
@@ -61,10 +62,14 @@ export default function AdminDashboard({ session, onLogout }) {
   const loadLogs = (page = 1) => apiRequest(`/api/admin/logs?page=${page}`, {}, session.token)
     .then(setLogs)
     .catch((error) => setMessage({ type: "error", text: error.message }));
+  const loadUserLogs = (page = 1) => apiRequest(`/api/admin/user-logs?page=${page}`, {}, session.token)
+    .then(setUserLogs)
+    .catch((error) => setMessage({ type: "error", text: error.message }));
   useEffect(() => {
     loadUsers();
     loadPolicy();
     loadLogs(1);
+    loadUserLogs(1);
   }, []);
   const perform = async (userId, action) => {
     try {
@@ -72,6 +77,7 @@ export default function AdminDashboard({ session, onLogout }) {
       setMessage({ type: "success", text: data.message });
       loadUsers();
       loadLogs(1);
+      loadUserLogs(1);
     } catch (error) { setMessage({ type: "error", text: error.message }); }
   };
   const savePolicy = async (event) => {
@@ -124,7 +130,7 @@ export default function AdminDashboard({ session, onLogout }) {
     <div className="admin-page">
       <header className="admin-header"><div className="brand"><div className="tcs-mark">tcs</div><div><strong>TCS CPI</strong><small>ADMINISTRATION</small></div></div><div><span>Signed in as <strong>{session.user.user_id}</strong></span><button className="btn secondary" type="button" onClick={onLogout}><LogOut size={15} />Sign out</button></div></header>
       <main className="admin-main">
-        <div className="admin-title"><div><h1>Admin Dashboard</h1><p>Manage users, password controls, and administrative activity.</p></div><button className="btn secondary" onClick={() => { loadUsers(); loadPolicy(); loadLogs(logs.page); }}>Refresh</button></div>
+        <div className="admin-title"><div><h1>Admin Dashboard</h1><p>Manage users, password controls, and administrative activity.</p></div><button className="btn secondary" onClick={() => { loadUsers(); loadPolicy(); loadLogs(logs.page); loadUserLogs(userLogs.page); }}>Refresh</button></div>
         {message && <div className={`auth-message ${message.type}`}>{message.text}</div>}
         <div className="admin-metrics"><div className="card"><UserPlus /><span>Pending approval</span><strong>{pending.length}</strong></div><div className="card"><LockKeyhole /><span>Locked accounts</span><strong>{locked.length}</strong></div><div className="card"><UserCheck /><span>Active users</span><strong>{approved.length}</strong></div></div>
         <Card title="Password policy" sub="These requirements apply immediately to registration and every password reset.">
@@ -144,8 +150,8 @@ export default function AdminDashboard({ session, onLogout }) {
         <Card title="Administrative logs" sub={`Audit history - ${logs.total} recorded event${logs.total === 1 ? "" : "s"}`}>
           {logs.logs.length ? (
             <div className="admin-table-wrap audit-log-table">
-              <table><thead><tr><th>Date & time</th><th>Administrator</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody>{logs.logs.map((entry) => (
-                <tr key={entry.id}><td>{new Date(entry.created_at).toLocaleString()}</td><td><strong>{entry.actor}</strong></td><td>{entry.action.replaceAll("_", " ")}</td><td>{entry.target || "-"}</td><td>{entry.details || "-"}</td></tr>
+              <table><thead><tr><th>Event ID</th><th>Date & time</th><th>Type</th><th>Outcome</th><th>Severity</th><th>Error code</th><th>Source IP</th><th>Action owner ID</th><th>Action</th><th>Resource ID</th><th>Details</th></tr></thead><tbody>{logs.logs.map((entry) => (
+                <tr key={entry.event_id}><td>{entry.event_id}</td><td>{new Date(entry.created_at).toLocaleString()}</td><td><Badge tone={entry.event_type === "error" ? "high" : "approved"}>{entry.event_type}</Badge></td><td>{entry.outcome}</td><td>{entry.severity}</td><td>{entry.error_code || "-"}</td><td>{entry.source_ip || "-"}</td><td><strong>{entry.action_owner_id}</strong></td><td>{entry.action.replaceAll("_", " ")}</td><td>{entry.resource_id || "-"}</td><td>{entry.details || "-"}</td></tr>
               ))}</tbody></table>
               <div className="admin-pagination">
                 <button type="button" aria-label="Previous 10 logs" title="Previous 10" disabled={logs.page <= 1} onClick={() => loadLogs(logs.page - 1)}>&lt;</button>
@@ -154,6 +160,20 @@ export default function AdminDashboard({ session, onLogout }) {
               </div>
             </div>
           ) : <div className="admin-empty">No administrative activity recorded yet.</div>}
+        </Card>
+        <Card title="User logs" sub={`User activity history - ${userLogs.total} recorded event${userLogs.total === 1 ? "" : "s"}`}>
+          {userLogs.logs.length ? (
+            <div className="admin-table-wrap audit-log-table">
+              <table><thead><tr><th>Event ID</th><th>Date & time</th><th>Type</th><th>Outcome</th><th>Severity</th><th>Error code</th><th>Source IP</th><th>Action owner ID</th><th>Action</th><th>Resource ID</th><th>Details</th></tr></thead><tbody>{userLogs.logs.map((entry) => (
+                <tr key={entry.event_id}><td>{entry.event_id}</td><td>{new Date(entry.created_at).toLocaleString()}</td><td><Badge tone={entry.event_type === "error" ? "high" : "approved"}>{entry.event_type}</Badge></td><td>{entry.outcome}</td><td>{entry.severity}</td><td>{entry.error_code || "-"}</td><td>{entry.source_ip || "-"}</td><td><strong>{entry.action_owner_id}</strong></td><td>{entry.action.replaceAll("_", " ")}</td><td>{entry.resource_id || "-"}</td><td>{entry.details || "-"}</td></tr>
+              ))}</tbody></table>
+              <div className="admin-pagination">
+                <button type="button" aria-label="Previous 10 user logs" title="Previous 10" disabled={userLogs.page <= 1} onClick={() => loadUserLogs(userLogs.page - 1)}>&lt;</button>
+                <span>Page {userLogs.page} of {userLogs.pages}</span>
+                <button type="button" aria-label="Next 10 user logs" title="Next 10" disabled={userLogs.page >= userLogs.pages} onClick={() => loadUserLogs(userLogs.page + 1)}>&gt;</button>
+              </div>
+            </div>
+          ) : <div className="admin-empty">No user activity recorded yet.</div>}
         </Card>
       </main>
     </div>

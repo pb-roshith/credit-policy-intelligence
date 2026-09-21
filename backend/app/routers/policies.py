@@ -5,6 +5,7 @@ from ..database import shared_policy_connection
 from ..manufacture_data.policy_generation_service import _json_object, _response_text
 from ..schemas import PolicyCopilotRequest
 from ..security import current_user
+from ..telemetry import observe_ai
 
 router = APIRouter()
 
@@ -120,20 +121,18 @@ Do not cite a document unless document_library returned relevant evidence from i
 """.strip()
 
     try:
-        with Mistral(api_key=MISTRAL_API_KEY) as client:
-            if payload.conversation_id:
-                response = client.beta.conversations.append(
-                    conversation_id=payload.conversation_id,
-                    inputs=prompt,
-                    store=True,
-                )
-            else:
-                response = client.beta.conversations.start(
-                    agent_id=configuration["mistral_agent_id"],
-                    inputs=prompt,
-                    store=True,
-                    metadata={"cpi_user": user["user_id"], "purpose": "policy_copilot"},
-                )
+        with observe_ai("Policy Intelligence", "policy_copilot", user["user_id"]) as telemetry:
+            with Mistral(api_key=MISTRAL_API_KEY) as client:
+                if payload.conversation_id:
+                    response = client.beta.conversations.append(
+                        conversation_id=payload.conversation_id, inputs=prompt, store=True,
+                    )
+                else:
+                    response = client.beta.conversations.start(
+                        agent_id=configuration["mistral_agent_id"], inputs=prompt, store=True,
+                        metadata={"cpi_user": user["user_id"], "purpose": "policy_copilot"},
+                    )
+            telemetry["response"] = response
         parsed = _json_object(_response_text(response))
     except Exception as error:
         raise HTTPException(status_code=502, detail=f"Policy Copilot request failed: {error}") from error

@@ -49,7 +49,7 @@ def run_scenario(request: ScenarioRunRequest, user: dict = Depends(current_user)
     results = calculate_metrics(inputs)
     improved_inputs, improved_results = recommended_case(inputs)
     agent_id, recommendations = ScenarioRecommendationAgent().run(
-        inputs, results, improved_inputs, improved_results
+        inputs, results, improved_inputs, improved_results, user["user_id"]
     )
     stored_results = {
         **results,

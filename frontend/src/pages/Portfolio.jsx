@@ -127,7 +127,7 @@ export default function Portfolio({ session }) {
             {chatError && <p role="alert" className="data-message error">{chatError}</p>}
           </div>
           <form className="chat-input" onSubmit={ask}>
-            <input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask about this portfolio…" aria-label="Ask a portfolio question" />
+            <input autoComplete="off" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask about this portfolio…" aria-label="Ask a portfolio question" />
             <button type="submit" disabled={asking || !question.trim()} aria-label="Ask"><Send size={14} /></button>
           </form>
         </Card>

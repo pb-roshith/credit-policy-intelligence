@@ -7,6 +7,8 @@ backend idempotently creates the database (when missing), schemas, tables,
 indexes, runtime role, row-level-security policies, and default password policy.
 The configured PostgreSQL role needs `CREATEDB` and `CREATEROLE` plus schema and
 table creation permissions for the first run. Existing tables and data are kept.
+Authentication sessions are stored in `public.sessions`; only SHA-256 hashes of
+bearer tokens are persisted, and expired rows are cleaned up during sign-in.
 
 The backend is organized by responsibility:
 

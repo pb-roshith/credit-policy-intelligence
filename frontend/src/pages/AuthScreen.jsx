@@ -45,10 +45,12 @@ import { API, apiRequest } from "../api/client";
 import { META, POLICY_TYPE_ORDER, policyDisplayName } from "../config";
 import { AuthField, Badge, Bars, Card, DataTable, DEFAULT_PASSWORD_POLICY, Heading, Insight, LineChart, Metric, NO_CLIPBOARD, PasswordPolicy, SecretInput, money, passwordRules } from "../components/ui";
 
-export default function AuthScreen({ onAuthenticated }) {
+export default function AuthScreen({ onAuthenticated, initialMessage = "" }) {
   const [view, setView] = useState("login");
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState(() => initialMessage
+    ? { type: "success", text: initialMessage }
+    : null);
   const [questions, setQuestions] = useState([]);
   const [recoveryQuestions, setRecoveryQuestions] = useState([]);
   const [passwordPolicy, setPasswordPolicy] = useState(DEFAULT_PASSWORD_POLICY);
@@ -186,8 +188,8 @@ export default function AuthScreen({ onAuthenticated }) {
 
           {view === "login" && (
             <form onSubmit={submitLogin} className="auth-form">
-              <AuthField label="User ID"><input {...NO_CLIPBOARD} autoFocus required autoComplete="username" value={login.user_id} onChange={(e) => setLogin({ ...login, user_id: e.target.value })} placeholder="Enter your user ID" /></AuthField>
-              <AuthField label="Password"><SecretInput required autoComplete="current-password" value={login.password} onChange={(e) => setLogin({ ...login, password: e.target.value })} placeholder="Enter your password" /></AuthField>
+              <AuthField label="User ID"><input {...NO_CLIPBOARD} autoFocus required autoComplete="off" value={login.user_id} onChange={(e) => setLogin({ ...login, user_id: e.target.value })} placeholder="Enter your user ID" /></AuthField>
+              <AuthField label="Password"><SecretInput required autoComplete="off" value={login.password} onChange={(e) => setLogin({ ...login, password: e.target.value })} placeholder="Enter your password" /></AuthField>
               <button className="auth-link forgot-link" type="button" onClick={() => changeView("forgot")}>Forgot password?</button>
               <button className="btn primary auth-submit" disabled={busy}>{busy ? "Signing in..." : "Sign in"}<ArrowRight size={16} /></button>
               <div className="auth-divider"><span>New to the platform?</span></div>
@@ -198,10 +200,10 @@ export default function AuthScreen({ onAuthenticated }) {
           {view === "register" && (
             <form onSubmit={submitRegistration} className="auth-form">
               <div className="auth-grid">
-                <AuthField label="User ID"><input {...NO_CLIPBOARD} required minLength="3" maxLength="64" value={registration.user_id} onChange={(e) => setRegistration({ ...registration, user_id: e.target.value })} placeholder="Choose a unique user ID" /></AuthField>
+                <AuthField label="User ID"><input {...NO_CLIPBOARD} required autoComplete="off" minLength="3" maxLength="64" value={registration.user_id} onChange={(e) => setRegistration({ ...registration, user_id: e.target.value })} placeholder="Choose a unique user ID" /></AuthField>
                 <AuthField label="Role"><select required value={registration.role} onChange={(e) => setRegistration({ ...registration, role: e.target.value })}><option value="relationship_manager">Relationship Manager</option><option value="credit_analyst">Credit Analyst</option></select></AuthField>
-                <AuthField label="Password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="new-password" value={registration.password} onChange={(e) => setRegistration({ ...registration, password: e.target.value })} placeholder="Create a password" /></AuthField>
-                <AuthField label="Confirm password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="new-password" value={registration.confirm} onChange={(e) => setRegistration({ ...registration, confirm: e.target.value })} placeholder="Re-enter your password" /></AuthField>
+                <AuthField label="Password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={registration.password} onChange={(e) => setRegistration({ ...registration, password: e.target.value })} placeholder="Create a password" /></AuthField>
+                <AuthField label="Confirm password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={registration.confirm} onChange={(e) => setRegistration({ ...registration, confirm: e.target.value })} placeholder="Re-enter your password" /></AuthField>
               </div>
               <PasswordPolicy password={registration.password} userId={registration.user_id} policy={passwordPolicy} />
               <div className="security-section">
@@ -210,7 +212,7 @@ export default function AuthScreen({ onAuthenticated }) {
                   <div className={`security-row ${entry.selection === "custom" ? "custom" : ""}`} key={index}>
                     <span>{index + 1}</span>
                     <select required value={entry.selection} onChange={(e) => updateSecurity(index, "selection", e.target.value)}><option value="">Select a question</option>{questions.map((question) => <option key={question} value={question}>{question}</option>)}<option value="custom">Custom question</option></select>
-                    {entry.selection === "custom" && <input required maxLength="200" value={entry.custom} onChange={(e) => updateSecurity(index, "custom", e.target.value)} placeholder="Enter your custom question" />}
+                    {entry.selection === "custom" && <input required autoComplete="off" maxLength="200" value={entry.custom} onChange={(e) => updateSecurity(index, "custom", e.target.value)} placeholder="Enter your custom question" />}
                     <SecretInput required maxLength="200" autoComplete="off" value={entry.answer} onChange={(e) => updateSecurity(index, "answer", e.target.value)} placeholder="Your answer" />
                   </div>
                 ))}
@@ -222,9 +224,9 @@ export default function AuthScreen({ onAuthenticated }) {
 
           {view === "forgot" && (
             <form onSubmit={recoveryQuestions.length ? submitReset : loadRecoveryQuestions} className="auth-form">
-              <AuthField label="User ID"><input {...NO_CLIPBOARD} required disabled={recoveryQuestions.length > 0} value={reset.user_id} onChange={(e) => setReset({ ...reset, user_id: e.target.value })} placeholder="Enter your user ID" /></AuthField>
+              <AuthField label="User ID"><input {...NO_CLIPBOARD} required autoComplete="off" disabled={recoveryQuestions.length > 0} value={reset.user_id} onChange={(e) => setReset({ ...reset, user_id: e.target.value })} placeholder="Enter your user ID" /></AuthField>
               {recoveryQuestions.map((question, index) => <AuthField label={question} key={question}><SecretInput required autoComplete="off" value={reset.answers[index] || ""} onChange={(e) => setReset({ ...reset, answers: reset.answers.map((answer, i) => i === index ? e.target.value : answer) })} placeholder="Your answer" /></AuthField>)}
-              {recoveryQuestions.length > 0 && <><AuthField label="New password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="new-password" value={reset.password} onChange={(e) => setReset({ ...reset, password: e.target.value })} /></AuthField><AuthField label="Confirm new password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="new-password" value={reset.confirm} onChange={(e) => setReset({ ...reset, confirm: e.target.value })} /></AuthField><PasswordPolicy password={reset.password} userId={reset.user_id} policy={passwordPolicy} /></>}
+              {recoveryQuestions.length > 0 && <><AuthField label="New password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={reset.password} onChange={(e) => setReset({ ...reset, password: e.target.value })} /></AuthField><AuthField label="Confirm new password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={reset.confirm} onChange={(e) => setReset({ ...reset, confirm: e.target.value })} /></AuthField><PasswordPolicy password={reset.password} userId={reset.user_id} policy={passwordPolicy} /></>}
               <button className="btn primary auth-submit" disabled={busy}>{busy ? "Please wait..." : recoveryQuestions.length ? "Reset password & unlock" : "Continue"}</button>
               <button className="auth-link" type="button" onClick={() => changeView("login")}>Back to sign in</button>
             </form>

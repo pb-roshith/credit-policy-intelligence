@@ -5,6 +5,7 @@ from mistralai.client import Mistral
 from ..config import COMPLIANCE_AGENT_LOCK, MISTRAL_API_KEY, MISTRAL_POLICY_MODEL
 from ..database import db_connection, shared_policy_connection
 from ..manufacture_data.policy_generation_service import _json_object, _response_text
+from ..telemetry import observe_ai
 
 class GenerativeComplianceReviewAgent:
     """Use a Mistral agent with policy-library retrieval to classify a request."""
@@ -147,12 +148,12 @@ overall_score must be an integer from 0 to 100. Do not return a finding without 
         proposal, signals, policies = self._context(request_number)
         agent_id = self._agent_id()
         try:
-            with Mistral(api_key=MISTRAL_API_KEY) as client:
-                response = client.beta.conversations.start(
-                    agent_id=agent_id,
-                    inputs=self._prompt(proposal, signals, policies),
-                    store=False,
-                )
+            with observe_ai("Compliance Review", "compliance_agent", user_id, request_number) as telemetry:
+                with Mistral(api_key=MISTRAL_API_KEY) as client:
+                    response = client.beta.conversations.start(
+                        agent_id=agent_id, inputs=self._prompt(proposal, signals, policies), store=False,
+                    )
+                telemetry["response"] = response
             generated = _json_object(_response_text(response))
         except HTTPException:
             raise

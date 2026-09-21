@@ -126,7 +126,7 @@ export default function Exceptions({ session, notify }) {
       <div className="exception-layout">
         <Card title="Exception Registry">
           <div className="request-tools">
-            <label className="request-search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search credit request ID..." /></label>
+            <label className="request-search"><Search size={16} /><input autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search credit request ID..." /></label>
             {query && <button type="button" className="text-btn" onClick={() => setQuery("")}>Clear</button>}
           </div>
           <DataTable

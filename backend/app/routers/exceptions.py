@@ -69,7 +69,10 @@ def create_exception(payload: CreateExceptionRequest, user: dict = Depends(curre
         "description": payload.description.strip(), "exposure": exposure, "severity": severity,
         "due_date": due_date, "status": payload.status,
     }
-    rationale = generate_exception_rationale(dict(proposal), exception_context, stored_review["review"] if stored_review else None)
+    rationale = generate_exception_rationale(
+        dict(proposal), exception_context, stored_review["review"] if stored_review else None,
+        user["user_id"],
+    )
     workflow = _workflow_for_status(payload.status)
     history = [{"date": str(date.today()), "event": "Exception created from Compliance Review", "actor": user["user_id"]}]
     with db_connection() as connection:

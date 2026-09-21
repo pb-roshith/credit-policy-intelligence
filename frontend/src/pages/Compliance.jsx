@@ -188,10 +188,10 @@ export default function Compliance({ notify, session }) {
         <Card className="request-form-card" title="Create Policy Exception" action={<button type="button" className="icon-button" aria-label="Close form" onClick={() => setShowExceptionForm(false)}><X size={17} /></button>}>
           <form className="credit-request-form" onSubmit={submitException}>
             <div className="credit-form-note form-wide"><Sparkles size={16} /><span>The exception ID, exposure, and severity are generated automatically. Mistral will create the business justification, risk implications, remediation, and escalation guidance from your description and this compliance review.</span></div>
-            <label><span>Credit request ID</span><input value={selectedRequest} readOnly /></label>
-            <label><span>Exception type</span><input required value={exceptionForm.exception_type} onChange={(event) => updateException("exception_type", event.target.value)} /></label>
-            <label><span>Policy clause</span><input required value={exceptionForm.clause_code} onChange={(event) => updateException("clause_code", event.target.value)} /></label>
-            <label><span>Owner</span><input required value={exceptionForm.owner} onChange={(event) => updateException("owner", event.target.value)} /></label>
+            <label><span>Credit request ID</span><input autoComplete="off" value={selectedRequest} readOnly /></label>
+            <label><span>Exception type</span><input required autoComplete="off" value={exceptionForm.exception_type} onChange={(event) => updateException("exception_type", event.target.value)} /></label>
+            <label><span>Policy clause</span><input required autoComplete="off" value={exceptionForm.clause_code} onChange={(event) => updateException("clause_code", event.target.value)} /></label>
+            <label><span>Owner</span><input required autoComplete="off" value={exceptionForm.owner} onChange={(event) => updateException("owner", event.target.value)} /></label>
             <label><span>Due date</span><input required type="date" min={new Date().toISOString().slice(0, 10)} value={exceptionForm.due_date} onChange={(event) => updateException("due_date", event.target.value)} /></label>
             <label><span>Status</span><select value={exceptionForm.status} onChange={(event) => updateException("status", event.target.value)}><option>Active</option><option>Pending Approval</option><option>Remediation</option><option>Closed</option></select></label>
             <label className="form-wide"><span>Exception description</span><textarea required minLength="10" rows="5" placeholder="Describe the policy exception and why it is being requested..." value={exceptionForm.description} onChange={(event) => updateException("description", event.target.value)} /></label>
@@ -275,7 +275,7 @@ function ComplianceCopilot({ session, requestNumber }) {
       </div>
       {error && <div className="data-message error">{error}</div>}
       <div className="suggestions">{["What policies are breached?", "Show warnings", "What should be remediated?"].map((text) => <button type="button" key={text} disabled={sending} onClick={(event) => ask(event, text)}>{text}</button>)}</div>
-      <form className="chat-input" onSubmit={ask}><input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask about these findings..." disabled={sending} aria-label="Ask Compliance Copilot" /><button type="submit" disabled={sending || !question.trim()} aria-label="Send question"><Send size={16} /></button></form>
+      <form className="chat-input" onSubmit={ask}><input autoComplete="off" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask about these findings..." disabled={sending} aria-label="Ask Compliance Copilot" /><button type="submit" disabled={sending || !question.trim()} aria-label="Send question"><Send size={16} /></button></form>
     </Card>
   );
 }

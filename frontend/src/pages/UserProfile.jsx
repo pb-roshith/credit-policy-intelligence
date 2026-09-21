@@ -130,8 +130,8 @@ export default function UserProfile({ session, onLogout }) {
               ))}
             </div>
             <div className="auth-grid">
-              <AuthField label="New password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter a new password" /></AuthField>
-              <AuthField label="Confirm new password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="new-password" value={confirm} onChange={(event) => setConfirm(event.target.value)} placeholder="Re-enter the new password" /></AuthField>
+              <AuthField label="New password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter a new password" /></AuthField>
+              <AuthField label="Confirm new password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={confirm} onChange={(event) => setConfirm(event.target.value)} placeholder="Re-enter the new password" /></AuthField>
             </div>
             <PasswordPolicy password={password} userId={session.user.user_id} policy={passwordPolicy} />
             <button className="btn primary profile-save" disabled={busy || questions.length !== 3}>
