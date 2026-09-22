@@ -3,7 +3,7 @@ import json
 from fastapi import HTTPException
 from mistralai.client import Mistral
 
-from ..config import MISTRAL_API_KEY, MISTRAL_POLICY_MODEL
+from ..config import MISTRAL_API_KEY, MISTRAL_POLICY_MODEL, MISTRAL_TIMEOUT_MS
 from ..manufacture_data.policy_generation_service import _json_object
 from ..telemetry import observe_ai
 
@@ -61,8 +61,10 @@ Return only valid JSON with exactly these string fields:
         with observe_ai(
             "Exception Management", "exception_rationale", user_id,
             str(proposal.get("credit_request_number", "")) or None,
+            input_payload=prompt,
+            retrieved_sources=["Credit proposal", "Submitted exception", "Saved compliance review"],
         ) as telemetry:
-            with Mistral(api_key=MISTRAL_API_KEY) as client:
+            with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=MISTRAL_TIMEOUT_MS) as client:
                 response = client.chat.complete(
                     model=MISTRAL_POLICY_MODEL,
                     messages=[{"role": "user", "content": prompt}],

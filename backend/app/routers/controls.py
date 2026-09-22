@@ -20,4 +20,5 @@ def controls(_: dict = Depends(current_user)):
             ORDER BY SPLIT_PART(document.library_policy_id, '.', 1)::INTEGER,
                      SPLIT_PART(document.library_policy_id, '.', 2)::INTEGER,
                      control.control_sequence
+            LIMIT 1000
         """).fetchall()

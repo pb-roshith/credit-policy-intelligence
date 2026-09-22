@@ -4,7 +4,7 @@ from pathlib import Path
 
 from mistralai.client import Mistral
 
-from ..config import MISTRAL_API_KEY, POLICY_OUTPUT_DIR
+from ..config import MISTRAL_API_KEY, MISTRAL_MANUFACTURING_TIMEOUT_MS, POLICY_OUTPUT_DIR
 from ..database import db_connection
 from ..manufacture_data.policy_generation_service import (
     _json_object,
@@ -107,7 +107,7 @@ def ensure_policy_types() -> tuple[int, int]:
 
     created = 0
     skipped = 0
-    with Mistral(api_key=MISTRAL_API_KEY) as client:
+    with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=MISTRAL_MANUFACTURING_TIMEOUT_MS) as client:
         library_documents = client.beta.libraries.documents.list(
             library_id=config["mistral_library_id"], page_size=100, page=0
         ).data

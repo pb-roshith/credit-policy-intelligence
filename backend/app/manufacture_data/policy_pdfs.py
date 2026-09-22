@@ -11,6 +11,28 @@ from .policy_generation_service import (
 )
 
 router = APIRouter(prefix="/api/data-manufacturing", tags=["data manufacturing"])
+_ACTIVE_WORKERS: dict[str, tuple[threading.Thread, threading.Event]] = {}
+
+
+def _run_worker(job_id: str, cancel_event: threading.Event) -> None:
+    try:
+        run_policy_generation(
+            job_id, shared_policy_connection, MISTRAL_API_KEY,
+            POLICY_OUTPUT_DIR, POLICY_SOURCE_DIR, MISTRAL_POLICY_MODEL, cancel_event,
+        )
+    finally:
+        with POLICY_JOB_LOCK:
+            _ACTIVE_WORKERS.pop(job_id, None)
+
+
+def shutdown_policy_workers() -> None:
+    """Request cooperative cancellation and briefly await active background workers."""
+    with POLICY_JOB_LOCK:
+        workers = list(_ACTIVE_WORKERS.values())
+    for _, cancel_event in workers:
+        cancel_event.set()
+    for worker, _ in workers:
+        worker.join(timeout=5)
 
 def public_policy_job(row: dict | None) -> dict:
     if not row:
@@ -89,12 +111,13 @@ def generate_policy_pdfs(user: dict = Depends(current_user)):
                     (job_id, status, total_documents, completed_documents, message, initiated_by)
                 VALUES (%s, 'queued', %s, %s, 'Policy generation queued', %s)
             """, (job_id, POLICY_LIBRARY_DOCUMENT_COUNT, stored_count, user["user_id"]))
+        cancel_event = threading.Event()
         worker = threading.Thread(
-            target=run_policy_generation,
-            args=(job_id, shared_policy_connection, MISTRAL_API_KEY,
-                  POLICY_OUTPUT_DIR, POLICY_SOURCE_DIR, MISTRAL_POLICY_MODEL),
+            target=_run_worker,
+            args=(job_id, cancel_event),
             name=f"policy-generation-{job_id[:8]}", daemon=True,
         )
+        _ACTIVE_WORKERS[job_id] = (worker, cancel_event)
         worker.start()
     return {
         "job_id": job_id, "status": "queued", "total_documents": POLICY_LIBRARY_DOCUMENT_COUNT,

@@ -12,6 +12,11 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
 
+from ..config import (
+    MISTRAL_MANUFACTURING_TIMEOUT_MS, POLICY_DOCUMENT_TIMEOUT_SECONDS,
+    POLICY_JOB_TIMEOUT_SECONDS,
+)
+
 
 POLICY_SPECS = [
     {"library_id": "20.1", "type": "Underwriting", "category": "Credit Policy", "parent": "CP-Wholesale-v4.2", "version": "4.2", "clause": "4.1", "name": "Underwriting Standards"},
@@ -159,9 +164,12 @@ def _render_pdf(path: Path, policy_reference: str, title: str, sections: list[di
     return document.page
 
 
-def _wait_for_document(client: Mistral, library_id: str, document_id: str) -> None:
-    deadline = time.monotonic() + 300
+def _wait_for_document(client: Mistral, library_id: str, document_id: str,
+                       cancel_event=None) -> None:
+    deadline = time.monotonic() + POLICY_DOCUMENT_TIMEOUT_SECONDS
     while time.monotonic() < deadline:
+        if cancel_event is not None and cancel_event.is_set():
+            raise InterruptedError("Policy generation was cancelled during shutdown")
         status = client.beta.libraries.documents.status(
             library_id=library_id, document_id=document_id
         )
@@ -216,8 +224,9 @@ def _resources(client: Mistral, db_connection, model: str) -> tuple[str, str]:
 
 def run_policy_generation(job_id: str, db_connection, api_key: str, output_dir: Path,
                           source_directory: Path,
-                          model: str = "mistral-medium-latest") -> None:
+                          model: str = "mistral-medium-latest", cancel_event=None) -> None:
     try:
+        job_deadline = time.monotonic() + POLICY_JOB_TIMEOUT_SECONDS
         output_dir.mkdir(parents=True, exist_ok=True)
         with db_connection() as connection:
             connection.execute("""
@@ -225,10 +234,14 @@ def run_policy_generation(job_id: str, db_connection, api_key: str, output_dir: 
                 SET status = 'running', started_at = CURRENT_TIMESTAMP, message = 'Preparing Mistral agent and library'
                 WHERE job_id = %s
             """, (job_id,))
-        with Mistral(api_key=api_key) as client:
+        with Mistral(api_key=api_key, timeout_ms=MISTRAL_MANUFACTURING_TIMEOUT_MS) as client:
             library_id, agent_id = _resources(client, db_connection, model)
             completed = 0
             for sequence, spec in enumerate(POLICY_SPECS, start=1):
+                if cancel_event is not None and cancel_event.is_set():
+                    raise InterruptedError("Policy generation was cancelled during shutdown")
+                if time.monotonic() >= job_deadline:
+                    raise TimeoutError("Policy generation exceeded its overall execution deadline")
                 parent = spec["parent"]
                 clause = spec["clause"]
                 title = spec["name"]
@@ -294,7 +307,7 @@ def run_policy_generation(job_id: str, db_connection, api_key: str, output_dir: 
                             library_id=library_id,
                             file={"file_name": file_name, "content": pdf_file},
                         )
-                _wait_for_document(client, library_id, uploaded.id)
+                _wait_for_document(client, library_id, uploaded.id, cancel_event)
                 summary_response = _start_conversation(client,
                     agent_id=agent_id,
                     inputs=_summary_prompt(file_name, parent, clause, title),
@@ -328,7 +341,9 @@ def run_policy_generation(job_id: str, db_connection, api_key: str, output_dir: 
                     WHERE job_id = %s
                 """, (GENERATED_DOCUMENT_COUNT, job_id))
             from ..scripts.import_external_policies import import_policies
-            imported, skipped = import_policies(source_directory)
+            imported, skipped = import_policies(
+                source_directory, deadline=job_deadline, cancel_event=cancel_event
+            )
             if imported + skipped != IMPORTED_DOCUMENT_COUNT:
                 raise RuntimeError("The policy document folder did not produce all 10 imported policies")
         with db_connection() as connection:

@@ -2,8 +2,8 @@ from datetime import datetime, timezone
 import json
 from fastapi import HTTPException
 from mistralai.client import Mistral
-from ..config import COMPLIANCE_AGENT_LOCK, MISTRAL_API_KEY, MISTRAL_POLICY_MODEL
-from ..database import db_connection, shared_policy_connection
+from ..config import COMPLIANCE_AGENT_LOCK, MISTRAL_API_KEY, MISTRAL_POLICY_MODEL, MISTRAL_TIMEOUT_MS
+from ..database import db_connection, run_db_transaction, shared_policy_connection
 from ..manufacture_data.policy_generation_service import _json_object, _response_text
 from ..telemetry import observe_ai
 
@@ -35,7 +35,7 @@ class GenerativeComplianceReviewAgent:
             if configuration["mistral_compliance_agent_id"]:
                 return configuration["mistral_compliance_agent_id"]
             try:
-                with Mistral(api_key=MISTRAL_API_KEY) as client:
+                with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=MISTRAL_TIMEOUT_MS) as client:
                     agent = client.beta.agents.create(
                         model=MISTRAL_POLICY_MODEL,
                         name="Credit Compliance Review Agent",
@@ -148,10 +148,15 @@ overall_score must be an integer from 0 to 100. Do not return a finding without 
         proposal, signals, policies = self._context(request_number)
         agent_id = self._agent_id()
         try:
-            with observe_ai("Compliance Review", "compliance_agent", user_id, request_number) as telemetry:
-                with Mistral(api_key=MISTRAL_API_KEY) as client:
+            prompt = self._prompt(proposal, signals, policies)
+            with observe_ai(
+                "Compliance Review", "compliance_agent", user_id, request_number,
+                input_payload=prompt,
+                retrieved_sources=[str(item.get("file_name") or item.get("title") or item.get("policy_type")) for item in policies],
+            ) as telemetry:
+                with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=MISTRAL_TIMEOUT_MS) as client:
                     response = client.beta.conversations.start(
-                        agent_id=agent_id, inputs=self._prompt(proposal, signals, policies), store=False,
+                        agent_id=agent_id, inputs=prompt, store=False,
                     )
                 telemetry["response"] = response
             generated = _json_object(_response_text(response))
@@ -216,12 +221,13 @@ overall_score must be an integer from 0 to 100. Do not return a finding without 
             "recommendations": [str(item) for item in generated.get("recommendations", []) if str(item).strip()],
             "evaluated_at": datetime.now(timezone.utc).isoformat(),
         }
-        with db_connection() as connection:
-            stored = connection.execute("""
+        def persist(connection):
+            return connection.execute("""
                 INSERT INTO ai_compliance_reviews
                     (credit_request_number, agent_id, review, created_by)
                 VALUES (%s, %s, %s::jsonb, %s) RETURNING review_id
             """, (request_number, agent_id, json.dumps(result), user_id)).fetchone()
+        stored = run_db_transaction(persist)
         result["review_id"] = stored["review_id"]
         return result
 

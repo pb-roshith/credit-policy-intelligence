@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
   FileText,
@@ -69,6 +69,7 @@ const NAV = [
 ];
 
 export default function Shell() {
+  const toastTimer = useRef(null);
   const [session, setSession] = useState(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem("cpi-session"));
@@ -97,17 +98,18 @@ export default function Shell() {
     }),
     [summary, setSummary] = useState({});
   useEffect(() => {
+    const controller = new AbortController();
     const handler = () => {
       const next = location.hash.slice(1) || "dashboard";
       setPage(validPage(next) ? next : "dashboard");
     };
     addEventListener("hashchange", handler);
     if (session) {
-      apiRequest("/api/summary", {}, session.token)
+      apiRequest("/api/summary", { signal: controller.signal }, session.token)
         .then(setSummary)
-        .catch(returnToLogin);
+        .catch(() => { if (!controller.signal.aborted) returnToLogin(); });
     }
-    return () => removeEventListener("hashchange", handler);
+    return () => { controller.abort(); removeEventListener("hashchange", handler); };
   }, [session?.user?.user_id]);
   useEffect(() => {
     if (!session?.expires_at) return undefined;
@@ -121,12 +123,14 @@ export default function Shell() {
   }, [session?.expires_at]);
   const notify = (message) => {
       setToast(message);
-      setTimeout(() => setToast(""), 2600);
+      clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => { setToast(""); toastTimer.current = null; }, 2600);
     },
     go = (id) => {
       location.hash = id;
       setMobile(false);
     };
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
   const Page = {
     dashboard: Dashboard,
     requests: Requests,

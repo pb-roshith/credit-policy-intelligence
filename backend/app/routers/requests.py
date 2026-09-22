@@ -2,8 +2,8 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from psycopg.errors import UniqueViolation
 from ..config import GEOGRAPHY_RISK
-from ..database import db_connection, resolve_borrower
-from ..schemas import CreateCreditRequest
+from ..database import db_connection, resolve_borrower, retry_on_db_conflict
+from ..schemas import CreateCreditRequest, MAX_SAFE_MONETARY_AMOUNT
 from ..security import current_user
 from ..services.compliance_scoring import calculate_compliance_score, persist_compliance_result, public_credit_request
 
@@ -41,13 +41,14 @@ def credit_requests(status: str | None = None, _: dict = Depends(current_user)):
     if status:
         query += " WHERE LOWER(cr.status) = LOWER(%s)"
         parameters = (status,)
-    query += " ORDER BY cr.compliance_score ASC, cr.credit_request_number ASC"
+    query += " ORDER BY cr.compliance_score ASC, cr.credit_request_number ASC LIMIT 1000"
     with db_connection() as connection:
         rows = connection.execute(query, parameters).fetchall()
     return [public_credit_request(row) for row in rows]
 
 
 @router.post("/api/requests", status_code=201)
+@retry_on_db_conflict
 def create_credit_request(payload: CreateCreditRequest, user: dict = Depends(current_user)):
     if user["role"] != "relationship_manager":
         raise HTTPException(status_code=403, detail="Only relationship managers can create credit requests")
@@ -76,7 +77,11 @@ def create_credit_request(payload: CreateCreditRequest, user: dict = Depends(cur
             """, (values["borrower_id"],)).fetchone()["exposure"]
             values["credit_request_number"] = f"CR-{next_number:05d}"
             values["exposure"] = derived_exposure or 0
+            if values["exposure"] < 0 or values["exposure"] > MAX_SAFE_MONETARY_AMOUNT:
+                raise HTTPException(status_code=422, detail="The calculated exposure is outside the supported range")
             post_approval_exposure = values["exposure"] + values["requested_amount"]
+            if post_approval_exposure > MAX_SAFE_MONETARY_AMOUNT:
+                raise HTTPException(status_code=422, detail="The resulting exposure exceeds the supported maximum")
             geography_risk = GEOGRAPHY_RISK[payload.geography]
             concentration_utilization = round(post_approval_exposure / 150_000_000 * 100, 2)
             required_authority = connection.execute("""
@@ -87,10 +92,13 @@ def create_credit_request(payload: CreateCreditRequest, user: dict = Depends(cur
             rating = payload.rating.strip().upper()
             rating_signal = "PASS" if rating.startswith(("AAA", "AA", "A", "BBB")) else "WARNING" if rating.startswith("BB") else "FAIL"
             coverage_signal = "PASS" if payload.collateral_coverage >= 120 else "WARNING" if payload.collateral_coverage >= 80 else "FAIL"
+            adjusted_collateral = round(post_approval_exposure * payload.collateral_coverage / 100)
+            if adjusted_collateral > MAX_SAFE_MONETARY_AMOUNT:
+                raise HTTPException(status_code=422, detail="The calculated collateral exceeds the supported maximum")
             derived_payload = CreateCreditRequest.model_validate({**payload.model_dump(), **{
                 "geography_risk": geography_risk,
                 "concentration_limit_utilization": concentration_utilization,
-                "adjusted_collateral": round(post_approval_exposure * payload.collateral_coverage / 100),
+                "adjusted_collateral": adjusted_collateral,
                 "approval_authority": required_authority,
                 "policy_clauses": [
                     {"clause_code": "CP-4.2", "clause_name": "Leverage and borrower risk", "result": rating_signal},

@@ -57,25 +57,36 @@ export default function DataManufacturing({ session, notify }) {
   const [loadingRequests, setLoadingRequests] = useState(false);
 
   useEffect(() => {
-    apiRequest("/api/data-manufacturing/policy-pdfs/status", {}, session.token)
-      .then(setPolicyJob)
+    const controller = new AbortController();
+    apiRequest("/api/data-manufacturing/policy-pdfs/status", { signal: controller.signal }, session.token)
+      .then((job) => { if (!controller.signal.aborted) setPolicyJob(job); })
       .catch(() => {});
+    return () => controller.abort();
   }, [session.token]);
 
   useEffect(() => {
     if (!policyJob || !["queued", "running"].includes(policyJob.status)) return undefined;
-    const timer = setInterval(() => {
+    let requestInFlight = false;
+    const controller = new AbortController();
+    const poll = async () => {
+      if (requestInFlight) return;
+      requestInFlight = true;
       const path = policyJob.job_id
         ? `/api/data-manufacturing/policy-pdfs/${policyJob.job_id}`
         : "/api/data-manufacturing/policy-pdfs/status";
-      apiRequest(path, {}, session.token)
-        .then((job) => {
-          setPolicyJob(job);
-          if (job.status === "completed") notify(job.message);
-        })
-        .catch((requestError) => setError(requestError.message));
-    }, 2500);
-    return () => clearInterval(timer);
+      try {
+        const job = await apiRequest(path, { signal: controller.signal }, session.token);
+        if (controller.signal.aborted) return;
+        setPolicyJob(job);
+        if (job.status === "completed") notify(job.message);
+      } catch (requestError) {
+        if (!controller.signal.aborted) setError(requestError.message);
+      } finally {
+        requestInFlight = false;
+      }
+    };
+    const timer = setInterval(poll, 2500);
+    return () => { controller.abort(); clearInterval(timer); };
   }, [policyJob?.job_id, policyJob?.status, session.token]);
 
   useEffect(() => {

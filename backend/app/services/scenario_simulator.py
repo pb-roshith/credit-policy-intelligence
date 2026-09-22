@@ -130,11 +130,15 @@ class ScenarioRecommendationAgent:
                 "improved_case_results": improved_results,
                 "units": "Monetary values are USD millions; concentration is percent.",
             }
-            with observe_ai("Decision Simulator", "scenario_recommendations", user_id) as telemetry:
+            prompt = "Recommend scenario mitigants from this JSON:\n" + json.dumps(context)
+            with observe_ai(
+                "Decision Simulator", "scenario_recommendations", user_id,
+                input_payload=prompt, retrieved_sources=["Scenario inputs", "Calculated scenario results"],
+            ) as telemetry:
                 with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=90000) as client:
                     response = client.beta.conversations.start(
                         agent_id=agent_id, store=False,
-                        inputs="Recommend scenario mitigants from this JSON:\n" + json.dumps(context),
+                        inputs=prompt,
                     )
                 telemetry["response"] = response
             generated = _json_object(_response_text(response))

@@ -79,8 +79,11 @@ export default function Dashboard({ session }) {
   useEffect(() => () => { generation.current?.abort(); generation.current = null; }, [session.token]);
   useEffect(() => {
     let active = true;
+    let requestInFlight = false;
     const controller = new AbortController();
     async function load() {
+      if (requestInFlight) return;
+      requestInFlight = true;
       setLoading(true);
       try {
         const result = await apiRequest("/api/dashboard", { signal: controller.signal }, session.token);
@@ -90,7 +93,7 @@ export default function Dashboard({ session }) {
               insights_source_generated_at: previous.insights_source_generated_at } : result); setError(""); }
       } catch (err) {
         if (active) setError(err.message);
-      } finally { if (active) setLoading(false); }
+      } finally { requestInFlight = false; if (active) setLoading(false); }
     }
     load();
     const interval = setInterval(load, 60000);

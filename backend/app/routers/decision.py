@@ -3,7 +3,7 @@ import json
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from ..database import db_connection
+from ..database import db_connection, run_db_transaction
 from ..schemas import DecisionRequest, ScenarioRunRequest
 from ..security import current_user
 from ..services.scenario_simulator import ScenarioRecommendationAgent, calculate_metrics, recommended_case
@@ -56,8 +56,8 @@ def run_scenario(request: ScenarioRunRequest, user: dict = Depends(current_user)
         "recommended_case": {"inputs": improved_inputs, "results": improved_results},
     }
     try:
-        with db_connection() as connection:
-            saved = connection.execute('''INSERT INTO decision_scenarios
+        def persist(connection):
+            return connection.execute('''INSERT INTO decision_scenarios
                 (scenario_name, inputs, results, recommendations, agent_id)
                 VALUES (%s, %s::jsonb, %s::jsonb, %s::jsonb, %s)
                 RETURNING scenario_id, scenario_name, created_at''', (
@@ -67,6 +67,7 @@ def run_scenario(request: ScenarioRunRequest, user: dict = Depends(current_user)
                     json.dumps(recommendations),
                     agent_id,
                 )).fetchone()
+        saved = run_db_transaction(persist)
     except psycopg.errors.UniqueViolation as error:
         raise HTTPException(
             status_code=409,
@@ -86,7 +87,7 @@ def run_scenario(request: ScenarioRunRequest, user: dict = Depends(current_user)
 def list_scenarios(_: dict = Depends(current_user)):
     with db_connection() as connection:
         return connection.execute('''SELECT scenario_id, scenario_name, created_at
-            FROM decision_scenarios ORDER BY created_at DESC, scenario_id DESC''').fetchall()
+            FROM decision_scenarios ORDER BY created_at DESC, scenario_id DESC LIMIT 500''').fetchall()
 
 
 @router.get("/api/decision-scenarios/{scenario_id}")

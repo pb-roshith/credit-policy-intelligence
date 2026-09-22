@@ -1,7 +1,7 @@
 import json
 from fastapi import APIRouter, Depends, HTTPException
 from mistralai.client import Mistral
-from ..config import MISTRAL_API_KEY
+from ..config import MISTRAL_API_KEY, MISTRAL_TIMEOUT_MS
 from ..database import db_connection
 from ..manufacture_data.policy_generation_service import _json_object, _response_text
 from ..schemas import ComplianceCopilotRequest, ComplianceReviewRequest
@@ -59,8 +59,12 @@ User question: {payload.question}
 Return only valid JSON: {{"answer":"clear, concise answer grounded in the table"}}
 """.strip()
     try:
-        with observe_ai("Compliance Review", "compliance_copilot", user["user_id"], payload.credit_request_number.strip().upper()) as telemetry:
-            with Mistral(api_key=MISTRAL_API_KEY) as client:
+        with observe_ai(
+            "Compliance Review", "compliance_copilot", user["user_id"],
+            payload.credit_request_number.strip().upper(), input_payload=prompt,
+            retrieved_sources=["AI Compliance Findings", "Compliance review metadata"],
+        ) as telemetry:
+            with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=MISTRAL_TIMEOUT_MS) as client:
                 response = client.beta.conversations.start(
                     agent_id=stored["agent_id"], inputs=prompt, store=False,
                 )

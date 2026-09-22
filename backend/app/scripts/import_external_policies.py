@@ -2,10 +2,11 @@
 
 import argparse
 from pathlib import Path
+import time
 
 from mistralai.client import Mistral
 
-from ..config import MISTRAL_API_KEY, POLICY_SOURCE_DIR
+from ..config import MISTRAL_API_KEY, MISTRAL_MANUFACTURING_TIMEOUT_MS, POLICY_SOURCE_DIR
 from ..database import db_connection
 from ..manufacture_data.policy_generation_service import (
     GENERATED_DOCUMENT_COUNT, _response_text, _start_conversation, _wait_for_document,
@@ -29,7 +30,8 @@ CATEGORY = "Special Assets & Recovery"
 PARENT_POLICY = "Problem Credit Management"
 
 
-def import_policies(source_directory: Path) -> tuple[int, int]:
+def import_policies(source_directory: Path, deadline: float | None = None,
+                    cancel_event=None) -> tuple[int, int]:
     missing = [file_name for _, _, _, file_name in EXTERNAL_POLICIES
                if not (source_directory / file_name).is_file()]
     if missing:
@@ -46,13 +48,17 @@ def import_policies(source_directory: Path) -> tuple[int, int]:
 
     imported = 0
     skipped = 0
-    with Mistral(api_key=MISTRAL_API_KEY) as client:
+    with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=MISTRAL_MANUFACTURING_TIMEOUT_MS) as client:
         library_documents = client.beta.libraries.documents.list(
             library_id=config["mistral_library_id"], page_size=100, page=0
         ).data
         documents_by_name = {document.name: document for document in library_documents}
 
         for import_sequence, (policy_code, policy_number, title, file_name) in enumerate(EXTERNAL_POLICIES, start=1):
+            if cancel_event is not None and cancel_event.is_set():
+                raise InterruptedError("Policy import was cancelled during shutdown")
+            if deadline is not None and time.monotonic() >= deadline:
+                raise TimeoutError("Policy import exceeded the policy job execution deadline")
             offset = GENERATED_DOCUMENT_COUNT + import_sequence
             with db_connection() as connection:
                 existing = connection.execute(
@@ -68,7 +74,9 @@ def import_policies(source_directory: Path) -> tuple[int, int]:
                         file={"file_name": file_name, "content": document_stream},
                     )
                 documents_by_name[file_name] = uploaded
-            _wait_for_document(client, config["mistral_library_id"], uploaded.id)
+            _wait_for_document(
+                client, config["mistral_library_id"], uploaded.id, cancel_event
+            )
             if existing:
                 with db_connection() as connection:
                     connection.execute("""

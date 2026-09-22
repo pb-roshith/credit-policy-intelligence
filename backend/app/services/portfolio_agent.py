@@ -70,7 +70,10 @@ is an accounting or regulatory result. Return plain text only.
 """.strip()
         try:
             agent_id = self._agent_id()
-            with observe_ai("Portfolio Analytics", "portfolio_copilot", user_id) as telemetry:
+            with observe_ai(
+                "Portfolio Analytics", "portfolio_copilot", user_id,
+                input_payload=prompt, retrieved_sources=["Current portfolio snapshot"],
+            ) as telemetry:
                 with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=90000) as client:
                     response = client.beta.conversations.start(agent_id=agent_id, inputs=prompt, store=False)
                 telemetry["response"] = response

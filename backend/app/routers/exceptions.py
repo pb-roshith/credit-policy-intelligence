@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from ..schemas import CreateExceptionRequest, ExceptionAction
 from ..security import current_user
-from ..database import db_connection
+from ..database import db_connection, retry_on_db_conflict, run_db_transaction
 from datetime import date
 import json
 from ..services.exception_rationale import generate_exception_rationale
@@ -32,7 +32,7 @@ def exception_registry(status: str | None = None, _: dict = Depends(current_user
         query = "SELECT exception_id AS id, credit_request_number, exception_type AS type, clause_code AS clause, severity, exposure, owner, due_date AS due, status, description, rationale, workflow, history FROM credit_request_exceptions"
         params = ()
         if status: query += " WHERE status = %s"; params = (status,)
-        result = [dict(row) for row in connection.execute(query + " ORDER BY exception_id", params).fetchall()]
+        result = [dict(row) for row in connection.execute(query + " ORDER BY exception_id LIMIT 1000", params).fetchall()]
         for item in result:
             item["workflow"] = _workflow_for_status(item["status"])
         return result
@@ -75,7 +75,7 @@ def create_exception(payload: CreateExceptionRequest, user: dict = Depends(curre
     )
     workflow = _workflow_for_status(payload.status)
     history = [{"date": str(date.today()), "event": "Exception created from Compliance Review", "actor": user["user_id"]}]
-    with db_connection() as connection:
+    def persist(connection):
         connection.execute("SELECT pg_advisory_xact_lock(hashtext('credit_request_exceptions'))")
         next_number = connection.execute("""
             SELECT GREATEST(9000, COALESCE(MAX(NULLIF(regexp_replace(exception_id, '\\D', '', 'g'), '')::BIGINT), 9000)) + 1 AS value
@@ -93,9 +93,12 @@ def create_exception(payload: CreateExceptionRequest, user: dict = Depends(curre
         """, (exception_id, request_number, payload.exception_type.strip(), payload.clause_code.strip().upper(),
               severity, exposure, payload.owner.strip(), due_date, payload.status, payload.description.strip(),
               json.dumps(rationale), json.dumps(workflow), json.dumps(history))).fetchone()
+        return row
+    row = run_db_transaction(persist)
     return dict(row)
 
 @router.post("/api/exceptions/{exception_id}/action")
+@retry_on_db_conflict
 def exception_action(exception_id: str, payload: ExceptionAction, _: dict = Depends(current_user)):
     new_status = {
         "approve": "Remediation",

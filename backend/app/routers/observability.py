@@ -56,7 +56,8 @@ def observability(_: dict = Depends(current_user)):
         traces = connection.execute("""
             SELECT span_id, trace_id, feature, operation, model, target, status,
                    latency_ms, input_tokens, output_tokens, total_tokens,
-                   started_at, ended_at
+                   started_at, ended_at, input_payload, output_payload,
+                   retrieved_sources, flow_steps
             FROM ai_observability_spans
             ORDER BY started_at DESC LIMIT 200
         """).fetchall()

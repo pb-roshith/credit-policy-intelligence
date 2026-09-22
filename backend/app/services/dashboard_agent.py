@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from mistralai.client import Mistral
 
 from ..config import MISTRAL_API_KEY, MISTRAL_POLICY_MODEL
-from ..database import db_connection, shared_policy_connection
+from ..database import run_db_transaction, shared_policy_connection
 from ..manufacture_data.policy_generation_service import _json_object, _response_text
 from ..telemetry import observe_ai
 
@@ -46,11 +46,15 @@ class PortfolioInsightsAgent:
         try:
             agent_id = self._agent_id()
             context = {key: value for key, value in snapshot.items() if key not in ('insights', 'insights_generated_at', 'insights_source_generated_at')}
-            with observe_ai("Executive Dashboard", "portfolio_insights", user_id) as telemetry:
+            prompt = "Generate portfolio insights from this dashboard snapshot:\n" + json.dumps(context, default=str)
+            with observe_ai(
+                "Executive Dashboard", "portfolio_insights", user_id,
+                input_payload=prompt, retrieved_sources=["Executive dashboard snapshot"],
+            ) as telemetry:
                 with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=90000) as client:
                     response = client.beta.conversations.start(
                         agent_id=agent_id, store=False,
-                        inputs="Generate portfolio insights from this dashboard snapshot:\n" + json.dumps(context, default=str),
+                        inputs=prompt,
                     )
                 telemetry["response"] = response
             generated = _json_object(_response_text(response))
@@ -65,7 +69,7 @@ class PortfolioInsightsAgent:
             raise
         except Exception as error:
             raise HTTPException(status_code=502, detail="Mistral could not generate valid portfolio insights. Please try again.") from error
-        with db_connection() as connection:
+        def persist(connection):
             return connection.execute('''INSERT INTO dashboard_insights
                 (user_id, insights, agent_id, source_generated_at)
                 VALUES (%s, %s::jsonb, %s, %s)
@@ -75,3 +79,4 @@ class PortfolioInsightsAgent:
                 RETURNING insights, generated_at AS insights_generated_at,
                     source_generated_at AS insights_source_generated_at''',
                 (user_id, json.dumps(points), agent_id, snapshot['generated_at'])).fetchone()
+        return run_db_transaction(persist)

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { RefreshCw, Send, Sparkles } from "lucide-react";
 import { apiRequest } from "../api/client";
 import { Card, Heading, Legend, money } from "../components/ui";
@@ -61,6 +61,7 @@ function Heat({ title, data }) {
 }
 
 export default function Portfolio({ session }) {
+  const chatRequest = useRef(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,11 +70,15 @@ export default function Portfolio({ session }) {
   const [messages, setMessages] = useState([]);
   const [asking, setAsking] = useState(false);
   const [chatError, setChatError] = useState("");
+  useEffect(() => () => chatRequest.current?.abort(), []);
 
   useEffect(() => {
     let active = true;
+    let requestInFlight = false;
     const controller = new AbortController();
     async function load() {
+      if (requestInFlight) return;
+      requestInFlight = true;
       setLoading(true);
       try {
         const result = await apiRequest("/api/portfolio", { signal: controller.signal }, session.token);
@@ -81,6 +86,7 @@ export default function Portfolio({ session }) {
       } catch (err) {
         if (active) setError(err.message);
       } finally {
+        requestInFlight = false;
         if (active) setLoading(false);
       }
     }
@@ -98,16 +104,20 @@ export default function Portfolio({ session }) {
     setMessages((current) => [...current, { role: "user", content: text }]);
     setAsking(true);
     setChatError("");
+    const controller = new AbortController();
+    chatRequest.current = controller;
     try {
       const result = await apiRequest("/api/portfolio/chat", {
         method: "POST",
+        signal: controller.signal,
         body: JSON.stringify({ question: text, history }),
       }, session.token);
-      setMessages((current) => [...current, { role: "assistant", content: result.answer }]);
+      if (!controller.signal.aborted) setMessages((current) => [...current, { role: "assistant", content: result.answer }]);
     } catch (err) {
-      setChatError(err.message);
+      if (!controller.signal.aborted) setChatError(err.message);
     } finally {
-      setAsking(false);
+      if (!controller.signal.aborted) setAsking(false);
+      if (chatRequest.current === controller) chatRequest.current = null;
     }
   }
 

@@ -1,4 +1,5 @@
 export const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const REQUEST_TIMEOUT_MS = 120000;
 const csrfToken = () => document.cookie
   .split("; ")
   .find((entry) => entry.startsWith("cpi_csrf="))
@@ -6,11 +7,21 @@ const csrfToken = () => document.cookie
 
 export async function apiRequest(path, options = {}) {
   let response;
+  let body;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort("timeout"), REQUEST_TIMEOUT_MS);
+  const externalSignal = options.signal;
+  const abortFromExternalSignal = () => controller.abort(externalSignal.reason);
+  if (externalSignal) {
+    if (externalSignal.aborted) abortFromExternalSignal();
+    else externalSignal.addEventListener("abort", abortFromExternalSignal, { once: true });
+  }
   const method = (options.method || "GET").toUpperCase();
   const csrf = !["GET", "HEAD", "OPTIONS"].includes(method) ? csrfToken() : "";
   try {
     response = await fetch(`${API}${path}`, {
       ...options,
+      signal: controller.signal,
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
@@ -18,16 +29,24 @@ export async function apiRequest(path, options = {}) {
         ...options.headers,
       },
     });
-  } catch {
+    body = await response.json().catch(() => ({}));
+  } catch (error) {
+    if (controller.signal.aborted && !externalSignal?.aborted) {
+      throw new Error("The request timed out. Please try again.");
+    }
     throw new Error("The request could not be completed. Please try again.");
+  } finally {
+    clearTimeout(timeout);
+    externalSignal?.removeEventListener("abort", abortFromExternalSignal);
   }
-  const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = response.status >= 500
       ? "An unexpected error occurred. Please try again later."
       : Array.isArray(body.detail)
-      ? body.detail.map((item) => item.msg || item).join(". ")
-      : body.detail || "Something went wrong";
+      ? "Please check the information you entered and try again."
+      : typeof body.detail === "string" && body.detail.trim()
+      ? body.detail
+      : "The request could not be completed. Please try again.";
     const error = new Error(message);
     error.status = response.status;
     throw error;

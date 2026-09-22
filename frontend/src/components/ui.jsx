@@ -11,8 +11,13 @@ import {
 import { META } from "../config";
 
 export const slug = (v) => String(v).toLowerCase().replaceAll(" ", "-");
+export const finiteNumber = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
+export const clampPercent = (value) => Math.min(100, Math.max(0, finiteNumber(value)));
 export const money = (v) =>
-  `$${v.toLocaleString(undefined, { maximumFractionDigits: 1 })}M`;
+  `$${finiteNumber(v).toLocaleString(undefined, { maximumFractionDigits: 1 })}M`;
 export function Badge({ children, tone }) {
   return <span className={`badge ${tone || slug(children)}`}>{children}</span>;
 }
@@ -109,8 +114,8 @@ export function Bars({ data, labels }) {
       <div className="bar-grid">
         {data.map((v, i) => (
           <div className="bar-slot" key={labels[i]}>
-            <i style={{ height: `${v}%` }} />
-            <b>{v}</b>
+            <i style={{ height: `${clampPercent(v)}%` }} />
+            <b>{finiteNumber(v)}</b>
           </div>
         ))}
       </div>
@@ -149,7 +154,7 @@ export function StageExposure({ label, value, percent, tone }) {
         <Badge tone={tone}>{value}</Badge>
       </div>
       <div className="stage-track">
-        <i className={tone} style={{ width: `${percent}%` }} />
+        <i className={tone} style={{ width: `${clampPercent(percent)}%` }} />
       </div>
     </div>
   );

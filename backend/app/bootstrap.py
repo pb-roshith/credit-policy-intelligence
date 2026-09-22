@@ -7,7 +7,18 @@ from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 from psycopg.rows import dict_row
 
-from .config import ADMIN_USER_ID, DATABASE_URL
+from .config import (
+    ADMIN_USER_ID, DATABASE_CONNECT_TIMEOUT_SECONDS, DATABASE_STATEMENT_TIMEOUT_MS,
+    DATABASE_URL,
+)
+
+
+def _connection_options() -> dict:
+    return {
+        "connect_timeout": DATABASE_CONNECT_TIMEOUT_SECONDS,
+        "options": f"-c statement_timeout={DATABASE_STATEMENT_TIMEOUT_MS} "
+                   f"-c idle_in_transaction_session_timeout={DATABASE_STATEMENT_TIMEOUT_MS}",
+    }
 
 
 ACCOUNT_TABLES = (
@@ -32,7 +43,7 @@ def ensure_database_exists() -> None:
         raise RuntimeError("DATABASE_URL must include a database name")
 
     try:
-        connection = psycopg.connect(DATABASE_URL)
+        connection = psycopg.connect(DATABASE_URL, **_connection_options())
     except psycopg.errors.InvalidCatalogName:
         connection = None
     if connection is not None:
@@ -41,7 +52,7 @@ def ensure_database_exists() -> None:
 
     maintenance_url = make_conninfo(DATABASE_URL, dbname="postgres")
     try:
-        with psycopg.connect(maintenance_url, autocommit=True) as maintenance:
+        with psycopg.connect(maintenance_url, autocommit=True, **_connection_options()) as maintenance:
             if maintenance.execute(
                 "SELECT 1 FROM pg_database WHERE datname = %s", (target_database,)
             ).fetchone():
@@ -527,6 +538,15 @@ def _create_account_tables(connection) -> None:
         CREATE INDEX IF NOT EXISTS ai_observability_spans_started_idx
         ON "user".ai_observability_spans (user_id, started_at DESC)
     """)
+    for audit_column in (
+        "input_payload TEXT",
+        "output_payload TEXT",
+        "retrieved_sources JSONB NOT NULL DEFAULT '[]'::jsonb",
+        "flow_steps JSONB NOT NULL DEFAULT '[]'::jsonb",
+    ):
+        connection.execute(
+            f'ALTER TABLE "user".ai_observability_spans ADD COLUMN IF NOT EXISTS {audit_column}'
+        )
 
 
 def _configure_account_security(connection) -> None:
@@ -583,7 +603,9 @@ def initialize_database() -> None:
     """Create every database object required by the backend if it is absent."""
     ensure_database_exists()
     try:
-        with psycopg.connect(DATABASE_URL, row_factory=dict_row) as connection:
+        with psycopg.connect(
+            DATABASE_URL, row_factory=dict_row, **_connection_options()
+        ) as connection:
             connection.execute("SELECT pg_advisory_xact_lock(hashtext('credit_policy_bootstrap'))")
             _create_public_tables(connection)
             _create_shared_tables(connection)

@@ -41,9 +41,28 @@ load_env_file()
 ADMIN_USER_ID = os.getenv("ADMIN_USER_ID", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "ChangeMe!12345")
 SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").strip().lower() in {"1", "true", "yes", "on"}
+ENABLE_HSTS = os.getenv("ENABLE_HSTS", "false").strip().lower() in {"1", "true", "yes", "on"}
+MAX_REQUEST_BODY_BYTES = max(1024, int(os.getenv("MAX_REQUEST_BODY_BYTES", "1048576")))
+RATE_LIMIT_REQUESTS = max(1, int(os.getenv("RATE_LIMIT_REQUESTS", "120")))
+RATE_LIMIT_WINDOW_SECONDS = max(1, int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")))
+CORS_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+    ).split(",")
+    if origin.strip()
+]
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:root@localhost:5432/credit_policy_intelligence")
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "")
 MISTRAL_POLICY_MODEL = os.getenv("MISTRAL_POLICY_MODEL", "mistral-medium-latest")
+MISTRAL_TIMEOUT_MS = int(os.getenv("MISTRAL_TIMEOUT_MS", "90000"))
+MISTRAL_MANUFACTURING_TIMEOUT_MS = int(os.getenv("MISTRAL_MANUFACTURING_TIMEOUT_MS", "450000"))
+DATABASE_CONNECT_TIMEOUT_SECONDS = int(os.getenv("DATABASE_CONNECT_TIMEOUT_SECONDS", "10"))
+DATABASE_STATEMENT_TIMEOUT_MS = int(os.getenv("DATABASE_STATEMENT_TIMEOUT_MS", "120000"))
+DATABASE_TRANSACTION_RETRIES = max(1, int(os.getenv("DATABASE_TRANSACTION_RETRIES", "3")))
+DATABASE_RETRY_BASE_DELAY_MS = max(1, int(os.getenv("DATABASE_RETRY_BASE_DELAY_MS", "50")))
+POLICY_DOCUMENT_TIMEOUT_SECONDS = int(os.getenv("POLICY_DOCUMENT_TIMEOUT_SECONDS", "1500"))
+POLICY_JOB_TIMEOUT_SECONDS = int(os.getenv("POLICY_JOB_TIMEOUT_SECONDS", "36000"))
 POLICY_OUTPUT_DIR = BASE_DIR / "generated_policies"
 POLICY_SOURCE_DIR = BASE_DIR / "policy doc"
 POLICY_JOB_LOCK = threading.Lock()

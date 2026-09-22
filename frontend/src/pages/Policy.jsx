@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
   FileText,
@@ -295,6 +295,7 @@ export default function Policy({ session }) {
 }
 
 function PolicyCopilot({ session, onSelectPolicy }) {
+  const activeRequest = useRef(null);
   const storagePrefix = `policyCopilotLibrary:${session.user.user_id}`;
   const [messages, setMessages] = useState(() => {
     try {
@@ -309,6 +310,7 @@ function PolicyCopilot({ session, onSelectPolicy }) {
   const [question, setQuestion] = useState("");
   const [sending, setSending] = useState(false);
   const [chatError, setChatError] = useState("");
+  useEffect(() => () => activeRequest.current?.abort(), []);
 
   useEffect(() => {
     sessionStorage.setItem(`${storagePrefix}:messages`, JSON.stringify(messages));
@@ -330,11 +332,14 @@ function PolicyCopilot({ session, onSelectPolicy }) {
     setChatError("");
     setMessages((current) => [...current, { role: "user", content: prompt }]);
     setSending(true);
+    const controller = new AbortController();
+    activeRequest.current = controller;
     try {
       const response = await apiRequest(
         "/api/policy-copilot/chat",
         {
           method: "POST",
+          signal: controller.signal,
           body: JSON.stringify({
             question: prompt,
             conversation_id: conversationId,
@@ -342,6 +347,7 @@ function PolicyCopilot({ session, onSelectPolicy }) {
         },
         session.token,
       );
+      if (controller.signal.aborted) return;
       setConversationId(response.conversation_id);
       setMessages((current) => [...current, {
         role: "assistant",
@@ -349,9 +355,10 @@ function PolicyCopilot({ session, onSelectPolicy }) {
         citations: response.citations || [],
       }]);
     } catch (requestError) {
-      setChatError(requestError.message);
+      if (!controller.signal.aborted) setChatError(requestError.message);
     } finally {
-      setSending(false);
+      if (!controller.signal.aborted) setSending(false);
+      if (activeRequest.current === controller) activeRequest.current = null;
     }
   };
 

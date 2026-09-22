@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
   FileText,
@@ -64,6 +64,7 @@ function ComplianceCount({ icon: Icon, label, value, tone }) {
 }
 
 export default function Compliance({ notify, session }) {
+  const agentRequest = useRef(null);
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState("");
   const [review, setReview] = useState(null);
@@ -71,6 +72,7 @@ export default function Compliance({ notify, session }) {
   const [loadingStored, setLoadingStored] = useState(false);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
+  useEffect(() => () => agentRequest.current?.abort(), []);
   const [showExceptionForm, setShowExceptionForm] = useState(false);
   const [savingException, setSavingException] = useState(false);
   const [exceptionError, setExceptionError] = useState("");
@@ -112,18 +114,22 @@ export default function Compliance({ notify, session }) {
     setRunning(true);
     setError("");
     setReview(null);
+    const controller = new AbortController();
+    agentRequest.current = controller;
     try {
       const result = await apiRequest(
         "/api/compliance-review/run",
-        { method: "POST", body: JSON.stringify({ credit_request_number: selectedRequest }) },
+        { method: "POST", signal: controller.signal, body: JSON.stringify({ credit_request_number: selectedRequest }) },
         session.token,
       );
+      if (controller.signal.aborted) return;
       setReview(result);
       notify(`${result.agent} completed ${selectedRequest}`);
     } catch (requestError) {
-      setError(requestError.message);
+      if (!controller.signal.aborted) setError(requestError.message);
     } finally {
-      setRunning(false);
+      if (!controller.signal.aborted) setRunning(false);
+      if (agentRequest.current === controller) agentRequest.current = null;
     }
   };
 
@@ -251,20 +257,32 @@ export default function Compliance({ notify, session }) {
 }
 
 function ComplianceCopilot({ session, requestNumber }) {
+  const activeRequest = useRef(null);
   const [messages, setMessages] = useState([]);
   const [question, setQuestion] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-  useEffect(() => { setMessages([]); setQuestion(""); setError(""); }, [requestNumber]);
+  useEffect(() => {
+    activeRequest.current?.abort();
+    setMessages([]); setQuestion(""); setError("");
+    return () => activeRequest.current?.abort();
+  }, [requestNumber]);
   const ask = async (event, suggestion = "") => {
     event?.preventDefault();
     const prompt = (suggestion || question).trim();
     if (!prompt || sending) return;
     setQuestion(""); setError(""); setMessages((current) => [...current, { role: "user", content: prompt }]); setSending(true);
+    const controller = new AbortController();
+    activeRequest.current = controller;
     try {
-      const response = await apiRequest("/api/compliance-review/copilot", { method: "POST", body: JSON.stringify({ credit_request_number: requestNumber, question: prompt }) }, session.token);
-      setMessages((current) => [...current, { role: "assistant", content: response.answer }]);
-    } catch (requestError) { setError(requestError.message); } finally { setSending(false); }
+      const response = await apiRequest("/api/compliance-review/copilot", { method: "POST", signal: controller.signal, body: JSON.stringify({ credit_request_number: requestNumber, question: prompt }) }, session.token);
+      if (!controller.signal.aborted) setMessages((current) => [...current, { role: "assistant", content: response.answer }]);
+    } catch (requestError) {
+      if (!controller.signal.aborted) setError(requestError.message);
+    } finally {
+      if (!controller.signal.aborted) setSending(false);
+      if (activeRequest.current === controller) activeRequest.current = null;
+    }
   };
   return (
     <Card title="Compliance Copilot" sub={`Answers are grounded only in the AI Compliance Findings table for ${requestNumber}.`} className="compliance-copilot" action={<button type="button" className="text-btn" onClick={() => setMessages([])}>Clear</button>}>

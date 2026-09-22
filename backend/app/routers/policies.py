@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from mistralai.client import Mistral
-from ..config import MISTRAL_API_KEY
+from ..config import MISTRAL_API_KEY, MISTRAL_TIMEOUT_MS
 from ..database import shared_policy_connection
 from ..manufacture_data.policy_generation_service import _json_object, _response_text
 from ..schemas import PolicyCopilotRequest
@@ -18,7 +18,7 @@ def policies(_: dict = Depends(current_user)):
                    summary, page_count, file_name, document_format, source_type,
                    policy_type, mistral_document_id,
                    mistral_library_id, created_at
-            FROM policy_documents ORDER BY display_order, policy_id
+            FROM policy_documents ORDER BY display_order, policy_id LIMIT 1000
         """).fetchall()
     return rows
 
@@ -121,8 +121,12 @@ Do not cite a document unless document_library returned relevant evidence from i
 """.strip()
 
     try:
-        with observe_ai("Policy Intelligence", "policy_copilot", user["user_id"]) as telemetry:
-            with Mistral(api_key=MISTRAL_API_KEY) as client:
+        with observe_ai(
+            "Policy Intelligence", "policy_copilot", user["user_id"],
+            input_payload=prompt,
+            retrieved_sources=[policy["file_name"] for policy in policies if policy.get("file_name")],
+        ) as telemetry:
+            with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=MISTRAL_TIMEOUT_MS) as client:
                 if payload.conversation_id:
                     response = client.beta.conversations.append(
                         conversation_id=payload.conversation_id, inputs=prompt, store=True,

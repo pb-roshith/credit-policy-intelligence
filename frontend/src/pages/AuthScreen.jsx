@@ -100,6 +100,12 @@ export default function AuthScreen({ onAuthenticated, initialMessage = "" }) {
   const submitRegistration = async (event) => {
     event.preventDefault();
     setMessage(null);
+    if (/\s/.test(registration.user_id)) {
+      return setMessage({ type: "error", text: "User ID cannot contain spaces" });
+    }
+    if (!/^[A-Za-z0-9._-]+$/.test(registration.user_id)) {
+      return setMessage({ type: "error", text: "User ID can only contain letters, numbers, periods, underscores, and hyphens" });
+    }
     if (registration.password !== registration.confirm) {
       return setMessage({ type: "error", text: "Passwords do not match" });
     }
@@ -200,7 +206,7 @@ export default function AuthScreen({ onAuthenticated, initialMessage = "" }) {
           {view === "register" && (
             <form onSubmit={submitRegistration} className="auth-form">
               <div className="auth-grid">
-                <AuthField label="User ID"><input {...NO_CLIPBOARD} required autoComplete="off" minLength="3" maxLength="64" value={registration.user_id} onChange={(e) => setRegistration({ ...registration, user_id: e.target.value })} placeholder="Choose a unique user ID" /></AuthField>
+                <AuthField label="User ID"><input {...NO_CLIPBOARD} required autoComplete="off" minLength="3" maxLength="64" value={registration.user_id} onChange={(e) => setRegistration({ ...registration, user_id: e.target.value })} placeholder="Choose a unique user ID (no spaces)" /></AuthField>
                 <AuthField label="Role"><select required value={registration.role} onChange={(e) => setRegistration({ ...registration, role: e.target.value })}><option value="relationship_manager">Relationship Manager</option><option value="credit_analyst">Credit Analyst</option></select></AuthField>
                 <AuthField label="Password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={registration.password} onChange={(e) => setRegistration({ ...registration, password: e.target.value })} placeholder="Create a password" /></AuthField>
                 <AuthField label="Confirm password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={registration.confirm} onChange={(e) => setRegistration({ ...registration, confirm: e.target.value })} placeholder="Re-enter your password" /></AuthField>
