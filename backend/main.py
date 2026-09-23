@@ -12,11 +12,16 @@ from starlette.exceptions import HTTPException
 from app.config import (CORS_ORIGINS, ENABLE_HSTS, MAX_REQUEST_BODY_BYTES,
                         RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS)
 from app.database import initialize_database
+from app.scripts.map_policy_relationships import map_policy_relationships
 from app.security import write_request_error
 from app.routers import auth, compliance, controls, dashboard, decision, exceptions, observability, policies, requests
 from app.manufacture_data import credit_requests, exposure_history, policy_controls, policy_pdfs
 
 initialize_database()
+# Relationship rows are derived from the policy catalog. Rebuild them on startup so
+# an existing deployment is repaired after an upgrade and a new database does not
+# depend on an operator remembering to run a separate maintenance command.
+map_policy_relationships()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
