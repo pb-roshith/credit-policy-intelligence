@@ -4009,3 +4009,8 @@ tbody tr.selected {
 @media (max-width:1200px) { .obs-kpis,.obs-kpis-seven { grid-template-columns:repeat(4,1fr); gap:8px; }.obs-stat,.obs-stat:first-child,.obs-stat:last-child { border-radius:8px; } }
 @media (max-width:860px) { .obs-agent-grid,.obs-audit-grid,.obs-trace-layout { grid-template-columns:1fr; }.obs-trace-list { border-right:0; border-bottom:1px solid var(--line); }.obs-kpis { grid-template-columns:repeat(2,1fr); } }
 @media (max-width:560px) { .obs-agent-grid { grid-template-columns:1fr; }.obs-agent-metrics,.obs-detail-grid { grid-template-columns:repeat(2,1fr); }.obs-kpis { grid-template-columns:1fr; } }
+
+.mapped-controls-search { display: flex; align-items: center; gap: 8px; margin: 0 24px 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.mapped-controls-search input { width: 100%; min-width: 0; border: 0; background: transparent; color: var(--text); }
+.mapped-controls-card .policy-control-content { min-height: 0; max-height: 480px; overflow-y: auto; scrollbar-gutter: stable; }
+.policy-control-content .policy-control-item + .policy-control-item { margin-top: 16px; }

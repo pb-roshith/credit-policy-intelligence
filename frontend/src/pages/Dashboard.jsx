@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FileText, ShieldCheck, AlertTriangle, CircleDollarSign, ShieldAlert, Clock3, Download, RefreshCw } from "lucide-react";
+import { policyDisplayName } from "../config";
 import { apiRequest } from "../api/client";
-import { Card, Heading, Metric, StageExposure, Legend, money } from "../components/ui";
+import { Card, Heading, Metric, Legend, money } from "../components/ui";
 
 const amount = (value) => money(Number(value) / 1000000);
 const colors = ["#20bad8", "#40bf91", "#efb75b", "#ac8ee8", "#e77991"];
@@ -27,21 +28,6 @@ function Trend({ data }) {
       {hovered && <g className="chart-tooltip" pointerEvents="none"><rect x={Math.min(hovered.x + 8, 570)} y={Math.max(hovered.y - 34, 4)} width="120" height="27" rx="4" /><text x={Math.min(hovered.x + 15, 577)} y={Math.max(hovered.y - 17, 21)}>{data[hovered.index].label}: {hovered.key} {data[hovered.index][hovered.key]}</text></g>}
     </svg>
   </div>;
-}
-
-function ifrsStages(payments) {
-  const total = payments.reduce((sum, row) => sum + Number(row.value), 0);
-  if (!total) return [];
-  // Allocate in $0.1M units so the three displayed values exactly match the displayed total.
-  const totalUnits = Math.max(3, Math.round(total / 100000));
-  const minimum = Math.max(1, Math.floor(totalUnits * 0.1));
-  const distributable = totalUnits - minimum * 3;
-  const weights = [Math.random() + 0.35, Math.random() + 0.35, Math.random() + 0.35];
-  const weightTotal = weights.reduce((sum, value) => sum + value, 0);
-  const allocated = weights.map((weight) => Math.floor(distributable * weight / weightTotal));
-  allocated[2] += distributable - allocated.reduce((sum, value) => sum + value, 0);
-  const values = allocated.map((value) => (value + minimum) * 100000);
-  return values.map((value, index) => ({ label: `Stage ${index + 1}`, value }));
 }
 
 function ExposureDonut({ data }) {
@@ -128,9 +114,6 @@ export default function Dashboard({ session }) {
 
   const insights = data?.insights || [];
   const metrics = data?.metrics;
-  const stages = useMemo(() => ifrsStages(data?.payments || []), [data?.payments]);
-  const stageTotal = stages.reduce((sum, row) => sum + row.value, 0);
-  const maxPayment = Math.max(1, ...stages.map((row) => Number(row.value)));
   return <>
     <Heading page="dashboard">
       <button className="btn secondary" disabled={loading} onClick={() => setRefresh((value) => value + 1)}><RefreshCw size={15} />{loading ? "Refreshing…" : "Refresh"}</button>
@@ -164,11 +147,9 @@ export default function Dashboard({ session }) {
         <Card title="Exposure by Exception Type" sub="Exception-level amounts; a request may have multiple exceptions">
           {data.types.length ? <ExposureDonut data={data.types} /> : <Empty />}
         </Card>
-        <Card title="Top Violated Policies" sub="Open exceptions by clause">{data.policies.length ? data.policies.map((row) => <div className="rank" key={row.label}><span>{row.label}</span><b>{row.value}</b></div>) : <Empty />}</Card>
+        <Card title="Top Violated Policies" sub="Open exceptions by policy">{data.policies.length ? data.policies.map((row) => <div className="rank" key={row.label}><span>{policyDisplayName(row.label)}</span><b>{row.value}</b></div>) : <Empty />}</Card>
       </div>
-      <Card title="IFRS 9 Stage Exposure Distribution ($M)" sub={stages.length ? `Random split of ${amount(stageTotal)} total exposure` : "Random allocation of latest total facility exposure"} className="ifrs-card">
-        {stages.length ? <div className="stage-chart">{stages.map((row, i) => <StageExposure key={row.label} label={row.label} value={amount(row.value)} percent={Number(row.value) / maxPayment * 100} tone={["stage-one", "stage-two", "stage-three"][i]} />)}</div> : <Empty>No borrower exposure history available.</Empty>}
-      </Card>
+
     </>}
   </>;
 }

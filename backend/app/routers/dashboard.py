@@ -1,12 +1,28 @@
 from fastapi import APIRouter, Depends
 
-from ..database import db_connection
+from ..database import db_connection, shared_policy_connection
 from ..schemas import PortfolioChatRequest
 from ..security import current_user
 from ..services.dashboard_agent import PortfolioInsightsAgent
 from ..services.portfolio_agent import PortfolioChatAgent
 
 router = APIRouter()
+
+
+def _top_violated_policies(counts, catalog):
+    totals = {}
+    for row in counts:
+        code = row['clause_code']
+        prefix, _, clause = code.partition('-')
+        policy = next((p for p in catalog if p['policy_code'] == code
+                       or p['library_policy_id'] == code), None)
+        if policy is None:
+            policy = next((p for p in catalog if clause and p['clause_number'] == clause
+                           and (p['parent_policy'] or '').split('-')[0] == prefix), None)
+        label = policy['title'] if policy else row['exception_type'] + ' Policy'
+        totals[label] = totals.get(label, 0) + row['value']
+    return [dict(label=label, value=value) for label, value in
+            sorted(totals.items(), key=lambda item: (-item[1], item[0]))[:5]]
 
 
 @router.get("/api/dashboard")
@@ -39,9 +55,10 @@ def dashboard(_: dict = Depends(current_user)):
             FROM credit_request_exceptions WHERE status <> 'Closed'
             GROUP BY exception_type ORDER BY value DESC, label
         """).fetchall()
-        policies = connection.execute("""
-            SELECT clause_code AS label, COUNT(*) AS value FROM credit_request_exceptions
-            WHERE status <> 'Closed' GROUP BY clause_code ORDER BY value DESC, label LIMIT 5
+        policy_counts = connection.execute("""
+            SELECT clause_code, exception_type, COUNT(*) AS value
+            FROM credit_request_exceptions WHERE status <> 'Closed'
+            GROUP BY clause_code, exception_type
         """).fetchall()
         trend = connection.execute(r"""
             WITH months AS (
@@ -73,6 +90,12 @@ def dashboard(_: dict = Depends(current_user)):
         generated_at = connection.execute("SELECT CURRENT_TIMESTAMP AS value").fetchone()['value']
         stored = connection.execute('''SELECT insights, generated_at, source_generated_at
             FROM dashboard_insights WHERE user_id = %s''', (_['user_id'],)).fetchone()
+    with shared_policy_connection() as connection:
+        catalog = connection.execute("""
+            SELECT policy_code, library_policy_id, clause_number, parent_policy, title
+            FROM policy_documents ORDER BY display_order, policy_id
+        """).fetchall()
+    policies = _top_violated_policies(policy_counts, catalog)
     return dict(metrics=metrics, industries=industries, types=types, policies=policies,
                 trend=trend, payments=payments, insights=stored['insights'] if stored else [],
                 insights_generated_at=stored['generated_at'] if stored else None,

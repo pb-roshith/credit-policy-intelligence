@@ -139,7 +139,7 @@ export default function Requests({ session, notify }) {
   const [requests, setRequests] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loadError, setLoadError] = useState("");
-  const [filter, setFilter] = useState("All Statuses");
+  const [filter, setFilter] = useState("All Active");
   const [query, setQuery] = useState("");
   const [requestPage, setRequestPage] = useState(0);
   const [showForm, setShowForm] = useState(false);
@@ -175,7 +175,7 @@ export default function Requests({ session, notify }) {
   }, [session.token]);
   const filtered = requests.filter(
     (row) =>
-      (filter === "All Statuses" || row[8] === filter) &&
+      (filter === "All Active" ? ["In Review", "Escalated", "Pending"].includes(row[8]) : row[8] === filter) &&
       `${row[0]} ${row[1]}`.toLowerCase().includes(query.toLowerCase()),
   );
   const pageCount = Math.max(1, Math.ceil(filtered.length / 10));
@@ -298,7 +298,7 @@ export default function Requests({ session, notify }) {
                 setRequestPage(0);
               }}
             >
-              <option>All Statuses</option>
+              <option>All Active</option>
               <option>In Review</option>
               <option>Escalated</option>
               <option>Approved</option>

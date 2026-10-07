@@ -56,7 +56,7 @@ export default function Policy({ session }) {
   const [error, setError] = useState("");
   const [relatedPolicies, setRelatedPolicies] = useState([]);
   const [selectedPolicyControls, setSelectedPolicyControls] = useState([]);
-  const [policyControlIndex, setPolicyControlIndex] = useState(0);
+  const [controlQuery, setControlQuery] = useState("");
   const [policyLinksLoading, setPolicyLinksLoading] = useState(false);
   const [policyLinksError, setPolicyLinksError] = useState("");
   const [expandedTypes, setExpandedTypes] = useState(() => new Set(POLICY_TYPE_ORDER));
@@ -85,7 +85,7 @@ export default function Policy({ session }) {
     setPolicyLinksError("");
     setRelatedPolicies([]);
     setSelectedPolicyControls([]);
-    setPolicyControlIndex(0);
+    setControlQuery("");
     Promise.all([
       apiRequest(`/api/policies/${selectedPolicyId}/relationships`, {}, session.token),
       apiRequest(`/api/policies/${selectedPolicyId}/controls`, {}, session.token),
@@ -99,7 +99,7 @@ export default function Policy({ session }) {
   }, [selectedPolicyId, session.token]);
 
   const selected = policies.find((policy) => policy.policy_id === selectedPolicyId) || policies[0];
-  const selectedMappedControl = selectedPolicyControls[policyControlIndex];
+  const filteredControls = selectedPolicyControls.filter((control) => Object.values(control).join(" ").toLowerCase().includes(controlQuery.trim().toLowerCase()));
   const additionalPolicyTypes = [...new Set(
     policies.map((policy) => policy.policy_type).filter(Boolean),
   )]
@@ -240,46 +240,31 @@ export default function Policy({ session }) {
             </Card>
             <Card className="mapped-controls-card" title="Mapped Controls" action={<span className="policy-control-count">{selectedPolicyControls.length}</span>}>
               {policyLinksLoading && <div className="data-message">Loading mapped controls...</div>}
-              {!policyLinksLoading && !policyLinksError && !selectedMappedControl && (
-                <div className="data-message">No controls are mapped to this policy.</div>
+              {policyLinksError && <div className="data-message error">{policyLinksError}</div>}
+              <label className="mapped-controls-search"><Search size={16} /><input aria-label="Search mapped controls" placeholder="Search mapped controls..." value={controlQuery} onChange={(event) => setControlQuery(event.target.value)} /></label>
+              {!policyLinksLoading && !policyLinksError && filteredControls.length === 0 && (
+                <div className="data-message">{selectedPolicyControls.length ? "No controls match your search." : "No controls are mapped to this policy."}</div>
               )}
-              {selectedMappedControl && (
-                <div className="policy-control-content">
-                  <div className="policy-control-item">
+              <div className="policy-control-content" role="region" aria-label="Mapped controls" tabIndex={0}>
+                {filteredControls.map((control) => (
+                  <div className="policy-control-item" key={control.control_id}>
                     <div className="policy-control-summary">
                       <div>
-                        <h3>{selectedMappedControl.control_name}</h3>
-                        <p>{selectedMappedControl.control_id} - {selectedMappedControl.control_owner}</p>
+                        <h3>{control.control_name}</h3>
+                        <p>{control.control_id} - {control.control_owner}</p>
                       </div>
-                      <Badge>{selectedMappedControl.status}</Badge>
+                      <Badge>{control.status}</Badge>
                     </div>
-                    <p className="policy-control-description">{selectedMappedControl.control_description}</p>
+                    <p className="policy-control-description">{control.control_description}</p>
                     <dl className="policy-control-review">
-                      <div><dt>Type:</dt><dd>{selectedMappedControl.control_type}</dd></div>
-                      <div><dt>Frequency:</dt><dd>{selectedMappedControl.frequency}</dd></div>
-                      <div><dt>Automation:</dt><dd>{selectedMappedControl.automation}</dd></div>
-                      <div><dt>Effectiveness:</dt><dd>{selectedMappedControl.effectiveness}%</dd></div>
+                      <div><dt>Type:</dt><dd>{control.control_type}</dd></div>
+                      <div><dt>Frequency:</dt><dd>{control.frequency}</dd></div>
+                      <div><dt>Automation:</dt><dd>{control.automation}</dd></div>
+                      <div><dt>Effectiveness:</dt><dd>{control.effectiveness}%</dd></div>
                     </dl>
                   </div>
-                  <div className="policy-control-navigation">
-                    <button
-                      type="button"
-                      disabled={policyControlIndex === 0}
-                      onClick={() => setPolicyControlIndex((index) => Math.max(0, index - 1))}
-                    >
-                      Previous
-                    </button>
-                    <span>{policyControlIndex + 1} of {selectedPolicyControls.length}</span>
-                    <button
-                      type="button"
-                      disabled={policyControlIndex >= selectedPolicyControls.length - 1}
-                      onClick={() => setPolicyControlIndex((index) => Math.min(selectedPolicyControls.length - 1, index + 1))}
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
+                ))}
+              </div>
             </Card>
             <PolicyCopilot
               session={session}
