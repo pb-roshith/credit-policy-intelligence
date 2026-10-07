@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { randomBytes } from "node:crypto";
 
-const csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http://localhost:8000 http://127.0.0.1:8000 ws://localhost:5173 ws://127.0.0.1:5173; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+const csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http://localhost:8002 http://127.0.0.1:8002 ws://localhost:5173 ws://127.0.0.1:5173; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 const securityHeaders = {
   "Content-Security-Policy": csp,
   "X-Frame-Options": "DENY",
@@ -34,7 +34,7 @@ export default defineConfig(({ command, isPreview }) => {
       },
     ],
     html: nonce ? { cspNonce: nonce } : {},
-    server: { headers: { ...securityHeaders, "Content-Security-Policy": developmentCsp } },
+    server: { port: 5173, strictPort: true, headers: { ...securityHeaders, "Content-Security-Policy": developmentCsp } },
     preview: { headers: securityHeaders },
   };
 });

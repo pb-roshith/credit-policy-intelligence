@@ -4,6 +4,9 @@ Requires Node.js 18+, Python 3.10+, and PostgreSQL.
 
 Current project folder: `C:\Users\2863775\Documents\CRO_Solutions\credit policy intelligence`.
 Ensure PostgreSQL is running before starting the backend.
+This project uses frontend port `5173` and backend port `8002`, so it can run
+alongside Credit_Dossier on ports `8080` and `8000`. The frontend API address
+is saved in `frontend/.env.local`; no PowerShell environment command is needed.
 If dependencies are already installed, use **Run after setup**; moving the folder
 on this computer does not require reinstalling them.
 
@@ -15,7 +18,7 @@ Open PowerShell in the project folder and start the backend:
 cd backend
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
+.\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8002
 ```
 
 Open a second PowerShell window in the project folder and start the frontend:
@@ -32,7 +35,7 @@ Open PowerShell in the project folder and start the backend:
 
 ```powershell
 cd "C:\Users\2863775\Documents\CRO_Solutions\credit policy intelligence\backend"
-.\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
+.\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8002
 ```
 
 Open a second PowerShell window in the project folder and start the frontend:
@@ -44,7 +47,7 @@ npm run dev
 
 Open **http://localhost:5173**.
 
-API documentation: **http://localhost:8000/docs**
+API documentation: **http://localhost:8002/docs**
 
 ## Default administrator
 
