@@ -2,6 +2,11 @@
 
 Requires Node.js 18+, Python 3.10+, and PostgreSQL.
 
+Current project folder: `C:\Users\2863775\Documents\CRO_Solutions\credit policy intelligence`.
+Ensure PostgreSQL is running before starting the backend.
+If dependencies are already installed, use **Run after setup**; moving the folder
+on this computer does not require reinstalling them.
+
 ## 1. First-time setup and run
 
 Open PowerShell in the project folder and start the backend:
@@ -9,9 +14,8 @@ Open PowerShell in the project folder and start the backend:
 ```powershell
 cd backend
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python -m uvicorn main:app --reload --port 8000
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
 ```
 
 Open a second PowerShell window in the project folder and start the frontend:
@@ -27,9 +31,8 @@ npm run dev
 Open PowerShell in the project folder and start the backend:
 
 ```powershell
-cd "C:\Users\2863775\Documents\credit policy intelligence\backend"
-.\.venv\Scripts\Activate.ps1
-python -m uvicorn main:app --reload --port 8000
+cd "C:\Users\2863775\Documents\CRO_Solutions\credit policy intelligence\backend"
+.\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
 ```
 
 Open a second PowerShell window in the project folder and start the frontend:
