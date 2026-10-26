@@ -1,0 +1,45 @@
+{
+  "generated_at": "2026-10-13T10:24:57.726026+00:00",
+  "model": "mistral-medium-latest",
+  "prompt_version": "policy-rule-extraction-v2",
+  "source": "Actual Mistral extraction from registered manufactured policies",
+  "job_id": "ed3b005f-7a7b-453e-be07-a5b5643f889b",
+  "bulk_job_status": "Running",
+  "ingested_documents": 35,
+  "ingested_clauses": 1609,
+  "sample_completed_policies": [
+    {
+      "status": "Completed",
+      "policy_id": 1,
+      "policy_name": "4.1 Underwriting Standards",
+      "rules_proposed": 114,
+      "clauses_processed": 20,
+      "qualitative_rules": 92,
+      "missing_thresholds": 104,
+      "quantitative_rules": 22,
+      "manual_review_rules": 114,
+      "validation_failures": 3,
+      "duplicate_candidates": 4
+    },
+    {
+      "status": "Completed",
+      "policy_id": 2,
+      "policy_name": "4.2 Leverage Limits",
+      "rules_proposed": 62,
+      "clauses_processed": 21,
+      "qualitative_rules": 44,
+      "missing_thresholds": 54,
+      "quantitative_rules": 18,
+      "manual_review_rules": 62,
+      "validation_failures": 1,
+      "duplicate_candidates": 8
+    }
+  ],
+  "inventory_lifecycle_counts": [
+    {
+      "status": "Draft",
+      "count": 784
+    }
+  ],
+  "note": "This is a completed-policy sample. Bulk progress and errors are shown in Policy Rule Library; no proposals have been approved or activated."
+}

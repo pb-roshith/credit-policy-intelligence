@@ -1,0 +1,11 @@
+{
+  "rules": [],
+  "policy_id": "21",
+  "policy_version": "1.0",
+  "non_rule_content": [],
+  "extraction_run_id": "3057cd5a-9af5-4815-a175-0b862e2de0eb",
+  "source_document_id": "59",
+  "processing_warnings": [
+    "POL-21-C72-R1: section/page restored from registered source metadata"
+  ]
+}

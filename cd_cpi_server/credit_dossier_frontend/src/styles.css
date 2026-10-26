@@ -1,0 +1,323 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-info: var(--info);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.20 0.04 260);
+  --surface: oklch(0.975 0.005 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.04 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.04 260);
+  --primary: oklch(0.32 0.13 258);
+  --primary-foreground: oklch(0.985 0.003 250);
+  --secondary: oklch(0.96 0.01 250);
+  --secondary-foreground: oklch(0.20 0.04 260);
+  --muted: oklch(0.95 0.01 250);
+  --muted-foreground: oklch(0.55 0.03 257);
+  --accent: oklch(0.95 0.01 250);
+  --accent-foreground: oklch(0.20 0.04 260);
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.985 0.003 250);
+  --info: oklch(0.55 0.16 245);
+  --warning: oklch(0.78 0.15 75);
+  --warning-foreground: oklch(0.38 0.10 70);
+  --border: oklch(0.92 0.012 255);
+  --input: oklch(0.92 0.012 255);
+  --ring: oklch(0.7 0.04 257);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  body { background-color: var(--color-background); color: var(--color-foreground); }
+}
+
+@utility kpi-card {
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+@utility doc-card {
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  overflow: hidden;
+}
+
+@utility doc-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@utility doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  & thead th {
+    text-align: left;
+    padding: 0.625rem 1rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-muted-foreground);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+  & tbody td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+  & tbody tr:last-child td { border-bottom: 0; }
+  & tbody tr:hover { background: var(--color-surface); }
+}
+
+/* ── Narrative Prose — rich markdown rendering ─────────────── */
+
+.narrative-prose {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: var(--foreground);
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.narrative-prose h1,
+.narrative-prose h2,
+.narrative-prose h3,
+.narrative-prose h4 {
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: var(--foreground);
+}
+
+.narrative-prose h1 { font-size: 1.375rem; }
+.narrative-prose h2 {
+  font-size: 1.15rem;
+  padding-bottom: 0.4em;
+  border-bottom: 2px solid var(--border);
+}
+.narrative-prose h3 { font-size: 1.025rem; color: oklch(0.40 0.12 258); }
+.narrative-prose h4 { font-size: 0.925rem; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.03em; }
+
+.narrative-prose p {
+  margin: 0.75em 0;
+}
+
+.narrative-prose strong {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.narrative-prose em {
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
+/* Lists */
+.narrative-prose ul,
+.narrative-prose ol {
+  margin: 0.5em 0 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.narrative-prose ul { list-style-type: disc; }
+.narrative-prose ol { list-style-type: decimal; }
+
+.narrative-prose li {
+  margin: 0.25em 0;
+  padding-left: 0.25em;
+}
+
+.narrative-prose li::marker {
+  color: oklch(0.55 0.16 245);
+}
+
+.narrative-prose ul ul { list-style-type: circle; margin-top: 0.15em; }
+.narrative-prose ul ul ul { list-style-type: square; }
+
+/* Tables */
+.narrative-prose table {
+  width: 100%;
+  margin: 1em 0;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 0.825rem;
+}
+
+.narrative-prose thead {
+  background: oklch(0.97 0.01 258);
+}
+
+.narrative-prose th {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: oklch(0.40 0.08 258);
+  border-bottom: 2px solid oklch(0.88 0.04 258);
+}
+
+.narrative-prose td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.narrative-prose tbody tr:last-child td { border-bottom: 0; }
+.narrative-prose tbody tr:hover { background: oklch(0.985 0.003 260); }
+
+/* Blockquotes */
+.narrative-prose blockquote {
+  margin: 1em 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid oklch(0.55 0.16 245);
+  background: oklch(0.975 0.008 250);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.narrative-prose blockquote p { margin: 0.25em 0; }
+
+/* Code */
+.narrative-prose code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.8em;
+  background: oklch(0.96 0.01 250);
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  color: oklch(0.40 0.12 258);
+}
+
+.narrative-prose pre {
+  margin: 1em 0;
+  padding: 1rem;
+  background: oklch(0.16 0.03 260);
+  color: oklch(0.9 0.01 260);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.narrative-prose pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Horizontal rules */
+.narrative-prose hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, oklch(0.80 0.04 258), transparent);
+  margin: 2em 0;
+}
+
+/* Links */
+.narrative-prose a {
+  color: oklch(0.50 0.18 258);
+  text-decoration: underline;
+  text-decoration-color: oklch(0.50 0.18 258 / 0.3);
+  text-underline-offset: 2px;
+  transition: color 0.15s, text-decoration-color 0.15s;
+}
+.narrative-prose a:hover {
+  color: oklch(0.35 0.18 258);
+  text-decoration-color: oklch(0.35 0.18 258);
+}
+
+/* Section badge */
+.section-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.section-status-badge.ready {
+  background: oklch(0.95 0.06 155);
+  color: oklch(0.35 0.12 155);
+  border: 1px solid oklch(0.85 0.08 155);
+}
+
+.section-status-badge.pending {
+  background: oklch(0.96 0.01 260);
+  color: oklch(0.50 0.03 260);
+  border: 1px solid oklch(0.90 0.01 260);
+}
+
+/* Narrative card glow for ready sections */
+.narrative-ready-glow {
+  box-shadow: 0 0 0 1px oklch(0.85 0.08 155), 0 4px 16px oklch(0.85 0.08 155 / 0.1);
+}
+
+/* Fade-in animation for generated content */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.narrative-content-enter {
+  animation: fadeSlideIn 0.4s ease-out;
+}
+

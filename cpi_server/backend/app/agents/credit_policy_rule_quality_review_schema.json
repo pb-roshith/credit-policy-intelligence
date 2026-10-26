@@ -1,0 +1,70 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "review_result": {
+      "enum": [
+        "ACCEPTABLE_FOR_HUMAN_REVIEW",
+        "REVISION_REQUIRED",
+        "UNSUPPORTED"
+      ],
+      "title": "Review Result",
+      "type": "string"
+    },
+    "issues": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "unsupported_fields": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unsupported Fields",
+      "type": "array"
+    },
+    "missing_fields": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Fields",
+      "type": "array"
+    },
+    "duplicate_candidates": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Duplicate Candidates",
+      "type": "array"
+    },
+    "recommended_revision": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Recommended Revision"
+    },
+    "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    }
+  },
+  "required": [
+    "review_result",
+    "issues",
+    "unsupported_fields",
+    "missing_fields",
+    "duplicate_candidates",
+    "recommended_revision",
+    "confidence"
+  ],
+  "title": "QualityReviewReport",
+  "type": "object"
+}

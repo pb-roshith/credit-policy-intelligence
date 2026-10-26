@@ -1,0 +1,88 @@
+{
+  "$defs": {
+    "ApplicabilityDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "candidate_type": {
+          "enum": [
+            "Policy",
+            "Rule"
+          ],
+          "title": "Candidate Type",
+          "type": "string"
+        },
+        "applicability": {
+          "enum": [
+            "Applicable",
+            "Not Applicable",
+            "Unable to Determine"
+          ],
+          "title": "Applicability",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "evaluated_attributes": {
+          "additionalProperties": true,
+          "title": "Evaluated Attributes",
+          "type": "object"
+        },
+        "missing_information": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Information",
+          "type": "array"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "candidate_type",
+        "applicability",
+        "reason",
+        "evaluated_attributes",
+        "missing_information"
+      ],
+      "title": "ApplicabilityDecision",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "evaluation_date": {
+      "title": "Evaluation Date",
+      "type": "string"
+    },
+    "current_stage": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Current Stage"
+    },
+    "decisions": {
+      "items": {
+        "$ref": "#/$defs/ApplicabilityDecision"
+      },
+      "title": "Decisions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "evaluation_date",
+    "current_stage",
+    "decisions"
+  ],
+  "title": "ApplicabilityReport",
+  "type": "object"
+}

@@ -1,0 +1,2667 @@
+{
+  "as_of_date": "2026-10-14",
+  "active_rules": 2965,
+  "attributes": 4855,
+  "mapped_attributes": 1132,
+  "metadata_gaps": 3723,
+  "calculation_methods": {
+    "undefined": 1919,
+    "ratio": 101,
+    "direct": 36,
+    "approval_authority": 11,
+    "manual": 888,
+    "percentage": 5,
+    "date_age": 5
+  },
+  "populated_requests": 0,
+  "requests": [
+    {
+      "account": "hela",
+      "request_id": "CR-10241",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10242",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10243",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10244",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10245",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10246",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10247",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 8,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 708
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10248",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10249",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10250",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10251",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 8,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 709
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10252",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10253",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10254",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10255",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 709
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10256",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10257",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10258",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10259",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10260",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10261",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10262",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10263",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 709
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10264",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10265",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10266",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10267",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10268",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10269",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10270",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10271",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10272",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10273",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10274",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10275",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10276",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10277",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10278",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10279",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 709
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10280",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10281",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10282",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10283",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10284",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10285",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10286",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10287",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10288",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10289",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10290",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10291",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10292",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10293",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10294",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10295",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10296",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10297",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10298",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10299",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10300",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 713
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10301",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10302",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10303",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10304",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10305",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10306",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10307",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 8,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 709
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10308",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10309",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10310",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10311",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 709
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10312",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10313",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10314",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10315",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10316",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 713
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10317",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10318",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10319",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10320",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10321",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10322",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10323",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10324",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10325",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10326",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10327",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 8,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 708
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10328",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10329",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10330",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10331",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10332",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10333",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10334",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10335",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 709
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10336",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10337",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10338",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10339",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10340",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 713
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10341",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10342",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10343",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10344",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10345",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10346",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10347",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10348",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10349",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10350",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10351",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10352",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10353",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "hela",
+      "request_id": "CR-10354",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10241",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10242",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10243",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10244",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 713
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10245",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10246",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10247",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 709
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10248",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10249",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10250",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10251",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10252",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 713
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10253",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10254",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10255",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10256",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10257",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10258",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10259",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10260",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10261",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10262",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10263",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10264",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10265",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10266",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10267",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10268",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10269",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10270",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10271",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10272",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10273",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10274",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10275",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10276",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 713
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10277",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10278",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10279",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10280",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10281",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10282",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10283",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10284",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10285",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10286",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10287",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 8,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 708
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10288",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10289",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10290",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "vijay",
+      "request_id": "CR-10291",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10241",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10242",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10243",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10244",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 713
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10245",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10246",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10247",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10248",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10249",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10250",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10251",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10252",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10253",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10254",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10255",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10256",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10257",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10258",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10259",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10260",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 713
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10261",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10262",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10263",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 709
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10264",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10265",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10266",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10267",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10268",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 713
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10269",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10270",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10271",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10272",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10273",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10274",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10275",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10276",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 713
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10277",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10278",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10279",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 709
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10280",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10281",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10282",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10283",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10284",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 5,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10285",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10286",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10287",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 7,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 709
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10288",
+      "scenario": "near_threshold",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 712
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10289",
+      "scenario": "compliant",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10290",
+      "scenario": "boundary",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10291",
+      "scenario": "breach",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 711
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10292",
+      "scenario": "multiple_breaches",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 383,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 713
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10293",
+      "scenario": "missing",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 0,
+        "partially_supported": 345,
+        "lacking_actual_data": 1913,
+        "manual_documentary": 707
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10294",
+      "scenario": "conflicting",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 4,
+        "partially_supported": 379,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 717
+      }
+    },
+    {
+      "account": "aegon",
+      "request_id": "CR-10295",
+      "scenario": "warning",
+      "revision": 4,
+      "counts": {
+        "fully_evaluable": 6,
+        "partially_supported": 384,
+        "lacking_actual_data": 1865,
+        "manual_documentary": 710
+      }
+    }
+  ],
+  "stored_requests": 220,
+  "aggregate_rule_coverage": {
+    "lacking_actual_data": 1865,
+    "partially_supported": 378,
+    "manual_documentary": 713,
+    "fully_evaluable": 9
+  },
+  "aggregate_basis": "Unique active DB rule versions; highest supported category across persisted demonstration requests"
+}

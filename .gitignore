@@ -25,7 +25,7 @@ dist/
 
 # Logs
 *.log
-backend/generated_policies/
+cpi_server/backend/generated_policies/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -37,3 +37,12 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Immutable local policy source archives (database-linked operational data)
+cpi_server/backend/inventory_sources/
+
+# Regenerable account-scoped demonstration coverage exports
+cpi_server/docs/credit-data-coverage/
+
+# Local inventory backups contain policy and assessment history.
+cpi_server/backend/quantitative-inventory-backup-*.json

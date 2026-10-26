@@ -1,61 +1,28 @@
-# Run the Credit Policy Intelligence Platform
+# Start both applications
 
-Requires Node.js 18+, Python 3.10+, and PostgreSQL.
+Start PostgreSQL, then double-click `start_all.bat` in this folder. It opens
+one Windows Terminal window with five named Command Prompt tabs using the existing
+Python environments and Node dependencies. Windows Terminal is required.
+Keep the tabs open while using the applications. Double-click `stop_all.bat` to
+stop all five servers together, or press Ctrl+C in a tab to stop one server.
+The self-contained `stop_all.bat` identifies this project's processes
+on the five server ports and stop their child processes too. Server tabs remain
+open and can be closed afterward. PostgreSQL stays running.
+If a port is already occupied, stop its existing server before starting again.
 
-Current project folder: `C:\Users\2863775\Documents\CRO_Solutions\credit policy intelligence`.
-Ensure PostgreSQL is running before starting the backend.
-This project uses frontend port `5173` and backend port `8002`, so it can run
-alongside Credit_Dossier on ports `8080` and `8000`. The frontend API address
-is saved in `frontend/.env.local`; no PowerShell environment command is needed.
-If dependencies are already installed, use **Run after setup**; moving the folder
-on this computer does not require reinstalling them.
+| Server | Port |
+| --- | --- |
+| Credit Dossier MCP | 8004 |
+| Credit Dossier backend | 8003 |
+| Credit Dossier frontend | 8081 |
+| Credit Policy Intelligence backend | 8002 |
+| Credit Policy Intelligence frontend | 5173 |
 
-## 1. First-time setup and run
+Open Credit Dossier at http://localhost:8081 and Credit Policy Intelligence at
+http://localhost:5173 after their terminals report that startup is complete.
 
-Open PowerShell in the project folder and start the backend:
-
-```powershell
-cd backend
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8002
-```
-
-Open a second PowerShell window in the project folder and start the frontend:
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-## 2. Run after setup
-
-Open PowerShell in the project folder and start the backend:
-
-```powershell
-cd "C:\Users\2863775\Documents\CRO_Solutions\credit policy intelligence\backend"
-.\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8002
-```
-
-Open a second PowerShell window in the project folder and start the frontend:
-
-```powershell
-cd frontend
-npm run dev
-```
-
-Open **http://localhost:5173**.
-
-API documentation: **http://localhost:8002/docs**
-
-## Default administrator
-
-The administrator login and PostgreSQL connection are configured in
-`backend/.env`. The local development defaults are `admin` / `Admin@123456`,
-with PostgreSQL at `postgresql://postgres:root@localhost:5432/credit_policy_intelligence`.
-On first startup, the backend creates the configured database and all required
-schemas, tables, indexes, roles, and security policies when they are missing.
-The PostgreSQL user in `DATABASE_URL` must have `CREATEDB` and `CREATEROLE`
-permissions for initial setup. Existing data is not deleted on later starts.
-Change both passwords before deploying or sharing the application.
+First-time setup and individual startup instructions are in
+[cd_cpi_server/run.md](cd_cpi_server/run.md) and [cpi_server/run.md](cpi_server/run.md).
+Shared frontend components are stored in `cd_cpi_server/credit_dossier_backend/shared`.
+Credit analysts see deals from all relationship managers in both applications.
+Relationship managers see their own deals.

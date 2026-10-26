@@ -1,0 +1,61 @@
+# Web Framework
+fastapi==0.140.0
+uvicorn[standard]==0.51.0
+
+# ORM & Database
+sqlalchemy==2.0.51
+alembic==1.18.5
+
+# PostgreSQL driver. Use the system libpq instead of psycopg-binary's bundled
+# library so PostgreSQL security updates apply without waiting for a new wheel.
+psycopg==3.3.4
+
+# Validation & Settings
+pydantic==2.13.4
+pydantic-settings==2.14.2
+
+# Security-sensitive dependency used by PDF signing/validation packages
+cryptography==50.0.0
+
+# Production secret provider (managed identity via DefaultAzureCredential)
+azure-identity==1.25.3
+azure-keyvault-secrets==4.10.0
+
+# File uploads
+python-multipart==0.0.32
+aiofiles==25.1.0
+
+# Mistral AI SDK
+mistralai==2.7.2
+
+# MCP Client (Model Context Protocol)
+mcp==1.28.1
+
+# File Processing
+pypdf==6.16.1
+python-docx==1.2.0
+openpyxl==3.1.5
+chardet==7.4.3
+
+# Document Export
+python-pptx==1.0.2
+reportlab==4.5.1
+xhtml2pdf==0.2.17
+html2docx==1.6.0
+markdown==3.10.2
+
+# Data Processing & Visualization
+pandas==3.0.5
+matplotlib==3.11.1
+
+# Image Processing
+colorthief==0.2.1
+
+# Environment
+python-dotenv==1.2.2
+
+# Async HTTP (for URL ingestion)
+httpx==0.28.1
+
+# Observability & Telemetry (installs OTel SDK + OTLP exporter)
+mistralai[telemetry]==2.7.2

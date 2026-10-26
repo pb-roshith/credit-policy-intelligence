@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "short_summary": {
+      "title": "Short Summary",
+      "type": "string"
+    },
+    "detailed_explanation": {
+      "title": "Detailed Explanation",
+      "type": "string"
+    },
+    "evidence_citations": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Evidence Citations",
+      "type": "array"
+    },
+    "missing_information": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Information",
+      "type": "array"
+    },
+    "next_required_action": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Next Required Action"
+    }
+  },
+  "required": [
+    "short_summary",
+    "detailed_explanation",
+    "evidence_citations",
+    "missing_information",
+    "next_required_action"
+  ],
+  "title": "ComplianceExplanationReport",
+  "type": "object"
+}

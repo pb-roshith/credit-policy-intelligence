@@ -1,0 +1,559 @@
+{
+  "$defs": {
+    "ApplicabilityCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "attribute": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "^[A-Za-z][A-Za-z0-9_.]*$",
+          "title": "Attribute",
+          "type": "string"
+        },
+        "operator": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Operator",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 2000,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attribute",
+        "operator",
+        "value"
+      ],
+      "title": "ApplicabilityCondition",
+      "type": "object"
+    },
+    "AtomicRuleProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "proposed_rule_code": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Proposed Rule Code",
+          "type": "string"
+        },
+        "rule_name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Rule Name",
+          "type": "string"
+        },
+        "rule_description": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Rule Description",
+          "type": "string"
+        },
+        "mandatory": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mandatory"
+        },
+        "source_section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Section"
+        },
+        "source_clause": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Source Clause",
+          "type": "string"
+        },
+        "source_page": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Page"
+        },
+        "source_excerpt": {
+          "maxLength": 16000,
+          "minLength": 1,
+          "title": "Source Excerpt",
+          "type": "string"
+        },
+        "check_question": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Check Question",
+          "type": "string"
+        },
+        "metric_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metric Name"
+        },
+        "metric_definition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metric Definition"
+        },
+        "operator": {
+          "anyOf": [
+            {
+              "enum": [
+                "EQ",
+                "NE",
+                "GT",
+                "GTE",
+                "LT",
+                "LTE",
+                "BETWEEN",
+                "IN",
+                "NOT_IN",
+                "EXISTS",
+                "NOT_EXISTS",
+                "MANUAL_ASSESSMENT"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operator"
+        },
+        "threshold_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Threshold Value"
+        },
+        "lower_bound": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower Bound"
+        },
+        "upper_bound": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upper Bound"
+        },
+        "threshold_unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Threshold Unit"
+        },
+        "threshold_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "HARD_LIMIT",
+                "WARNING",
+                "TARGET"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Threshold Type"
+        },
+        "calculation_logic": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calculation Logic"
+        },
+        "input_data_fields": {
+          "items": {
+            "$ref": "#/$defs/InputDataField"
+          },
+          "maxItems": 40,
+          "title": "Input Data Fields",
+          "type": "array"
+        },
+        "data_sources": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 30,
+          "title": "Data Sources",
+          "type": "array"
+        },
+        "evidence_requirements": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 30,
+          "title": "Evidence Requirements",
+          "type": "array"
+        },
+        "applicability_conditions": {
+          "items": {
+            "$ref": "#/$defs/ApplicabilityCondition"
+          },
+          "maxItems": 30,
+          "title": "Applicability Conditions",
+          "type": "array"
+        },
+        "applicable_stages": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 30,
+          "title": "Applicable Stages",
+          "type": "array"
+        },
+        "severity": {
+          "anyOf": [
+            {
+              "enum": [
+                "CRITICAL",
+                "HIGH",
+                "MEDIUM",
+                "LOW"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Severity"
+        },
+        "breach_consequence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Breach Consequence"
+        },
+        "exception_allowed": {
+          "default": "NOT_STATED",
+          "enum": [
+            "YES",
+            "NO",
+            "NOT_STATED"
+          ],
+          "title": "Exception Allowed",
+          "type": "string"
+        },
+        "approval_or_escalation_requirement": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approval Or Escalation Requirement"
+        },
+        "related_rule_codes": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 30,
+          "title": "Related Rule Codes",
+          "type": "array"
+        },
+        "relationship_logic": {
+          "anyOf": [
+            {
+              "enum": [
+                "AND",
+                "OR",
+                "INDEPENDENT"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Relationship Logic"
+        },
+        "extraction_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Extraction Confidence",
+          "type": "number"
+        },
+        "ambiguities": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 50,
+          "title": "Ambiguities",
+          "type": "array"
+        },
+        "requires_human_review": {
+          "const": true,
+          "default": true,
+          "title": "Requires Human Review",
+          "type": "boolean"
+        },
+        "proposed_status": {
+          "const": "DRAFT",
+          "default": "DRAFT",
+          "title": "Proposed Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "proposed_rule_code",
+        "rule_name",
+        "rule_description",
+        "source_clause",
+        "source_excerpt",
+        "check_question",
+        "extraction_confidence"
+      ],
+      "title": "AtomicRuleProposal",
+      "type": "object"
+    },
+    "InputDataField": {
+      "additionalProperties": false,
+      "properties": {
+        "field_name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "^[A-Za-z][A-Za-z0-9_.]*$",
+          "title": "Field Name",
+          "type": "string"
+        },
+        "definition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Definition"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "field_name"
+      ],
+      "title": "InputDataField",
+      "type": "object"
+    },
+    "NonRuleContent": {
+      "additionalProperties": false,
+      "properties": {
+        "source_clause": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Source Clause",
+          "type": "string"
+        },
+        "classification": {
+          "enum": [
+            "DEFINITION",
+            "GUIDANCE",
+            "BACKGROUND",
+            "EXAMPLE",
+            "OTHER"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "reason_not_extracted": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason Not Extracted",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_clause",
+        "classification",
+        "reason_not_extracted"
+      ],
+      "title": "NonRuleContent",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "policy_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "policy_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Policy Version"
+    },
+    "source_document_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Source Document Id",
+      "type": "string"
+    },
+    "extraction_run_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Extraction Run Id",
+      "type": "string"
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/AtomicRuleProposal"
+      },
+      "maxItems": 80,
+      "title": "Rules",
+      "type": "array"
+    },
+    "non_rule_content": {
+      "items": {
+        "$ref": "#/$defs/NonRuleContent"
+      },
+      "maxItems": 100,
+      "title": "Non Rule Content",
+      "type": "array"
+    },
+    "processing_warnings": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 100,
+      "title": "Processing Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "policy_id",
+    "source_document_id",
+    "extraction_run_id",
+    "rules"
+  ],
+  "title": "CreditPolicyExtractionReport",
+  "type": "object"
+}

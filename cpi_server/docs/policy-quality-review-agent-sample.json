@@ -1,0 +1,23 @@
+{
+  "rule_version_id": 974,
+  "advisory_only": true,
+  "report": {
+    "review_result": "REVISION_REQUIRED",
+    "issues": [
+      "The proposed rule references 'predefined thresholds' but the source clause does not specify the threshold values, units, or how they are determined. This creates ambiguity in enforceability.",
+      "The rule lacks explicit traceability to a specific policy/section/clause beyond the general governance excerpt. The source clause is broad and does not isolate the exact requirement for rule extraction.",
+      "The rule does not specify the applicable workflow stage (e.g., pre-approval, post-approval) where the Credit Committee review is required, though the source clause implies it is part of the approval process.",
+      "The rule includes input_data_fields ('transaction_value', 'predefined_threshold', 'credit_committee_approval_status') that are not explicitly validated or defined in the source clause. The source does not confirm these as mandatory inputs."
+    ],
+    "unsupported_fields": [],
+    "missing_fields": [
+      "applicable_stage",
+      "threshold_value",
+      "threshold_unit",
+      "threshold_source"
+    ],
+    "duplicate_candidates": [],
+    "recommended_revision": "Clarify the definition and source of 'predefined thresholds' (e.g., reference to a DoA matrix or specific policy document). Explicitly state the workflow stage (e.g., 'pre-approval') where the Credit Committee review is required. Remove or justify unsupported fields such as threshold_value, operator, and calculation_logic, as the source clause does not mandate their inclusion. Confirm whether input_data_fields are explicitly required by the policy or are assumptions.",
+    "confidence": 0.95
+  }
+}
