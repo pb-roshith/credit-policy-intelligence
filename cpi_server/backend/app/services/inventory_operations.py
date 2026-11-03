@@ -3,6 +3,7 @@ import hashlib
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextvars import copy_context
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -77,8 +78,11 @@ def run_quality_reviews(job_id,user):
         rows=c.execute("""SELECT r.*,e.rule_code,cl.section_heading,cl.clause_number,cl.page_number,cl.source_excerpt
           FROM policy_rule_versions r JOIN policy_rule_entities e ON e.id=r.rule_entity_id
           JOIN policy_versions pv ON pv.id=r.policy_version_id JOIN policy_clauses cl ON cl.id=r.clause_id
-          WHERE credit_data.is_quantitative_rule(r.definition) AND r.policy_id=ANY(%s) AND pv.is_current AND r.status IN ('Draft','Under Review')
-          ORDER BY r.policy_id,r.clause_id,r.id""",(job['policy_ids'],)).fetchall()
+          WHERE credit_data.is_quantitative_rule(r.definition) AND r.policy_id=ANY(%s) AND pv.is_current
+          AND (r.status IN ('Draft','Under Review') OR (r.status='Approved' AND EXISTS (
+              SELECT 1 FROM risk_knowledge_objects evidence WHERE evidence.kind='metadata' AND evidence.owner_id=''
+              AND evidence.id='CPI-RULE-'||r.id::text AND evidence.payload->>'job_id'=%s)))
+          ORDER BY r.policy_id,r.clause_id,r.id""",(job['policy_ids'],str(job_id))).fetchall()
         cached=c.execute('SELECT * FROM rule_quality_reports WHERE prompt_version=%s',(agent.prompt_version,)).fetchall()
     complete={(r['rule_version_id'],r['definition_checksum']) for r in cached if r['status']=='Completed'}
     pending=[row for row in rows if (row['id'],definition_checksum(row['definition'])) not in complete]
@@ -117,7 +121,7 @@ def run_quality_reviews(job_id,user):
             c.execute('UPDATE agent_execution_logs SET status=%s,error_code=%s,finished_at=CURRENT_TIMESTAMP WHERE id=%s',('Failed' if failure else 'Completed',failure,execution_id))
         return len(reports),len(batch)-len(reports)
     with ThreadPoolExecutor(max_workers=RULE_INVENTORY_WORKERS,thread_name_prefix='inventory-quality') as pool:
-        futures=[pool.submit(review,batch,clauses) for batch,clauses in review_batches(pending)]
+        futures=[pool.submit(copy_context().run,review,batch,clauses) for batch,clauses in review_batches(pending)]
         for future in as_completed(futures):
             ok,failed=future.result();totals['quality_reviewed']+=ok;totals['quality_failed']+=failed;totals['quality_pending']-=ok+failed;progress()
     return totals

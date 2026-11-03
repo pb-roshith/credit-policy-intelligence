@@ -253,7 +253,7 @@
 }
 .compliance-counts {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 16px;
 }
@@ -2216,6 +2216,15 @@ tbody tr.selected {
   color: #b3ccd6;
   background: #142a35;
 }
+.badge.unable-to-assess {
+  color: #c2cbd5;
+  border-color: #536171;
+  background: #273340;
+}
+.compliance-count > span.unable-to-assess {
+  color: #c2cbd5;
+  background: #273340;
+}
 .score {
   width: 30px;
   height: 23px;
@@ -4177,6 +4186,8 @@ tbody tr.selected {
 .applicability-pagination span { margin-right: auto; font-size: 12px; color: var(--muted); }
 
 .assessment-results { margin-top: 20px; }
+.assessment-filters { padding: 0 24px 20px; }
+.assessment-filters select { width: min(100%, 360px); min-height: 38px; }
 .assessment-pagination { padding: 16px 24px; margin-top: 0; border-top: 1px solid var(--line); }
 .assessment-empty { padding: 0 24px 16px; color: var(--muted); }
 .app .assessment-results .findings-table table { width: 100%; min-width: 900px; table-layout: fixed; }
@@ -4259,3 +4270,14 @@ tbody tr.selected {
   .line-chart.portfolio-risk-chart { padding: 8px 12px 16px; }
 }
 
+
+/* Selected-policy Risk Knowledge pipeline inside the existing rule library. */
+.rule-knowledge-progress,.rule-knowledge-evidence,.rule-knowledge-review{border:1px solid var(--line);border-radius:8px;padding:16px;margin:16px 0;background:color-mix(in srgb,var(--card) 90%,var(--aqua) 10%)}
+.rule-knowledge-progress h4,.rule-knowledge-evidence h4,.rule-knowledge-review h4{margin:0 0 14px;color:var(--aqua)}
+.rule-knowledge-stages{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.rule-knowledge-stages>div{padding:10px;border:1px solid var(--line);border-radius:5px;color:var(--muted);background:var(--card)}
+.rule-knowledge-stages strong,.rule-knowledge-stages span{display:block;font-size:12px;line-height:1.6}
+.rule-knowledge-stages .completed{border-color:var(--green)}.rule-knowledge-stages .running{border-color:var(--aqua)}.rule-knowledge-stages .failed{border-color:var(--red)}.rule-knowledge-stages .partial{border-color:#d59b32}
+.rule-knowledge-evidence li{padding:5px 0;line-height:1.7}.rule-knowledge-evidence small{margin-left:8px;color:var(--muted)}
+.rule-knowledge-evidence pre{white-space:pre-wrap;overflow-wrap:anywhere}.rule-knowledge-review label{display:block}.rule-knowledge-review textarea{display:block;width:100%;min-height:76px;margin:8px 0 14px}
+@media(max-width:760px){.rule-knowledge-stages{grid-template-columns:repeat(2,minmax(0,1fr))}}

@@ -23,6 +23,21 @@ class RuleEvaluationTests(unittest.TestCase):
     def test_invalid_numeric_warns(self):
         self.assertEqual(evaluate(self.rule,{"requested_amount":"unknown"})[1],"WARNING")
 
+class UnavailableRulesTests(unittest.TestCase):
+    def test_no_effective_rules_stops_assessment_without_requiring_activation(self):
+        from unittest.mock import patch
+        from fastapi import HTTPException
+        from app.services.rule_assessment import run_rule_assessment
+        with patch('app.services.rule_assessment.assessment_request_context',return_value=('CR-1',{})), \
+             patch('app.services.rule_assessment.active_rule_candidates',return_value=[]), \
+             patch('app.services.rule_engine.execute_rule') as execute:
+            with self.assertRaises(HTTPException) as raised:
+                run_rule_assessment('CR-1','test')
+        self.assertEqual(raised.exception.status_code,409)
+        self.assertIn('no activation is required',raised.exception.detail)
+        execute.assert_not_called()
+
+
 class ApplicableOnlyAssessmentTests(unittest.TestCase):
     def test_unknown_and_inapplicable_rules_are_never_compared(self):
         from unittest.mock import patch, MagicMock

@@ -10,14 +10,14 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException
 from app.config import (CORS_ORIGINS, ENABLE_HSTS, MAX_REQUEST_BODY_BYTES,
-                        RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS)
+                        RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS, RULE_MAX_FILE_BYTES)
 from app.database import initialize_database
 from app.scripts.map_policy_relationships import map_policy_relationships
 from app.security import write_request_error
 from app.routers import auth, compliance, controls, dashboard, decision, exceptions, observability, policies, requests
 from app.manufacture_data import credit_requests, exposure_history, policy_controls, policy_pdfs
 
-from app.routers import rules, credit_data
+from app.routers import rules, credit_data, risk_knowledge
 
 initialize_database()
 # Relationship rows are derived from the policy catalog. Rebuild them on startup so
@@ -118,17 +118,18 @@ async def security_headers(request: Request, call_next):
             headers={"Retry-After": str(RATE_LIMIT_WINDOW_SECONDS)},
         )
     else:
+        body_limit = RULE_MAX_FILE_BYTES + 1024 * 1024 if request.url.path.startswith('/api/risk-knowledge/assets/') else MAX_REQUEST_BODY_BYTES
         content_length = request.headers.get("content-length")
-        if content_length and content_length.isdigit() and int(content_length) > MAX_REQUEST_BODY_BYTES:
+        if content_length and content_length.isdigit() and int(content_length) > body_limit:
             audit_error(request, 413, "REQUEST_TOO_LARGE", f"{request.method} request exceeded the size limit")
             response = JSONResponse(status_code=413, content={"detail": "The request is too large."})
         elif request.method in {"POST", "PUT", "PATCH"}:
             body = bytearray()
             async for chunk in request.stream():
                 body.extend(chunk)
-                if len(body) > MAX_REQUEST_BODY_BYTES:
+                if len(body) > body_limit:
                     break
-            if len(body) > MAX_REQUEST_BODY_BYTES:
+            if len(body) > body_limit:
                 audit_error(request, 413, "REQUEST_TOO_LARGE", f"{request.method} request exceeded the size limit")
                 response = JSONResponse(status_code=413, content={"detail": "The request is too large."})
             else:
@@ -172,6 +173,7 @@ for router in (
     policies.router,
     rules.router,
     credit_data.router,
+    risk_knowledge.router,
     decision.router,
     observability.router,
 ):

@@ -1,0 +1,33 @@
+.exception-detail { display: flex; flex-direction: column; }
+.exception-detail .exception-rationale-notice { margin: 0 17px 14px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: #e5aa5110; color: var(--amber); font-size: 13px; line-height: 1.6; }
+.exception-detail .exception-delete-actions { margin-top: auto; padding: 18px; border-top: 1px solid var(--line); }
+.exception-delete-actions .btn.exception-delete-trigger { width: 100%; min-height: 40px; border: 1px solid #a75459; background: #ef6c660a; color: #ffaaa5; font-size: 12px; }
+.exception-delete-actions .exception-delete-trigger:hover:not(:disabled) { background: #ef6c661a; }
+.exception-delete-dialog { width: min(460px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: #d5e3ea; font: inherit; box-shadow: 0 24px 80px #0008; color-scheme: dark; }
+.exception-delete-dialog::backdrop { background: #020b14bf; }
+.exception-delete-dialog-header { display: flex; align-items: center; gap: 12px; padding: 22px 24px 0; }
+.exception-delete-icon { display: grid; place-items: center; flex: 0 0 42px; height: 42px; border-radius: 10px; background: #ef6c661a; color: #ffaaa5; }
+.exception-delete-dialog-header h2 { margin: 0; font-size: 18px; line-height: 1.4; font-weight: 600; }
+.exception-delete-close { display: grid; place-items: center; margin-left: auto; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); }
+.exception-delete-close:hover:not(:disabled) { background: #ffffff0a; color: #fff; }
+.exception-delete-dialog-body { padding: 16px 24px 24px; }
+.exception-delete-dialog-body p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+.exception-delete-summary { margin: 18px 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.exception-delete-summary > div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 4px 0; font-size: 12px; line-height: 1.5; }
+.exception-delete-summary dt { color: var(--muted); flex-shrink: 0; }
+.exception-delete-summary dd { margin: 0; text-align: right; overflow-wrap: anywhere; min-width: 0; font-weight: 600; }
+.exception-delete-dialog-body .exception-delete-warning { display: flex; align-items: center; gap: 8px; color: #ffaaa5; font-size: 12px; }
+.exception-delete-warning svg { flex-shrink: 0; }
+.exception-delete-dialog-body .data-message.error { margin-top: 16px; color: #ffaaa5; }
+.exception-delete-dialog-footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--line); background: #00000012; }
+.exception-delete-dialog-footer .btn { min-height: 38px; padding: 9px 16px; font-size: 12px; border-radius: 6px; }
+.exception-delete-dialog-footer .btn.exception-delete-button { background: #b53841; border-color: #cf515a; color: #fff; }
+.exception-delete-dialog-footer .exception-delete-button:hover:not(:disabled) { background: #c5414b; }
+.exception-delete-dialog button:disabled, .exception-delete-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.exception-delete-dialog button:focus-visible, .exception-delete-actions button:focus-visible { outline: 2px solid var(--aqua); outline-offset: 3px; }
+@media (max-width: 480px) {
+  .exception-delete-dialog-header { padding: 18px 18px 0; }
+  .exception-delete-dialog-body { padding: 16px 18px 20px; }
+  .exception-delete-dialog-footer { padding: 14px 18px; }
+  .exception-delete-dialog-footer .btn { flex: 1; }
+}

@@ -52,13 +52,13 @@ def validate_source(c,payload):
     return source
 
 
-def store_rule(payload: GovernedRuleInput,user,previous=None,extraction_key=None,c=None):
+def store_rule(payload: GovernedRuleInput,user,previous=None,extraction_key=None,c=None,force_draft=False):
     from .quantitative_rules import is_quantitative_rule
     if not is_quantitative_rule(payload.definition.model_dump()):
         raise HTTPException(422, 'Only quantitative rules with an explicit numeric threshold or bound are supported')
     if c is None:
         with shared_policy_connection() as connection:
-            return store_rule(payload,user,previous,extraction_key,connection)
+            return store_rule(payload,user,previous,extraction_key,connection,force_draft)
     source=validate_source(c,payload)
     before=None; version=1; superseded=None
     if previous:
@@ -92,8 +92,14 @@ def store_rule(payload: GovernedRuleInput,user,previous=None,extraction_key=None
         existing=c.execute('SELECT * FROM policy_rule_versions WHERE extraction_key=%s',(extraction_key,)).fetchone()
         if existing:return dict(existing)
     definition=payload.definition.model_dump(mode='json')
-    row=c.execute("INSERT INTO policy_rule_versions(rule_key,version,policy_id,policy_version,policy_fingerprint,definition,effective_from,effective_to,created_by,rule_entity_id,policy_version_id,clause_id,superseded_version_id,extraction_key) VALUES (%s,%s,%s,%s,md5(%s),%s::jsonb,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *",(key,version,payload.policy_id,source['version'],source['summary'],json.dumps(definition),payload.effective_from,payload.effective_to,user['user_id'],entity_id,source['policy_version_id'],source['id'],superseded,extraction_key)).fetchone()
-    children(c,row);audit(c,before,row,user,'extract rule' if extraction_key else 'create version',payload.definition.change_rationale)
+    if before and str(before.get('extraction_key') or '').startswith('risk-knowledge:'):
+        force_draft=True
+        if extraction_key is None:
+            extraction_key='risk-knowledge:revision:'+str(uuid4())
+    extra_columns=',status,active' if force_draft else ''
+    extra_values=",'Draft',false" if force_draft else ''
+    row=c.execute(f"INSERT INTO policy_rule_versions(rule_key,version,policy_id,policy_version,policy_fingerprint,definition,effective_from,effective_to,created_by,rule_entity_id,policy_version_id,clause_id,superseded_version_id,extraction_key{extra_columns}) VALUES (%s,%s,%s,%s,md5(%s),%s::jsonb,%s,%s,%s,%s,%s,%s,%s,%s{extra_values}) RETURNING *",(key,version,payload.policy_id,source['version'],source['summary'],json.dumps(definition),payload.effective_from,payload.effective_to,user['user_id'],entity_id,source['policy_version_id'],source['id'],superseded,extraction_key)).fetchone()
+    children(c,row);audit(c,before,row,user,'extract draft' if force_draft and not previous else 'extract rule' if extraction_key else 'create version',payload.definition.change_rationale)
     return dict(row)
 
 
@@ -115,6 +121,11 @@ def approval_ready(row,c=None):
         document=c.execute('SELECT doc.extraction_status FROM policy_clauses cl JOIN inventory_documents doc ON doc.id=cl.document_id WHERE cl.id=%s',(row['clause_id'],)).fetchone()
         if not document or document['extraction_status']!='Completed':
             raise HTTPException(409,'Complete or retry source extraction before approving an AI-generated rule')
+        if str(row['extraction_key']).startswith('risk-knowledge:'):
+            from ..risk_knowledge.pipeline import fingerprint
+            evidence=c.execute("SELECT payload FROM risk_knowledge_objects WHERE kind='metadata' AND owner_id='' AND id=%s",('CPI-RULE-'+str(row['id']),)).fetchone()
+            if not evidence or evidence['payload'].get('definition_fingerprint')!=fingerprint(d) or not evidence['payload'].get('validation',{}).get('source_provenance_verified'):
+                raise HTTPException(409,'Submit this version through Risk Knowledge to refresh its source and mapping evidence')
     if row['policy_version_id'] is None or row['clause_id'] is None:
         raise HTTPException(409,'Legacy rule must be revised against an ingested source clause')
     if d.get('requirement_kind')=='guidance':
@@ -134,7 +145,23 @@ def approval_ready(row,c=None):
 
 def change_status(rule_id,action,comment,user):
     if action != 'comment':
-        raise HTTPException(410,'Rules are available by default; lifecycle actions have been removed')
+        with shared_policy_connection() as c:
+            target=c.execute("SELECT r.*,EXISTS(SELECT 1 FROM policy_rule_versions related WHERE related.rule_key=r.rule_key AND related.extraction_key LIKE 'risk-knowledge:%%') AS knowledge_family FROM policy_rule_versions r WHERE r.id=%s",(rule_id,)).fetchone()
+        family_retirement=target and target.get('knowledge_family') is True and action in ('deactivate','retire')
+        if not target or not str(target.get('extraction_key') or '').startswith('risk-knowledge:') and not family_retirement:
+            raise HTTPException(410,'Legacy rules remain available by default; review actions apply to Risk Knowledge candidates')
+        if action=='submit':
+            if target['created_by']!=user['user_id']:
+                reviewer(user)
+            from ..risk_knowledge.pipeline import refresh_rule_evidence
+            try:
+                refresh_rule_evidence(dict(target),user,shared_policy_connection)
+            except ValueError as error:
+                raise HTTPException(422,str(error)) from None
+            with shared_policy_connection() as c:
+                refreshed=c.execute('SELECT * FROM policy_rule_versions WHERE id=%s',(rule_id,)).fetchone()
+            if refreshed and refreshed['status']=='Approved' and refreshed.get('approved_by')=='system:auto-approval':
+                return dict(refreshed)
     with shared_policy_connection() as c:
         # Lock by logical rule before its versions to serialize activation/version edits.
         reference=c.execute('SELECT rule_key FROM policy_rule_versions WHERE id=%s',(rule_id,)).fetchone()

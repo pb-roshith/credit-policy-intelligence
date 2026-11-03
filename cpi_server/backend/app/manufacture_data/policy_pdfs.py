@@ -1,5 +1,6 @@
 import secrets
 import threading
+from contextvars import copy_context
 from fastapi import APIRouter, Depends, HTTPException
 from ..config import (MISTRAL_API_KEY, MISTRAL_POLICY_MODEL, POLICY_JOB_LOCK,
                       POLICY_OUTPUT_DIR, POLICY_SOURCE_DIR)
@@ -113,8 +114,8 @@ def generate_policy_pdfs(user: dict = Depends(current_user)):
             """, (job_id, POLICY_LIBRARY_DOCUMENT_COUNT, stored_count, user["user_id"]))
         cancel_event = threading.Event()
         worker = threading.Thread(
-            target=_run_worker,
-            args=(job_id, cancel_event),
+            target=copy_context().run,
+            args=(_run_worker, job_id, cancel_event),
             name=f"policy-generation-{job_id[:8]}", daemon=True,
         )
         _ACTIVE_WORKERS[job_id] = (worker, cancel_event)

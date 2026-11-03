@@ -1,0 +1,57 @@
+{
+  "$defs": {
+    "Mapping": {
+      "additionalProperties": false,
+      "properties": {
+        "original_term": {
+          "title": "Original Term",
+          "type": "string"
+        },
+        "concept_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Concept Id"
+        },
+        "normalized_term": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Normalized Term"
+        }
+      },
+      "required": [
+        "original_term",
+        "concept_id",
+        "normalized_term"
+      ],
+      "title": "Mapping",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "items": {
+        "$ref": "#/$defs/Mapping"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Mappings",
+  "type": "object"
+}

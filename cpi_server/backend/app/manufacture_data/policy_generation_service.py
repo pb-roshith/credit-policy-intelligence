@@ -65,11 +65,12 @@ def _response_text(response) -> str:
     return "\n".join(parts).strip()
 
 
-def _start_conversation(client: Mistral, **arguments):
+def _start_conversation(client: Mistral, telemetry_operation='policy_generation', **arguments):
     """Retry transient Mistral gateway and rate-limit failures."""
     for attempt in range(4):
         try:
-            return client.beta.conversations.start(**arguments)
+            from ..telemetry import record_ai_call
+            return record_ai_call('Policy Intelligence', telemetry_operation, client.beta.conversations.start, **arguments)
         except Exception as error:
             message = str(error).lower()
             transient = any(marker in message for marker in (
@@ -357,6 +358,7 @@ def run_policy_generation(job_id: str, db_connection, api_key: str, output_dir: 
                         )
                 _wait_for_document(client, library_id, uploaded.id, cancel_event)
                 summary_response = _start_conversation(client,
+                    telemetry_operation='policy_summary',
                     agent_id=agent_id,
                     inputs=_summary_prompt(file_name, parent, clause, title),
                     store=False,

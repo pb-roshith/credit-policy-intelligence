@@ -29,7 +29,7 @@ export async function apiRequest(path, options = {}) {
       signal: controller.signal,
       credentials: "include",
       headers: {
-        "Content-Type": "application/json",
+        ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
         ...(csrf ? { "X-CSRF-Token": csrf } : {}),
         ...(account ? { "X-Account-User-Id": account } : {}),
         ...options.headers,

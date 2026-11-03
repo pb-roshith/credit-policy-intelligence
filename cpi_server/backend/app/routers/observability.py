@@ -25,11 +25,21 @@ def observability(_: dict = Depends(current_user)):
             WITH catalog(feature, operation, display_name) AS (VALUES
               ('Executive Dashboard', 'portfolio_insights', 'Portfolio Insights'),
               ('Policy Intelligence', 'policy_copilot', 'Policy Copilot'),
-              ('Compliance Review', 'compliance_agent', 'AI Compliance Agent'),
               ('Compliance Review', 'compliance_copilot', 'Compliance Copilot'),
               ('Exception Management', 'exception_rationale', 'AI Exception Rationale'),
               ('Decision Simulator', 'scenario_recommendations', 'Scenario Recommendations'),
-              ('Portfolio Analytics', 'portfolio_copilot', 'Portfolio Analytics Copilot')
+              ('Portfolio Analytics', 'portfolio_copilot', 'Portfolio Analytics Copilot'),
+              ('Compliance Review', 'policy_applicability', 'Policy Applicability'),
+              ('Policy Rule Library', 'rule_extraction', 'Policy Rule Extraction'),
+              ('Policy Rule Library', 'rule_quality_review', 'Rule Quality Review'),
+              ('Risk Knowledge', 'knowledge_taxonomy_enrichment', 'Taxonomy Enrichment'),
+              ('Risk Knowledge', 'knowledge_ontology_discovery', 'Ontology Discovery'),
+              ('Risk Knowledge', 'knowledge_clause_classification', 'Clause Classification'),
+              ('Risk Knowledge', 'knowledge_rule_extraction', 'Knowledge Rule Extraction'),
+              ('Risk Knowledge', 'knowledge_taxonomy_mapping', 'Taxonomy Mapping'),
+              ('Risk Knowledge', 'knowledge_conflict_explanation', 'Conflict Explanation'),
+              ('Policy Intelligence', 'policy_generation', 'Policy Document Generation'),
+              ('Policy Intelligence', 'policy_summary', 'Policy Summary Generation')
             ), aggregate AS (
               SELECT feature, operation, COUNT(*) AS total_requests,
                      COUNT(*) FILTER (WHERE status='success') AS successful,
@@ -41,6 +51,16 @@ def observability(_: dict = Depends(current_user)):
                      MAX(started_at) AS last_request_at
               FROM ai_observability_spans GROUP BY feature, operation
             )
+            , discovered_catalog AS (
+              SELECT * FROM catalog
+              UNION
+              SELECT feature, operation, INITCAP(REPLACE(operation, '_', ' '))
+              FROM aggregate a
+              -- Retired operations remain in historical traces, not active cards.
+              WHERE NOT (a.feature='Compliance Review' AND a.operation='compliance_agent')
+              AND NOT EXISTS (
+                SELECT 1 FROM catalog c WHERE c.feature=a.feature AND c.operation=a.operation)
+            )
             SELECT catalog.feature, catalog.operation, catalog.display_name,
                    COALESCE(aggregate.total_requests, 0) AS total_requests,
                    COALESCE(aggregate.successful, 0) AS successful,
@@ -50,7 +70,7 @@ def observability(_: dict = Depends(current_user)):
                    COALESCE(aggregate.output_tokens, 0) AS output_tokens,
                    COALESCE(aggregate.total_tokens, 0) AS total_tokens,
                    aggregate.last_request_at
-            FROM catalog LEFT JOIN aggregate USING (feature, operation)
+            FROM discovered_catalog catalog LEFT JOIN aggregate USING (feature, operation)
             ORDER BY catalog.feature, catalog.operation
         """).fetchall()
         traces = connection.execute("""

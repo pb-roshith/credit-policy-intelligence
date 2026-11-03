@@ -5,10 +5,13 @@ from pathlib import Path
 from mistralai.client import Mistral
 from mistralai.client.utils.retries import RetryConfig,BackoffStrategy
 from ..config import MISTRAL_API_KEY,MISTRAL_POLICY_MODEL,MISTRAL_TIMEOUT_MS
+from ..telemetry import record_ai_call
 from ..services.credit_policy_extraction_schema import CreditPolicyExtractionReport
+from ..services.source_quantities import restore_stated_amount_units,source_unit_supported
 
 AGENT_NAME='Credit Policy Rule Extraction Agent'
-PROMPT_VERSION='credit-policy-rule-extraction-v5-quantitative-compact'
+PROMPT_VERSION='credit-policy-rule-extraction-v6-source-units'
+COMPATIBLE_CHECKPOINT_VERSIONS=('credit-policy-rule-extraction-v5-quantitative-compact',)
 SYSTEM_PROMPT=(Path(__file__).parent/'credit_policy_rule_extraction_prompt.txt').read_text(encoding='utf-8-sig')
 
 class SourceValidationError(ValueError):
@@ -55,6 +58,8 @@ def validate_report(report,metadata,clauses):
             raise SourceValidationError('Rule code does not match its supplied source prefix')
         sequence=int(rule.proposed_rule_code[len(prefix):]);span_sequences.setdefault(clause['id'],[]).append(sequence)
         source=clause['source_excerpt'];normalized=' '.join(source.lower().split())
+        if restore_stated_amount_units(rule,rule.source_excerpt):
+            report.processing_warnings.append(f'{rule.proposed_rule_code}: amount restored to the exact quoted source magnitude/unit')
         numeric=[]
         for value in (rule.threshold_value,rule.lower_bound,rule.upper_bound):
             values=value if isinstance(value,list) else [value]
@@ -83,7 +88,8 @@ def validate_report(report,metadata,clauses):
                 if not percentage:field.unit=None;report.processing_warnings.append('input unit:'+field.field_name)
         if rule.threshold_unit and rule.threshold_unit.lower() not in normalized:
             percentage=rule.threshold_unit.lower() in ('%','percent','percentage') and ('%' in source or 'percent' in normalized)
-            if not percentage:rule.threshold_unit=None;report.processing_warnings.append('threshold_unit')
+            explicit_amount=source_unit_supported(rule.threshold_unit,rule.source_excerpt,numeric)
+            if not percentage and not explicit_amount:rule.threshold_unit=None;report.processing_warnings.append('threshold_unit')
         retained_stages=[]
         for stage in rule.applicable_stages:
             if ' '.join(stage.lower().split()) in normalized:retained_stages.append(stage)
@@ -126,14 +132,21 @@ class CreditPolicyRuleExtractionAgent:
         self.client_factory=client_factory
         self.api_key=MISTRAL_API_KEY if api_key is None else api_key
 
-    def run(self,*,policy_id,policy_version,source_document_id,extraction_run_id,clauses,previous_validation_error=None):
+    def run(self,*,policy_id,policy_version,source_document_id,extraction_run_id,clauses,previous_validation_error=None,knowledge_context=None):
         if not self.api_key:raise ValueError('Mistral API key is not configured')
         if not clauses or len(clauses)>10 or sum(len(c['source_excerpt']) for c in clauses)>18000:
             raise ValueError('Supply a nonempty, bounded clause group')
         metadata={'policy_id':str(policy_id),'policy_version':policy_version,'source_document_id':str(source_document_id),'extraction_run_id':str(extraction_run_id)}
         payload=[{'source_clause':clause_reference(c),'source_section':c.get('section_heading'),'source_page':c.get('page_number'),'rule_code_prefix':f"POL-{policy_id}-C{c['sequence']}-R",'source_excerpt':c['source_excerpt'],'exact_quote_candidates':[part.strip() for part in re.split(r'(?<=[.;!?])\s+',c['source_excerpt']) if part.strip()]} for c in clauses]
+        content={'application_metadata':metadata,'source_clauses':payload,'previous_validation_error':previous_validation_error}
+        system=SYSTEM_PROMPT
+        if knowledge_context is not None:
+            if len(json.dumps(knowledge_context))>20000:
+                raise ValueError('Risk knowledge context exceeds the extraction limit')
+            content['risk_knowledge_context']=knowledge_context
+            system+='\nRisk knowledge context is vocabulary assistance only. SOURCE schema entries are not approved mappings. Derive every requirement and threshold solely from the supplied policy clauses. Never treat taxonomy values or ontology relationships as policy requirements. Preserve original field terminology and source wording.'
         with self.client_factory(api_key=self.api_key,timeout_ms=MISTRAL_TIMEOUT_MS) as client:
-            response=client.chat.parse(model=MISTRAL_POLICY_MODEL,response_format=self.output_schema,messages=[{'role':'system','content':SYSTEM_PROMPT},{'role':'user','content':json.dumps({'application_metadata':metadata,'source_clauses':payload,'previous_validation_error':previous_validation_error},default=str)}],tools=[],temperature=0,max_tokens=16000,retries=RetryConfig('none',BackoffStrategy(0,0,1,0),False))
+            response=record_ai_call('Policy Rule Library','rule_extraction',client.chat.parse,telemetry_target=str(policy_id),model=MISTRAL_POLICY_MODEL,response_format=self.output_schema,messages=[{'role':'system','content':system},{'role':'user','content':json.dumps(content,default=str)}],tools=[],temperature=0,max_tokens=16000,retries=RetryConfig('none',BackoffStrategy(0,0,1,0),False))
         report=response.choices[0].message.parsed
         if not isinstance(report,self.output_schema):raise SourceValidationError('Mistral did not return the typed extraction contract')
         report=validate_report(report,metadata,clauses)

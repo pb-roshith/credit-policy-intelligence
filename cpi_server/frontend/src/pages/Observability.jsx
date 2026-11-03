@@ -84,8 +84,8 @@ export default function Observability({ session, notify }) {
         <Stat icon={Activity} label="Total requests" value={number(overview.total_requests)} /><Stat icon={CheckCircle2} label="Successful" value={number(overview.successful)} tone="good" /><Stat icon={XCircle} label="Failed" value={number(overview.failed)} tone={Number(overview.failed) ? "bad" : "good"} /><Stat icon={Clock3} label="Average latency" value={latency(overview.average_latency_ms)} /><Stat icon={Zap} label="Input tokens" value={number(overview.input_tokens)} /><Stat icon={Sparkles} label="Output tokens" value={number(overview.output_tokens)} /><Stat icon={Gauge} label="Total tokens" value={number(overview.total_tokens)} />
       </div></Card>
 
-      <div className="obs-agent-grid">{data.features.map((item, index) => <Card className="obs-agent" key={item.operation}>
-        <div className="obs-agent-title"><span>{index + 1}</span><div><h3>{item.display_name}</h3><small>Mistral AI feature</small></div></div>
+      <div className="obs-agent-grid">{data.features.map((item, index) => <Card className="obs-agent" key={`${item.feature}:${item.operation}`}>
+        <div className="obs-agent-title"><span>{index + 1}</span><div><h3>{item.display_name}</h3><small>AI feature</small></div></div>
         <div className="obs-agent-section"><small>Application section</small><strong>{item.feature}</strong></div>
         <div className="obs-agent-metrics"><div><small>Total requests</small><b>{number(item.total_requests)}</b></div><div><small>Successful</small><b className="success">{number(item.successful)}</b></div><div><small>Failed</small><b className={Number(item.failed) ? "failure" : ""}>{number(item.failed)}</b></div><div><small>Average latency</small><b>{latency(item.average_latency_ms)}</b></div><div><small>Input tokens</small><b>{number(item.input_tokens)}</b></div><div><small>Output tokens</small><b>{number(item.output_tokens)}</b></div><div><small>Total tokens</small><b>{number(item.total_tokens)}</b></div><div><small>Last request</small><b>{dateTime(item.last_request_at)}</b></div></div>
       </Card>)}</div>

@@ -40,6 +40,7 @@ contain only actual request keys and their exact values. missing_information lis
 scope or request fields. Explain scope and matching facts concisely."""
 
 def policy_decisions(proposal,rules,evaluation_date):
+    from ..telemetry import record_ai_call
     policy_ids=sorted({r['policy_id'] for r in rules})
     if not policy_ids:return []
     if not MISTRAL_API_KEY:raise HTTPException(503,'Policy applicability model is not configured')
@@ -58,7 +59,7 @@ def policy_decisions(proposal,rules,evaluation_date):
                   'source_passages':[(p['summary'] or '')[:8000], '\n'.join(p['scope_excerpts'])[:24000]]} for p in batch]
         try:
             with Mistral(api_key=MISTRAL_API_KEY,timeout_ms=MISTRAL_TIMEOUT_MS) as client:
-                response=client.chat.parse(model=MISTRAL_POLICY_MODEL,response_format=PolicyScopeBatch,
+                response=record_ai_call('Compliance Review','policy_applicability',client.chat.parse,telemetry_target=str(proposal.get('credit_request_number') or ''),model=MISTRAL_POLICY_MODEL,response_format=PolicyScopeBatch,
                     messages=[{'role':'system','content':PROMPT},
                               {'role':'user','content':json.dumps({'request':proposal,'policies':sources},default=str)}],
                     tools=[],temperature=0,max_tokens=6000)

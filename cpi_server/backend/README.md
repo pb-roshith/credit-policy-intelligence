@@ -4,7 +4,12 @@ The [credit data and evidence layer](../docs/credit-data-and-evidence.md) docume
 the canonical fact contract, attribute registry, actual-value resolution, synthetic
 scenarios, coverage exports and future ingestion interfaces.
 
-Run with `uvicorn main:app --reload --port 8000` from this directory. API docs are available at `/docs`.
+Run with `uvicorn main:app --reload --port 8002` from this directory. API docs are available at `/docs`.
+
+Risk Knowledge is integrated into the existing Policy Intelligence screen and API.
+See [its integration guide](docs/risk-knowledge/README.md). It uses the existing
+PostgreSQL connection, policy catalog, authenticated sessions and audit store;
+there is no separate application or additional runtime database.
 
 Set `DATABASE_URL` in `.env` to the desired PostgreSQL database. On startup, the
 backend idempotently creates the database (when missing), schemas, tables,
@@ -72,7 +77,9 @@ initial draft generation, verification and operational limits.
 The extraction contract has been updated to the business-supplied
 [Credit Policy Rule Extraction Agent](../docs/credit-policy-rule-extraction-agent.md).
 It adds structured non-rule content, threshold type, risk severity and typed input
-metadata while preserving the separate review, approval and activation workflow.
+metadata. The integrated library automatically approves source-backed extracted
+rules and eligible taxonomy/ontology items with system audit attribution.
+Approved rules are available to compliance assessments automatically; no separate activation is required.
 
 The [three policy review agents](../docs/policy-review-agents.md) add advisory
 rule quality review in the Policy Rule Library, independent applicability checks

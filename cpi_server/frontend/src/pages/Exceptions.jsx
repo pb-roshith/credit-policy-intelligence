@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import "./Exceptions.css";
 import {
   LayoutDashboard,
   FileText,
@@ -40,6 +41,7 @@ import {
   Eye,
   EyeOff,
   Factory,
+  Trash2,
 } from "lucide-react";
 import { API, apiRequest } from "../api/client";
 import { loadRequestList } from "../api/requestList";
@@ -71,6 +73,12 @@ function ComplianceCount({ icon: Icon, label, value, tone }) {
 export default function Exceptions({ session, notify }) {
   const [tab, setTab] = useState("All"), [selected, setSelected] = useState(null), [exceptions, setExceptions] = useState([]), [loading, setLoading] = useState(true), [loadError, setLoadError] = useState(""), [query, setQuery] = useState(() => sessionStorage.getItem("exceptionRegistrySearch") || "");
   const [acting, setActing] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null), [deleting, setDeleting] = useState(false), [deleteError, setDeleteError] = useState("");
+  const deleteDialog = useRef(null);
+  useEffect(() => {
+    if (deleteTarget) deleteDialog.current?.showModal();
+    else deleteDialog.current?.close();
+  }, [deleteTarget]);
   const [creating, setCreating] = useState(false), [saving, setSaving] = useState(false), [createError, setCreateError] = useState("");
   const [requests, setRequests] = useState([]);
   const [form, setForm] = useState({ credit_request_number: "", exception_type: "Policy", clause_code: "", owner: session.user.user_id, due_date: "", status: "Active", description: "" });
@@ -96,7 +104,7 @@ export default function Exceptions({ session, notify }) {
       setTab("Active");
       setQuery("");
       setCreating(false);
-      notify(`${created.id} created as Active`);
+      notify(created.rationale?.generation_notice || `${created.id} created as Active`);
     } catch (error) { setCreateError(error.message); }
     finally { setSaving(false); }
   };
@@ -146,6 +154,24 @@ export default function Exceptions({ session, notify }) {
       notify(`Could not ${action} ${row.id}: ${error.message}`);
     } finally {
       setActing(false);
+    }
+  };
+  const confirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const target = deleteTarget;
+      const accountQuery = target.account_user_id ? `?account_user_id=${encodeURIComponent(target.account_user_id)}` : "";
+      await apiRequest(`/api/exceptions/${encodeURIComponent(target.id)}${accountQuery}`, { method: "DELETE" });
+      setExceptions(current => current.filter(item => !(item.id === target.id && item.account_user_id === target.account_user_id)));
+      setSelected(null);
+      setDeleteTarget(null);
+      notify(`${target.id} deleted`);
+    } catch (error) {
+      setDeleteError(error.message);
+    } finally {
+      setDeleting(false);
     }
   };
   if (loading) return <><Heading page="exceptions" /><div className="compliance-empty"><Database size={28} /><h3>Loading exception registry</h3><p>Reading exceptions and workflow details from PostgreSQL...</p></div></>;
@@ -218,7 +244,8 @@ export default function Exceptions({ session, notify }) {
               ),
             )}
           </div>
-          <h3>AI Exception Rationale</h3>
+          <h3>{row.rationale.generation_status === "pending" ? "AI Exception Rationale — Pending" : "AI Exception Rationale"}</h3>
+          {row.rationale.generation_status === "pending" && <p className="exception-rationale-notice" role="status">{row.rationale.generation_notice}</p>}
           <Rationale title="Why detected">
             {row.rationale.why_detected}
           </Rationale>
@@ -244,8 +271,31 @@ export default function Exceptions({ session, notify }) {
           <div className="history">
             {row.history.map((event, index) => <p key={`${event.date}-${index}`}>{event.date} - {event.event} ({event.actor})</p>)}
           </div>
+          {(canApprove || (canCreate && row.account_user_id === session.user.user_id)) && <div className="exception-delete-actions">
+            <button type="button" className="btn exception-delete-trigger" disabled={acting || deleting} onClick={() => { setDeleteError(""); setDeleteTarget(row); }}><Trash2 size={16} />Delete exception</button>
+          </div>}
         </Card>}
       </div>
+      <dialog ref={deleteDialog} className="exception-delete-dialog" aria-labelledby="exception-delete-title" aria-describedby="exception-delete-description" onCancel={event => { event.preventDefault(); if (!deleting) setDeleteTarget(null); }}>
+        <div className="exception-delete-dialog-header">
+          <span className="exception-delete-icon"><Trash2 size={21} aria-hidden="true" /></span>
+          <h2 id="exception-delete-title">Delete exception?</h2>
+          <button type="button" className="exception-delete-close" aria-label="Close delete confirmation" disabled={deleting} onClick={() => setDeleteTarget(null)}><X size={18} /></button>
+        </div>
+        <div className="exception-delete-dialog-body">
+          <p id="exception-delete-description">Are you sure you want to delete this exception? The exception and its workflow history will be permanently removed.</p>
+          <dl className="exception-delete-summary">
+            <div><dt>Exception</dt><dd>{deleteTarget?.id}</dd></div>
+            <div><dt>Credit request</dt><dd>{deleteTarget?.credit_request_number}</dd></div>
+          </dl>
+          <p className="exception-delete-warning"><AlertTriangle size={15} aria-hidden="true" />This action cannot be undone.</p>
+          {deleteError && <p role="alert" className="data-message error">{deleteError}</p>}
+        </div>
+        <div className="exception-delete-dialog-footer">
+          <button type="button" className="btn secondary" autoFocus disabled={deleting} onClick={() => setDeleteTarget(null)}>Cancel</button>
+          <button type="button" className="btn exception-delete-button" disabled={deleting} onClick={confirmDelete}><Trash2 size={15} />{deleting ? "Deleting..." : "Delete exception"}</button>
+        </div>
+      </dialog>
     </>
   );
 }

@@ -129,7 +129,8 @@ def inventory(policy_id: int | None = None, user=Depends(current_user)):
             cl.page_number AS source_page,doc.id AS source_document_id,p.source_type,q.status AS quality_status,q.report AS quality_report,q.error_code AS quality_error,q.definition_checksum AS quality_checksum,
             (r.policy_version_id IS NULL OR NOT COALESCE(pv.is_current,false)
              OR p.version<>r.policy_version OR md5(p.summary)<>r.policy_fingerprint) AS review_required,
-            EXISTS(SELECT 1 FROM rule_relationships rel WHERE
+                   rk.payload AS risk_knowledge,
+                   EXISTS(SELECT 1 FROM rule_relationships rel WHERE
                 (rel.rule_version_id=r.id OR rel.related_rule_version_id=r.id)
                 AND rel.relationship_type='Duplicate candidate') AS duplicate_candidate
             FROM policy_rule_versions r JOIN policy_documents p USING(policy_id)
@@ -137,6 +138,7 @@ def inventory(policy_id: int | None = None, user=Depends(current_user)):
             LEFT JOIN policy_versions pv ON pv.id=r.policy_version_id
             LEFT JOIN policy_clauses cl ON cl.id=r.clause_id
             LEFT JOIN inventory_documents doc ON doc.id=cl.document_id
+            LEFT JOIN risk_knowledge_objects rk ON rk.kind='metadata' AND rk.owner_id='' AND rk.id='CPI-RULE-'||r.id::text
             LEFT JOIN LATERAL (SELECT * FROM rule_quality_reports qr WHERE qr.rule_version_id=r.id ORDER BY qr.created_at DESC LIMIT 1) q ON true
             WHERE credit_data.is_quantitative_rule(r.definition)
                 AND (%s::bigint IS NULL OR r.policy_id=%s)
@@ -162,6 +164,8 @@ def details(rule_id: int,user=Depends(current_user)):
         result={'rule':rule,'versions':c.execute('SELECT id,version,status,active,effective_from,effective_to,approved_by,approval_date,superseded_version_id FROM policy_rule_versions WHERE rule_key=%s ORDER BY version DESC',(rule['rule_key'],)).fetchall(),
                 'reviews':c.execute('SELECT * FROM rule_reviews WHERE rule_version_id=%s ORDER BY id',(rule_id,)).fetchall(),
                 'relationships':c.execute('SELECT * FROM rule_relationships WHERE rule_version_id=%s OR related_rule_version_id=%s',(rule_id,rule_id)).fetchall()}
+        knowledge=c.execute("SELECT payload FROM risk_knowledge_objects WHERE kind='metadata' AND owner_id='' AND id=%s",('CPI-RULE-'+str(rule_id),)).fetchone()
+        result['risk_knowledge']=knowledge['payload'] if knowledge else None
     with db_connection() as c:
         result['assessments']=c.execute('SELECT a.id,a.request_id,a.result,a.evaluated_at,run.review_id FROM request_rule_assessments a JOIN rule_assessment_runs run ON run.id=a.run_id AND run.user_id=a.user_id WHERE a.rule_version_id=%s ORDER BY a.evaluated_at DESC LIMIT 100',(rule_id,)).fetchall()
     return result
@@ -189,7 +193,18 @@ def create(payload: GovernedRuleInput,user=Depends(current_user)):
 
 @router.put("/api/policy-rules/{rule_id}")
 def revise(rule_id: int,payload: GovernedRuleInput,user=Depends(current_user)):
-    return store_rule(payload,user,previous=rule_id)
+    row=store_rule(payload,user,previous=rule_id)
+    if str(row.get('extraction_key') or '').startswith('risk-knowledge:'):
+        from ..risk_knowledge.pipeline import refresh_rule_evidence
+        from ..services.automatic_approval import approve_rules
+        try:
+            refresh_rule_evidence(row,user,shared_policy_connection)
+        except ValueError as error:
+            raise HTTPException(422,str(error)) from None
+        approve_rules(shared_policy_connection,[row['id']])
+        with shared_policy_connection() as c:
+            return c.execute('SELECT * FROM policy_rule_versions WHERE id=%s',(row['id'],)).fetchone()
+    return row
 
 @router.post("/api/policy-rules/{rule_id}/actions")
 def action(rule_id: int,payload: Action,user=Depends(current_user)):
@@ -210,7 +225,8 @@ def enqueue_inventory(user,policy_ids=None):
         if existing:raise HTTPException(409,'An inventory generation job is already running')
         policies=c.execute("SELECT policy_id FROM policy_documents WHERE lower(status) IN ('active','pending metadata') AND (%s::bigint[] IS NULL OR policy_id=ANY(%s)) ORDER BY policy_id",(policy_ids,policy_ids)).fetchall()
         if not policies:raise HTTPException(409,'No active policy documents were selected')
-        return c.execute("INSERT INTO rule_inventory_jobs(id,status,policy_ids,created_by,discovered_documents) VALUES (%s,'Queued',%s::jsonb,%s,%s::jsonb) RETURNING *",(str(uuid4()),json.dumps([p['policy_id'] for p in policies]),user['user_id'],json.dumps(documents))).fetchone()
+        from ..risk_knowledge.pipeline import PIPELINE_VERSION
+        return c.execute("INSERT INTO rule_inventory_jobs(id,status,policy_ids,created_by,discovered_documents,report) VALUES (%s,'Queued',%s::jsonb,%s,%s::jsonb,%s::jsonb) RETURNING *",(str(uuid4()),json.dumps([p['policy_id'] for p in policies]),user['user_id'],json.dumps(documents),json.dumps({'pipeline':PIPELINE_VERSION}))).fetchone()
 
 
 @router.get('/api/inventory/documents')
@@ -279,19 +295,22 @@ def propose(policy_id: int,background: BackgroundTasks,user=Depends(current_user
 
 @router.get("/api/inventory/jobs")
 def jobs(user=Depends(current_user)):
+    from ..services.extraction_failures import attach_failures
     with shared_policy_connection() as c:
         c.execute("UPDATE rule_inventory_jobs SET status='Failed',error='Worker interrupted; retry resumes completed batches',finished_at=CURRENT_TIMESTAMP WHERE status IN ('Queued','Running') AND COALESCE(heartbeat_at,created_at)<CURRENT_TIMESTAMP-INTERVAL '30 minutes'")
-        return c.execute('SELECT * FROM rule_inventory_jobs ORDER BY created_at DESC LIMIT 20').fetchall()
+        rows=c.execute('SELECT * FROM rule_inventory_jobs ORDER BY created_at DESC LIMIT 20').fetchall()
+        return attach_failures(rows,c)
 
 @router.get("/api/inventory/jobs/{job_id}")
 def job_status(job_id: str,user=Depends(current_user)):
+    from ..services.extraction_failures import attach_failures
     from uuid import UUID
     try:UUID(job_id)
     except ValueError:raise HTTPException(422,'Invalid inventory job ID')
     with shared_policy_connection() as c:
         job=c.execute('SELECT * FROM rule_inventory_jobs WHERE id=%s',(job_id,)).fetchone()
         if not job:raise HTTPException(404,'Inventory job not found')
-        return job
+        return attach_failures([job],c)[0]
 
 @router.get("/api/inventory/config")
 def inventory_config(user=Depends(current_user)):

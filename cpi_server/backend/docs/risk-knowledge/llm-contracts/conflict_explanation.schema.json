@@ -1,0 +1,20 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "explanation": {
+      "title": "Explanation",
+      "type": "string"
+    },
+    "requires_review": {
+      "const": true,
+      "default": true,
+      "title": "Requires Review",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "explanation"
+  ],
+  "title": "ConflictExplanation",
+  "type": "object"
+}

@@ -1,14 +1,17 @@
-import json
 from fastapi import APIRouter, Depends, HTTPException
 from mistralai.client import Mistral
-from ..config import MISTRAL_API_KEY, MISTRAL_TIMEOUT_MS
+from ..config import MISTRAL_API_KEY, MISTRAL_TIMEOUT_MS, MISTRAL_POLICY_MODEL
 from ..database import db_connection
-from ..manufacture_data.policy_generation_service import _json_object, _response_text
+from ..manufacture_data.policy_generation_service import _json_object
 from ..schemas import ComplianceCopilotRequest, ComplianceReviewRequest
 from ..security import current_user
-from ..services.compliance_agent import GenerativeComplianceReviewAgent, latest_stored_compliance_review
+from ..services.compliance_agent import latest_stored_compliance_review
 from ..telemetry import observe_ai
 from ..services.assessment_request import normalize_request_id
+from ..services.compliance_copilot import copilot_prompt
+from ..services.exception_rationale import _chat_response_text, _retry_delay
+from mistralai.client.utils import BackoffStrategy, RetryConfig
+from time import sleep
 
 router = APIRouter()
 
@@ -40,7 +43,8 @@ def historical_review(review_id: int, user: dict = Depends(current_user)):
     with db_connection() as connection:
         row=connection.execute("SELECT review_id,review,created_at FROM ai_compliance_reviews WHERE review_id=%s",(review_id,)).fetchone()
     if not row:raise HTTPException(404,"Assessment version not found in your account")
-    return {**row['review'],"review_id":row['review_id'],"stored_at":row['created_at'],"cached":True}
+    from ..services.assessment_comparison import refresh_finding_comparisons
+    return refresh_finding_comparisons({**row['review'],"review_id":row['review_id'],"stored_at":row['created_at'],"cached":True})
 
 
 @router.post("/api/compliance-review/run")
@@ -55,49 +59,42 @@ def run_compliance_review(payload: ComplianceReviewRequest, user: dict = Depends
 def compliance_review_copilot(payload: ComplianceCopilotRequest, user: dict = Depends(current_user)):
     if not MISTRAL_API_KEY:
         raise HTTPException(status_code=503, detail="MISTRAL_API_KEY is not configured")
-    with db_connection() as connection:
-        stored = connection.execute("""
-            SELECT review, agent_id
-            FROM ai_compliance_reviews
-            WHERE COALESCE(source_request_id, credit_request_number) = %s
-            ORDER BY created_at DESC, review_id DESC LIMIT 1
-        """, (normalize_request_id(payload.credit_request_number),)).fetchone()
-    if not stored:
+    review = latest_stored_compliance_review(payload.credit_request_number)
+    if not review:
         raise HTTPException(status_code=404, detail="Run the Compliance Review Agent before asking the copilot")
-    review = stored["review"]
-    prompt = f"""
-You are Compliance Copilot. Answer the user's question only from the AI Compliance Findings table
-and review metadata supplied below. Do not use outside facts, invent evidence, or change a finding's
-classification. If the table does not contain enough information, say so clearly.
-
-Review metadata:
-{json.dumps({key: review.get(key) for key in ('overall_score', 'compliance_status', 'executive_summary', 'recommendations')}, default=str)}
-
-AI Compliance Findings table:
-{json.dumps(review.get('findings', []), default=str)}
-
-User question: {payload.question}
-
-Return only valid JSON: {{"answer":"clear, concise answer grounded in the table"}}
-""".strip()
+    prompt = copilot_prompt(review, payload.question)
     try:
         with observe_ai(
             "Compliance Review", "compliance_copilot", user["user_id"],
             normalize_request_id(payload.credit_request_number), input_payload=prompt,
             retrieved_sources=["AI Compliance Findings", "Compliance review metadata"],
         ) as telemetry:
-            with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=MISTRAL_TIMEOUT_MS) as client:
-                response = client.beta.conversations.start(
-                    agent_id=GenerativeComplianceReviewAgent()._agent_id(), inputs=prompt, store=False,
-                )
+            with Mistral(api_key=MISTRAL_API_KEY, timeout_ms=min(MISTRAL_TIMEOUT_MS, 30000)) as client:
+                for attempt in range(2):
+                    try:
+                        response = client.chat.complete(
+                            model=MISTRAL_POLICY_MODEL,
+                            messages=[{"role": "user", "content": prompt}],
+                            temperature=0.1, max_tokens=1200,
+                            response_format={"type": "json_object"},
+                            retries=RetryConfig('none', BackoffStrategy(0, 0, 1, 0), False),
+                        )
+                        break
+                    except Exception as error:
+                        delay = _retry_delay(error, attempt)
+                        if getattr(error, 'status_code', None) != 429 or attempt or delay > 30:
+                            raise
+                        sleep(delay)
             telemetry["response"] = response
-        answer = str(_json_object(_response_text(response)).get("answer", "")).strip()
+        answer = _json_object(_chat_response_text(response)).get("answer", "")
     except Exception as error:
-        raise HTTPException(status_code=502, detail=f"Compliance Copilot failed: {error}") from error
-    if not answer:
+        if getattr(error, 'status_code', None) == 429:
+            raise HTTPException(429, "Compliance Copilot is temporarily rate-limited. Please try again in a minute.") from error
+        raise HTTPException(status_code=502, detail="Compliance Copilot could not complete the AI request. Please try again.") from error
+    if not isinstance(answer, str) or not answer.strip():
         raise HTTPException(status_code=502, detail="Compliance Copilot returned an empty answer")
     return {
-        "answer": answer,
+        "answer": answer.strip(),
         "credit_request_number": normalize_request_id(payload.credit_request_number),
         "generated_by": "Mistral Credit Compliance Review Agent",
         "user": user["user_id"],

@@ -251,8 +251,21 @@ def latest_stored_compliance_review(request_number: str) -> dict | None:
     if not stored:
         return None
     review = dict(stored["review"])
+    # Removed rule versions invalidate the entire saved assessment. Filtering
+    # findings alone would leave its score, summary and policy mappings stale.
+    rule_ids = {int(rule['id']) for rule in review.get('rule_snapshots', [])}
+    rule_ids.update(int(finding['rule_version_id']) for finding in review.get('findings', [])
+                    if finding.get('rule_version_id') is not None)
+    if rule_ids:
+        with shared_policy_connection() as connection:
+            retained = connection.execute(
+                'SELECT id FROM policy_rule_versions WHERE id=ANY(%s)', (sorted(rule_ids),),
+            ).fetchall()
+        if rule_ids != {row['id'] for row in retained}:
+            return None
     review["review_id"] = stored["review_id"]
     review["stored_at"] = stored["created_at"]
     review["cached"] = True
-    return review
+    from .assessment_comparison import refresh_finding_comparisons
+    return refresh_finding_comparisons(review)
 

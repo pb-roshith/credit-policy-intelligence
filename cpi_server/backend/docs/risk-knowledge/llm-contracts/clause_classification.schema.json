@@ -1,0 +1,17 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "categories": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Categories",
+      "type": "array"
+    }
+  },
+  "required": [
+    "categories"
+  ],
+  "title": "Classifications",
+  "type": "object"
+}

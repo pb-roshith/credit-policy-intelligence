@@ -105,6 +105,25 @@ def create_exception(payload: CreateExceptionRequest, user: dict = Depends(curre
     row = run_db_transaction(persist)
     return dict(row)
 
+@router.delete("/api/exceptions/{exception_id}")
+@retry_on_db_conflict
+def delete_exception(exception_id: str, account_user_id: str | None = None, user: dict = Depends(current_user)):
+    if user.get('role') not in {'relationship_manager', 'credit_analyst'}:
+        raise HTTPException(403, 'Exception workflow access is unavailable.')
+    account = account_user_id or user['user_id']
+    if account != user['user_id'] and user['role'] != 'credit_analyst':
+        raise HTTPException(403, 'You can only delete your own exceptions.')
+    factory = shared_policy_connection if user['role'] == 'credit_analyst' else db_connection
+    with factory() as connection:
+        deleted = connection.execute(
+            'DELETE FROM "user".credit_request_exceptions WHERE user_id=%s AND exception_id=%s RETURNING exception_id',
+            (account, exception_id),
+        ).fetchone()
+        if not deleted:
+            raise HTTPException(404, 'Exception not found')
+    return {"exception_id": exception_id, "account_user_id": account, "deleted": True}
+
+
 @router.post("/api/exceptions/{exception_id}/action")
 @retry_on_db_conflict
 def exception_action(exception_id: str, payload: ExceptionAction, _: dict = Depends(current_user)):

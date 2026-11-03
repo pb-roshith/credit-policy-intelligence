@@ -169,7 +169,7 @@ class EngineTests(unittest.TestCase):
 class InventoryJobTests(unittest.TestCase):
     @patch('app.services.inventory_operations.run_quality_reviews',return_value={})
     @patch('app.services.rule_extraction.shared_policy_connection')
-    @patch('app.services.rule_extraction.process_policy')
+    @patch('app.risk_knowledge.pipeline.process_policy')
     def test_policy_failure_does_not_stop_other_policies(self,process,db,quality):
         import json
         from app.services.rule_extraction import run_inventory_job
@@ -187,8 +187,61 @@ class InventoryJobTests(unittest.TestCase):
         reports=[json.loads(c.args[1][1]) for c in calls if 'report=%s' in c.args[0]]
         self.assertEqual(reports[-1]['policies_processed'],2)
         self.assertEqual(reports[-1]['policies_failed'],1)
+
+    @patch('app.services.inventory_operations.run_quality_reviews',return_value={'quality_failed':1})
     @patch('app.services.rule_extraction.shared_policy_connection')
-    @patch('app.services.rule_extraction.process_policy')
+    @patch('app.risk_knowledge.pipeline.process_policy')
+    def test_retry_skips_completed_documents_but_retains_their_counts(self,process,db,quality):
+        import json
+        from app.services.rule_extraction import run_inventory_job
+        connection=db.return_value.__enter__.return_value
+        connection.execute.return_value.fetchone.return_value={'policy_ids':[1,2],'progress':[
+            {'policy_id':1,'status':'Completed','rules_proposed':5},
+            {'policy_id':2,'status':'Completed','partial_result':True,'rules_proposed':2}]}
+        process.return_value={'policy_id':2,'status':'Completed','rules_proposed':3}
+        run_inventory_job('job-1',{'user_id':'analyst'})
+        process.assert_called_once()
+        self.assertEqual(process.call_args.args[0],2)
+        final=next(c for c in reversed(connection.execute.call_args_list) if 'finished_at=' in c.args[0])
+        self.assertEqual(final.args[1][0],'Completed with errors')
+        report=json.loads(final.args[1][1])
+        self.assertEqual(report['rules_proposed'],8)
+        self.assertEqual(report['policies_processed'],2)
+
+    @patch('app.services.inventory_operations.run_quality_reviews',side_effect=ValueError('Review unavailable'))
+    @patch('app.services.rule_extraction.shared_policy_connection')
+    @patch('app.risk_knowledge.pipeline.process_policy')
+    def test_review_crash_finalizes_job_with_error_and_stops_heartbeat(self,process,db,quality):
+        from app.services.rule_extraction import run_inventory_job
+        connection=db.return_value.__enter__.return_value
+        connection.execute.return_value.fetchone.return_value={'policy_ids':[1]}
+        process.return_value={'policy_id':1,'status':'Completed','rules_proposed':3}
+        with patch('app.services.rule_extraction.logger'):
+            run_inventory_job('job-1',{'user_id':'analyst'})
+        final=next(c for c in reversed(connection.execute.call_args_list) if 'finished_at=' in c.args[0])
+        self.assertIn("THEN 'Completed with errors' ELSE 'Failed'",final.args[0])
+        self.assertEqual(final.args[1],('Review unavailable','job-1'))
+
+    @patch('app.services.inventory_operations.run_quality_reviews',return_value={})
+    @patch('app.services.rule_extraction.shared_policy_connection')
+    @patch('app.risk_knowledge.pipeline.process_policy')
+    def test_long_model_calls_keep_job_alive_without_waiting_for_a_batch(self,process,db,quality):
+        from app.services.rule_extraction import run_inventory_job
+        connection=db.return_value.__enter__.return_value
+        connection.execute.return_value.fetchone.return_value={'policy_ids':[1]}
+        process.return_value={'policy_id':1,'status':'Completed','rules_proposed':1}
+        with patch('threading.Event') as event,patch('threading.Thread') as thread, \
+             patch('app.services.rule_extraction._process_inventory_job'):
+            event.return_value.wait.side_effect=[False,True]
+            def start():
+                thread.call_args.kwargs['target']()
+            thread.return_value.start.side_effect=start
+            run_inventory_job('job-1',{'user_id':'analyst'})
+            event.return_value.set.assert_called_once()
+            thread.return_value.join.assert_called_once()
+        self.assertTrue(any("WHERE id=%s AND status='Running'" in c.args[0] for c in connection.execute.call_args_list))
+    @patch('app.services.rule_extraction.shared_policy_connection')
+    @patch('app.risk_knowledge.pipeline.process_policy')
     def test_unclaimed_job_does_not_run_twice(self,process,db):
         from app.services.rule_extraction import run_inventory_job
         db.return_value.__enter__.return_value.execute.return_value.fetchone.return_value=None

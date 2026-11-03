@@ -26,3 +26,8 @@ test('uses the latest result per document and ignores unrelated documents', () =
 test('handles a job that has not started', () => {
   assert.deepEqual(extractionProgress(), {total: 0, completed: 0, failed: 0, processed: 0});
 });
+
+test('partial documents count as processed and needing retry',()=>{
+  assert.deepEqual(extractionProgress({policy_ids:[1],progress:[{policy_id:1,status:'Completed with errors'}]}),
+    {total:1,completed:1,failed:1,processed:1});
+});

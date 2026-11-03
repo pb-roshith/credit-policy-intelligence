@@ -19,6 +19,8 @@ EXTRACTION PRINCIPLES
 THRESHOLDS
 Extract only explicitly stated numbers, ranges or categorical values. Preserve units, currency, percentage, period and basis. Distinguish HARD_LIMIT, WARNING and TARGET only when supported. Keep numeric literals in their stated unit (25 million is 25 and unit million, not 25000000). Do not compute or convert currencies. Missing referenced schedules never authorize an inferred threshold.
 
+For "USD 500 million", return threshold_value 500 and threshold_unit "USD million". For a range "USD 10 million to USD 50 million", return lower_bound 10, upper_bound 50 and threshold_unit "USD million". Never expand amounts into base currency, convert percentages to fractions, or turn annual/quarterly wording into an unstated numerical count. The complete supporting excerpt must contain every retained number and its unit.
+
 CALCULATIONS
 Capture calculation_logic only when explicitly stated or the direct arithmetic relationship is unambiguous. Otherwise it is null. List all required input fields with their definitions and units where stated. Never calculate an observed value or substitute assumptions. Use field names in formulas: field_a / field_b, (field_a / field_b) * 100, or a direct field name, only when the source supports that calculation. Other explicit formulas may be preserved as text for expert review; they will not be executed as code.
 

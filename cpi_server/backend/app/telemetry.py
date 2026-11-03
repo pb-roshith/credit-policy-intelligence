@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from functools import wraps
 from datetime import datetime, timezone
 import json
 from time import perf_counter
@@ -9,7 +10,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.trace import Status, StatusCode
 
 from .config import MISTRAL_POLICY_MODEL
-from .database import run_db_transaction
+from .database import run_db_transaction, account_user_id
 
 
 if trace.get_tracer_provider().__class__.__name__ == "ProxyTracerProvider":
@@ -18,12 +19,47 @@ if trace.get_tracer_provider().__class__.__name__ == "ProxyTracerProvider":
 tracer = trace.get_tracer("credit-policy-intelligence.ai", "1.0.0")
 
 
+def record_ai_call(feature, operation, call, *, telemetry_target=None, telemetry_model=None, **arguments):
+    """Record a provider request in the initiating account, including worker calls."""
+    owner = account_user_id.get()
+    # Offline scripts/tests without an account must not create account telemetry.
+    if not owner:
+        return call(**arguments)
+    payload = arguments.get('messages', arguments.get('inputs'))
+    if payload is None:
+        payload = (arguments.get('json') or {}).get('messages', [])
+    model = telemetry_model or arguments.get('model') or MISTRAL_POLICY_MODEL
+    with observe_ai(feature, operation, owner, telemetry_target, model=model,
+                    input_payload=json.dumps(payload, default=str),
+                    retrieved_sources=['Supplied policy and request context']) as capture:
+        response = call(**arguments)
+        if hasattr(response, 'status_code') and isinstance(response.status_code, int) and response.status_code >= 400:
+            raise ValueError(f'External provider returned HTTP {response.status_code}; response body omitted to protect credentials.')
+        capture['response'] = response
+        return response
+
+
+def account_ai_job(function):
+    """Restore the initiating account for background inventory jobs."""
+    @wraps(function)
+    def wrapped(job_id, user, *args, **kwargs):
+        token = account_user_id.set(user['user_id'])
+        try:
+            return function(job_id, user, *args, **kwargs)
+        finally:
+            account_user_id.reset(token)
+    return wrapped
+
+
 def _usage(response) -> tuple[int | None, int | None, int | None]:
     """Extract provider token usage without estimating missing values."""
     try:
         value = response.model_dump(mode="json")
     except Exception:
-        value = getattr(response, "__dict__", {})
+        try:
+            value = response.json()
+        except Exception:
+            value = getattr(response, "__dict__", {})
     candidates = []
 
     visited: set[int] = set()
@@ -60,6 +96,16 @@ def _response_text(response) -> str | None:
     """Return a readable provider response without depending on one SDK shape."""
     if response is None:
         return None
+    # Configurable OpenAI-compatible providers return an HTTP response.
+    if hasattr(response, 'json'):
+        try:
+            payload = response.json()
+            if isinstance(payload, dict):
+                choices = payload.get('choices') or []
+                if choices:
+                    return choices[0].get('message', {}).get('content') or json.dumps(payload)
+        except Exception:
+            pass
     choices = getattr(response, "choices", None) or []
     if choices:
         content = getattr(getattr(choices[0], "message", None), "content", None)

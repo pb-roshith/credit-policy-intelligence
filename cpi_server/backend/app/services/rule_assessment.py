@@ -77,11 +77,17 @@ def active_rule_candidates(evaluation_date=None):
             JOIN policy_clauses cl ON cl.id=r.clause_id
             JOIN inventory_documents doc ON doc.id=cl.document_id
             WHERE credit_data.is_quantitative_rule(r.definition)
+                AND (COALESCE(r.extraction_key,'') NOT LIKE 'risk-knowledge:%%'
+                     OR (r.status='Active' AND r.active AND r.approved_by IS NOT NULL)
+                     OR r.status='Approved')
                 AND pv.is_current AND r.policy_version=p.version AND r.policy_fingerprint=md5(p.summary)
                 AND (%s::date IS NULL OR (r.effective_from<=%s AND (r.effective_to IS NULL OR r.effective_to>=%s) AND pv.effective_date<=%s))
                 AND NOT EXISTS (SELECT 1 FROM policy_rule_versions newer
                     WHERE newer.rule_key=r.rule_key AND newer.version>r.version
-                    AND newer.policy_version_id=r.policy_version_id)
+                    AND newer.policy_version_id=r.policy_version_id
+                    AND (COALESCE(newer.extraction_key,'') NOT LIKE 'risk-knowledge:%%'
+                         OR (newer.status='Active' AND newer.active AND newer.approved_by IS NOT NULL)
+                         OR newer.status='Approved'))
             ORDER BY r.id""",(evaluation_date,evaluation_date,evaluation_date,evaluation_date)).fetchall()
 
 
@@ -94,22 +100,42 @@ def run_rule_assessment(request_number,user_id,*,user=None):
     is_local=request_number.startswith('CR-')
     now=datetime.now(timezone.utc)
     rules=active_rule_candidates(now.date())
-    if not rules:raise HTTPException(409,'No current rule versions are effective. Generate rules in the Policy Rule Library and check their source versions and effective dates.')
+    if not rules:raise HTTPException(409,'No current rule versions are effective. Generate rules in the Policy Rule Library if none exist, and check their source versions and effective dates. Approved rules are available automatically; no activation is required.')
     from .policy_scope import policy_first_applicability
     applicability_report=policy_first_applicability(proposal,rules,proposal.get('status'),now.date())
     applicable_ids={d['candidate_id'] for d in applicability_report['decisions']
                     if d['candidate_type']=='Rule' and (d['applicability']=='Applicable' or proposal.get('_canonical_record') and d['applicability']=='Unable to Determine')}
     applicable_rules=[rule for rule in rules if str(rule['id']) in applicable_ids]
+    from ..manufacture_data.assessment_data import (ACTUAL_GENERATOR_VERSION,
+        manufacture_assessment_inputs, supplement_actual_resolution, manufacture_observed_actual)
+    assessment_data,manufactured_inputs=manufacture_assessment_inputs(request_number,proposal,applicable_rules,now.date())
     findings=[];snapshots=[]
     for rule in applicable_rules:
         d=rule['definition']
         from .credit_data import resolve_actual
         record=proposal.get('_canonical_record')
         resolution=resolve_actual(rule,record,as_of=now.date()) if record else None
-        evaluation=resolution['evaluation'] if resolution else execute_rule(d,proposal,now.date())
+        if resolution:
+            resolution=supplement_actual_resolution(rule,resolution,assessment_data,manufactured_inputs,now.date())
+        evaluation=resolution['evaluation'] if resolution else execute_rule(d,assessment_data,now.date())
+        evaluation,manufactured_actual=manufacture_observed_actual(request_number,rule,evaluation,now.date())
+        if manufactured_actual:
+            manufactured_inputs[manufactured_actual['rule_field']]=manufactured_actual['value']
+            if resolution:
+                from copy import deepcopy
+                resolution=deepcopy(resolution)
+                resolution['actual_value']=manufactured_actual['value']
+                resolution['actual_provenance']=manufactured_actual['provenance']
+                resolution['resolved_fields'].append(manufactured_actual)
+                resolution['provenance'].append(manufactured_actual['provenance'])
         evidence=[{'key':'policy_clause','source':rule['file_name'],'reference':f"document:{rule['document_id']}/clause:{rule['clause_id']}",'value':d['source_excerpt'],'checksum':rule['checksum']}]
-        evidence.extend({'key':field,'source':proposal.get('data_source') or 'CPI stored request data','reference':f'request:{request_number}/field:{field}','value':value} for field,value in evaluation['input_values'].items())
-        evidence.extend(item for item in proposal['evidence'] if isinstance(item,dict) and item.get('key') in {req['key'] for req in d.get('evidence_requirements',[])})
+        evidence.extend({'key':field,'source':'Manufactured Demonstration Data' if field in manufactured_inputs else proposal.get('data_source') or 'CPI stored request data','reference':f'request:{request_number}/field:{field}','value':value} for field,value in evaluation['input_values'].items())
+        evidence.extend(item for item in assessment_data['evidence'] if isinstance(item,dict) and item.get('key') in {req['key'] for req in d.get('evidence_requirements',[])})
+        if manufactured_actual:
+            evidence.append({'key':manufactured_actual['rule_field'],'source':'Manufactured Demonstration Data',
+                'source_type':'SYNTHETIC','value':manufactured_actual['value'],
+                'reference':manufactured_actual['provenance']['source_identifier'],
+                'provenance':manufactured_actual['provenance']})
         if resolution:
             from .credit_data import provenance_sources
             evidence.extend({'key':p['attribute_name'],'source':p['source_type'],'reference':p.get('source_identifier'),'value':p['value'],'provenance':p} for p in resolution['provenance'])
@@ -117,11 +143,14 @@ def run_rule_assessment(request_number,user_id,*,user=None):
            'rule_id':rule['rule_entity_id'],'rule_version_id':rule['id'],'rule_version':rule['version'],'rule_code':rule['rule_code'],'clause_id':rule['clause_id'],
            'source_section':rule['section_heading'],'source_clause':rule['clause_number'],'source_page':rule['page_number'],'source_document_id':rule['document_id'],
            'rule_name':d['rule_name'],'check_question':d.get('check_question'),'operator':d.get('operator'),'threshold_unit':d.get('threshold_unit'),'approval_or_escalation_requirement':d.get('approval_or_escalation_requirement'),'workflow_stage':proposal.get('status'),'request_id':request_number,'evaluated_at':now.isoformat(),
-           'rule_type':d.get('rule_type'),'synthetic_inputs':[key for key in evaluation['input_values'] if key in proposal.get('synthetic_fields',[])],
+           'rule_type':d.get('rule_type'),'synthetic_inputs':[key for key in evaluation['input_values'] if key in manufactured_inputs or key in proposal.get('synthetic_fields',[])],
            'evidence':d['source_excerpt'],'evidence_references':evidence,'data_source':d.get('data_source'),
            'actual':str(evaluation['observed_value']) if evaluation['observed_value'] is not None else 'Unavailable','threshold':expected_condition(d),'expected_condition':expected_condition(d),
            'policy_clause':d['rule_name'],'rationale':evaluation['applicability_reason'],'evaluated_values':evaluation['input_values']}
         findings.append(f);snapshots.append(dict(rule))
+        if f['synthetic_inputs']:
+            f['actual_sources']=['SYNTHETIC']
+            f['actual_unit']=d.get('threshold_unit')
         if resolution:
             f['actual_data_resolution']={k:v for k,v in resolution.items() if k not in ('evaluation','engine_data')}
             f['actual_unit']=resolution['unit']
@@ -154,6 +183,8 @@ def run_rule_assessment(request_number,user_id,*,user=None):
             f['severity']={'Pass':'PASS','Warning':'WARNING','Breach':'BREACH'}.get(combined)
             if unknown and combined=='Manual Review Required':f['missing_inputs'].append('Unresolved '+operator_name+' requirement')
             f['applicability_reason']+='; '+operator_name+' dependency outcomes: '+', '.join(results)
+    from .assessment_comparison import refresh_finding_comparisons
+    findings=refresh_finding_comparisons({'findings':findings,'rule_snapshots':snapshots})['findings']
     explain_findings(findings)
     counts={status:sum(f.get('severity')==status for f in findings) for status in ('PASS','WARNING','BREACH')}
     outcomes={status:sum(f['result']==status for f in findings) for status in ('Pass','Warning','Breach','Not Applicable','Unable to Assess','Manual Review Required')}
@@ -168,6 +199,9 @@ def run_rule_assessment(request_number,user_id,*,user=None):
             'executive_summary':f"{assessed} checks resolved; {unknown} require data or manual review. Policy scope was checked first; only applicable rules within applicable policies were evaluated.",
             'evaluated_at':now.isoformat(),'engine_version':ENGINE_VERSION,'recommendations':[],'cached':False}
     result['applicability_report']=applicability_report
+    result['manufactured_inputs']=manufactured_inputs
+    result['actual_generator_version']=ACTUAL_GENERATOR_VERSION
+    result['demonstration_data_used']=any(f.get('synthetic_inputs') or 'SYNTHETIC' in f.get('actual_sources',[]) or any(e.get('source_type')=='SYNTHETIC' for e in f['evidence_references']) for f in findings)
     serialized=json.dumps(result,default=str)
     def persist(c):
         stored=c.execute('INSERT INTO ai_compliance_reviews(credit_request_number,source_request_id,agent_id,review,created_by) VALUES (%s,%s,%s,%s::jsonb,%s) RETURNING review_id',(request_number if is_local else None,request_number,'approved-rule-library',serialized,user_id)).fetchone()
