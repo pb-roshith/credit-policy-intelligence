@@ -23,7 +23,7 @@ class KnowledgeProviderTests(unittest.TestCase):
         except ValueError as error:invalid=error
         expected=Classifications(categories=['SCOPE','OTHER'])
         response=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(parsed=expected))])
-        with patch('mistralai.client.Mistral') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
+        with patch('app.ai_provider.AIClient') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
             parse=client.return_value.__enter__.return_value.chat.parse
             parse.side_effect=[invalid,response]
             result=MistralLLMProvider().run('clause_classification',{'text':'Purpose and scope of this policy.'})
@@ -36,7 +36,7 @@ class KnowledgeProviderTests(unittest.TestCase):
     def test_unsupported_category_is_not_reported_as_truncated_json(self):
         try:Classifications(categories=['PURPOSE'])
         except ValueError as error:invalid=error
-        with patch('mistralai.client.Mistral') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
+        with patch('app.ai_provider.AIClient') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
             parse=client.return_value.__enter__.return_value.chat.parse
             parse.side_effect=invalid
             with self.assertRaisesRegex(ValueError,'AI returned an unsupported clause category after 3 attempts'):
@@ -45,7 +45,7 @@ class KnowledgeProviderTests(unittest.TestCase):
     def test_network_timeout_is_retried_with_backoff(self):
         expected=Classifications(categories=['RULE'])
         response=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(parsed=expected))])
-        with patch('mistralai.client.Mistral') as client,patch('app.config.MISTRAL_API_KEY','test-key'), \
+        with patch('app.ai_provider.AIClient') as client,patch('app.config.MISTRAL_API_KEY','test-key'), \
              patch('app.risk_knowledge.llm.sleep') as sleep:
             parse=client.return_value.__enter__.return_value.chat.parse
             parse.side_effect=[httpx.ReadTimeout('Model timed out'),response]
@@ -58,7 +58,7 @@ class KnowledgeProviderTests(unittest.TestCase):
             def __init__(self,status):self.status_code=status
         expected=Classifications(categories=['RULE'])
         response=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(parsed=expected))])
-        with patch('mistralai.client.Mistral') as client,patch('app.config.MISTRAL_API_KEY','test-key'), \
+        with patch('app.ai_provider.AIClient') as client,patch('app.config.MISTRAL_API_KEY','test-key'), \
              patch('app.risk_knowledge.llm.sleep'):
             parse=client.return_value.__enter__.return_value.chat.parse
             parse.side_effect=[ProviderError(429),response]
@@ -71,7 +71,7 @@ class KnowledgeProviderTests(unittest.TestCase):
     def test_truncated_json_is_retried_without_accepting_partial_output(self):
         expected=Classifications(categories=['RULE'])
         response=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(parsed=expected))])
-        with patch('mistralai.client.Mistral') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
+        with patch('app.ai_provider.AIClient') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
             parse=client.return_value.__enter__.return_value.chat.parse
             parse.side_effect=[json.JSONDecodeError('Unterminated string','{"categories":"',14),response]
             result=MistralLLMProvider().run('clause_classification',{'text':'Must comply.'})
@@ -79,7 +79,7 @@ class KnowledgeProviderTests(unittest.TestCase):
         self.assertEqual(parse.call_count,2)
 
     def test_repeated_truncation_has_bounded_retries_and_actionable_error(self):
-        with patch('mistralai.client.Mistral') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
+        with patch('app.ai_provider.AIClient') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
             parse=client.return_value.__enter__.return_value.chat.parse
             parse.side_effect=json.JSONDecodeError('Unterminated string','{"items":"',10)
             with self.assertRaisesRegex(ValueError,'clause_classification: AI returned incomplete.*3 attempts'):
@@ -90,7 +90,7 @@ class KnowledgeProviderTests(unittest.TestCase):
         parent=Concept(concept_id='RATING',preferred_name='Internal rating',data_type='STRING',
             metadata={'key_flag':'FK'},source=Provenance(document_id='SCHEMA',document_name='Model.xlsx',
                 origin='SOURCE_SCHEMA',passage='Original schema definition',cell='A2:F2'))
-        with patch('mistralai.client.Mistral') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
+        with patch('app.ai_provider.AIClient') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
             def parse(**kwargs):
                 schema=kwargs['response_format']
                 self.assertEqual(schema.model_json_schema()['properties']['items']['maxItems'],8)
@@ -105,7 +105,7 @@ class KnowledgeProviderTests(unittest.TestCase):
         self.assertEqual(result.items[0].status,'AI_PROPOSED')
 
     def test_ontology_schema_restricts_both_endpoints_to_supplied_ids(self):
-        with patch('mistralai.client.Mistral') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
+        with patch('app.ai_provider.AIClient') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
             def parse(**kwargs):
                 schema=kwargs['response_format']
                 model=schema.model_json_schema()
@@ -125,7 +125,7 @@ class KnowledgeProviderTests(unittest.TestCase):
     def test_configured_model_returns_typed_task_output(self):
         expected=Classifications(categories=['RULE'])
         response=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(parsed=expected))])
-        with patch('mistralai.client.Mistral') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
+        with patch('app.ai_provider.AIClient') as client,patch('app.config.MISTRAL_API_KEY','test-key'):
             parse=client.return_value.__enter__.return_value.chat.parse
             parse.return_value=response
             result=MistralLLMProvider().run('clause_classification',{'text':'Exposure must not exceed 100 USD.'})

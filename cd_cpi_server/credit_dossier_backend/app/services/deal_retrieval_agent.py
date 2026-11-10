@@ -1,7 +1,7 @@
 """Hosted read-only agent; records follow the verified user's role and ownership."""
 import json
 import logging
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 from mistralai.client.models import FunctionResultEntry
 from sqlalchemy import text
 from app.config import settings

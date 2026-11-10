@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 from app.config import settings
 from app.database import Base, engine, SessionLocal
 import app.models  # Register the canonical deal and agent tables.

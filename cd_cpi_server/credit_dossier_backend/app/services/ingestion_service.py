@@ -35,7 +35,7 @@ _mistral_client = None
 def _get_mistral():
     global _mistral_client
     if _mistral_client is None:
-        from mistralai.client import Mistral
+        from app.ai_provider import AIClient as Mistral
         _mistral_client = Mistral(api_key=settings.MISTRAL_API_KEY)
     return _mistral_client
 

@@ -1,7 +1,7 @@
 import json
 
 from fastapi import HTTPException
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 from mistralai.client.errors import SDKError
 
 from ..config import MISTRAL_API_KEY, MISTRAL_POLICY_MODEL

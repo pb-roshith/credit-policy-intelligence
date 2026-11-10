@@ -73,7 +73,7 @@ class MistralLLMProvider(LLMProvider):
     name='MistralLLMProvider'
 
     def run(self,task,context):
-        from mistralai.client import Mistral
+        from app.ai_provider import AIClient as Mistral
         from mistralai.client.utils.retries import RetryConfig,BackoffStrategy
         from ..config import MISTRAL_API_KEY,MISTRAL_POLICY_MODEL,MISTRAL_TIMEOUT_MS
         if not MISTRAL_API_KEY:
@@ -238,7 +238,7 @@ class MockLLMProvider(LLMProvider):
 
 def provider_from_env(default='mistral'):
     name = os.environ.get('LLM_PROVIDER',default).lower()
-    providers={'mock':MockLLMProvider,'external':ConfigurableLLMProvider,'mistral':MistralLLMProvider}
+    providers={'mock':MockLLMProvider,'external':ConfigurableLLMProvider,'mistral':MistralLLMProvider,'gemini':MistralLLMProvider}
     if name not in providers:
-        raise ValueError('LLM_PROVIDER must be mistral, mock or external')
+        raise ValueError('LLM_PROVIDER must be mistral, gemini, mock or external')
     return providers[name]()

@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 import time
 
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 
 from ..config import MISTRAL_API_KEY, MISTRAL_MANUFACTURING_TIMEOUT_MS, POLICY_SOURCE_DIR, MISTRAL_POLICY_MODEL
 from ..database import db_connection

@@ -6,7 +6,7 @@ import json
 import logging
 
 from mcp.server.fastmcp import FastMCP
-from mistralai.client import Mistral
+from ai_provider import AIClient as Mistral
 
 from catalog import PDF_FILES, TABLE_NAMES
 from database import (

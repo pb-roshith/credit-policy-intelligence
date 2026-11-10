@@ -46,3 +46,6 @@ cpi_server/docs/credit-data-coverage/
 
 # Local inventory backups contain policy and assessment history.
 cpi_server/backend/quantitative-inventory-backup-*.json
+
+# Local Gemini agents and document libraries
+.ai-data/

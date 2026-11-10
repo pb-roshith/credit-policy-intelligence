@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import time
 
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import LETTER

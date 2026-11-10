@@ -3,7 +3,7 @@ import math
 from time import sleep
 
 from fastapi import HTTPException
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 from mistralai.client.utils import BackoffStrategy, RetryConfig
 
 from ..config import MISTRAL_API_KEY, MISTRAL_POLICY_MODEL, MISTRAL_TIMEOUT_MS

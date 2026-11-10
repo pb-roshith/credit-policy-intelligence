@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import json
 from fastapi import HTTPException
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 from ..config import COMPLIANCE_AGENT_LOCK, MISTRAL_API_KEY, MISTRAL_POLICY_MODEL, MISTRAL_TIMEOUT_MS
 from ..database import db_connection, run_db_transaction, shared_policy_connection
 from ..manufacture_data.policy_generation_service import _json_object, _response_text, _resources

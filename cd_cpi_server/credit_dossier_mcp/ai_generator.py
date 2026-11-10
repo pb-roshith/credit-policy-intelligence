@@ -7,7 +7,7 @@ import logging
 import re
 from typing import Any
 
-from mistralai.client import Mistral
+from ai_provider import AIClient as Mistral
 
 from catalog import TABLE_COLUMNS, document_sections, document_summary
 from settings import settings

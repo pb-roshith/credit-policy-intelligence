@@ -9,7 +9,7 @@ import logging
 from typing import Callable
 from xml.sax.saxutils import escape
 
-from mistralai.client import Mistral
+from ai_provider import AIClient as Mistral
 from reportlab import rl_config
 
 # CVE-2020-28463: synthetic PDFs do not retrieve remote or local resources.
@@ -266,6 +266,14 @@ def upload_pdfs_to_mistral(
     library_id = company.get("mistral_library_id")
     uploaded_count = 0
     try:
+        if library_id:
+            from mistralai.client.errors import SDKError
+            try:
+                client.beta.libraries.get(library_id=library_id)
+            except SDKError as error:
+                if error.status_code != 404:
+                    raise
+                library_id = None
         if not library_id:
             library_id = _create_library(client, context)
             update_company_library(company["id"], library_id)
@@ -284,6 +292,7 @@ def upload_pdfs_to_mistral(
             is_current = (
                 existing_document
                 and existing_document.get("mistral_document_id")
+                and (settings.ai_provider != "gemini" or existing_document["mistral_document_id"].startswith("gemini-"))
                 and int(existing_document.get("generator_version") or 1)
                 >= GENERATOR_VERSION
             )

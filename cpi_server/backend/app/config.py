@@ -55,6 +55,15 @@ CORS_ORIGINS = [
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:root@localhost:5432/credit_policy_intelligence")
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "")
 MISTRAL_POLICY_MODEL = os.getenv("MISTRAL_POLICY_MODEL", "mistral-medium-latest")
+AI_PROVIDER = os.getenv("AI_PROVIDER", "mistral").strip().lower()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+if AI_PROVIDER not in {"mistral", "gemini"}:
+    raise ValueError("AI_PROVIDER must be mistral or gemini")
+# Existing call sites use these aliases for the active provider.
+if AI_PROVIDER == "gemini":
+    MISTRAL_API_KEY = GEMINI_API_KEY
+    MISTRAL_POLICY_MODEL = GEMINI_MODEL
 MISTRAL_TIMEOUT_MS = int(os.getenv("MISTRAL_TIMEOUT_MS", "90000"))
 SHARED_DEAL_API_URL = os.getenv("SHARED_DEAL_API_URL", "http://127.0.0.1:8003").rstrip("/")
 SHARED_DEAL_API_KEY = os.getenv("SHARED_DEAL_API_KEY", "")

@@ -141,7 +141,8 @@ def observe_ai(feature: str, operation: str, user_id: str, target: str | None = 
     }
     error = None
     with tracer.start_as_current_span(f"ai.{operation}") as span:
-        span.set_attribute("gen_ai.system", "mistral_ai")
+        from .config import AI_PROVIDER
+        span.set_attribute("gen_ai.system", "google_genai" if AI_PROVIDER == "gemini" else "mistral_ai")
         span.set_attribute("gen_ai.request.model", model)
         span.set_attribute("cpi.ai.feature", feature)
         span.set_attribute("cpi.ai.operation", operation)
@@ -170,15 +171,15 @@ def observe_ai(feature: str, operation: str, user_id: str, target: str | None = 
                 {"name": "Live sources retrieved", "duration_ms": None, "status": "success",
                  "timestamp": started_at.isoformat(), "source_count": len(sources), "sources": sources,
                  "description": f"{len(sources)} source{'s were' if len(sources) != 1 else ' was'} retrieved and grounded into the request."},
-                {"name": "Request sent to Mistral", "duration_ms": None, "status": "success",
+                {"name": "Request sent to AI provider", "duration_ms": None, "status": "success",
                  "timestamp": started_at.isoformat(), "model": model,
                  "input_characters": len(response_holder.get("input") or ""),
                  "description": f"The grounded prompt was sent to {model}."},
-                {"name": "Mistral response received", "duration_ms": latency_ms,
+                {"name": "AI provider response received", "duration_ms": latency_ms,
                  "status": "failed" if error else "success",
                  "timestamp": ended_at.isoformat(), "output_characters": len(output_payload or ""),
                  "input_tokens": input_tokens, "output_tokens": output_tokens, "total_tokens": total_tokens,
-                 "description": "Mistral returned the model response; this duration is the measured end-to-end AI span." if not error else "The Mistral request failed before a usable response was returned."},
+                 "description": "The AI provider returned the model response; this duration is the measured end-to-end AI span." if not error else "The AI request failed before a usable response was returned."},
                 {"name": "Response captured for audit", "duration_ms": capture_ms, "status": "success",
                  "timestamp": ended_at.isoformat(),
                  "description": "Output, usage, evidence, status, and timing were saved to this audit trace."},

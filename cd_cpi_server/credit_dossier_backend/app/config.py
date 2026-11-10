@@ -4,6 +4,7 @@ PostgreSQL is the only supported application database.
 """
 
 from pathlib import Path
+import os
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -22,6 +23,9 @@ class Settings(BaseSettings):
     )
 
     # ── Mistral AI ──────────────────────────────────────────────
+    AI_PROVIDER: str = "mistral"
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
     MISTRAL_API_KEY: str = "your_mistral_api_key_here"
     MISTRAL_MODEL: str = "mistral-large-latest"
     MISTRAL_AGENT_MODEL: str = "mistral-large-latest"
@@ -159,3 +163,12 @@ class Settings(BaseSettings):
         return [origin.strip().rstrip("/") for origin in self.CORS_ALLOWED_ORIGINS.split("|") if origin.strip()]
 
 settings = Settings()
+settings.AI_PROVIDER = settings.AI_PROVIDER.strip().lower()
+if settings.AI_PROVIDER not in {"gemini", "mistral"}:
+    raise ValueError("AI_PROVIDER must be mistral or gemini")
+os.environ.update(AI_PROVIDER=settings.AI_PROVIDER, GEMINI_API_KEY=settings.GEMINI_API_KEY,
+                  GEMINI_MODEL=settings.GEMINI_MODEL)
+if settings.AI_PROVIDER == "gemini":
+    settings.MISTRAL_API_KEY = settings.GEMINI_API_KEY
+    settings.MISTRAL_MODEL = settings.GEMINI_MODEL
+    settings.MISTRAL_AGENT_MODEL = settings.GEMINI_MODEL

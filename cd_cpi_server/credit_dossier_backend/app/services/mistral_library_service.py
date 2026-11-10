@@ -216,7 +216,7 @@ def conversation_output_content(response: Any) -> str | None:
 def _get_client():
     global _mistral_client
     if _mistral_client is None:
-        from mistralai.client import Mistral
+        from app.ai_provider import AIClient as Mistral
         _mistral_client = Mistral(
             api_key=settings.MISTRAL_API_KEY,
             timeout_ms=_MISTRAL_TIMEOUT_MS,
@@ -1068,6 +1068,9 @@ class MistralLibraryService:
         section_title: str,
     ) -> tuple[float | None, str, dict[str, Any]] | None:
         """Run the configured saved Observability judge for the confidence score."""
+        if settings.AI_PROVIDER == "gemini":
+            # The existing model evaluator below supports either provider.
+            return None
         judge_id = settings.MISTRAL_ACCURACY_JUDGE_ID.strip()
         if not judge_id:
             logger.warning(

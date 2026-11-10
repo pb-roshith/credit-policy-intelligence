@@ -59,3 +59,6 @@ httpx==0.28.1
 
 # Observability & Telemetry (installs OTel SDK + OTLP exporter)
 mistralai[telemetry]==2.7.2
+
+# Gemini SDK (AI_PROVIDER=gemini)
+google-genai>=1.0,<3

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 from mistralai.client.errors import SDKError
 from ..config import MISTRAL_API_KEY, MISTRAL_TIMEOUT_MS, MISTRAL_POLICY_MODEL
 from ..database import shared_policy_connection

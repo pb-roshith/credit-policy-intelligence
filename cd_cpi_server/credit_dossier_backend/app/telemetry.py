@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from mistralai.client import Mistral
+    from app.ai_provider import AIClient as Mistral
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,12 @@ def setup_telemetry(client: "Mistral") -> None:
     Sends traces to Mistral's dedicated telemetry backend.
     """
     global _telemetry_configured, _tracer
+
+    if getattr(client, "provider", None) == "gemini":
+        from opentelemetry import trace
+        _tracer = trace.get_tracer("credit-dossier-api")
+        _telemetry_configured = True
+        return
 
     if _telemetry_configured:
         return
@@ -186,5 +192,10 @@ def set_gen_ai_attributes(span, **kwargs) -> None:
     """
     if span is None:
         return
+    from app.config import settings
+    if settings.AI_PROVIDER == "gemini":
+        kwargs["system"] = "google_genai"
+        if "request_model" in kwargs:
+            kwargs["request_model"] = settings.GEMINI_MODEL
     for key, value in kwargs.items():
         span.set_attribute(f"gen_ai.{key}", str(value))

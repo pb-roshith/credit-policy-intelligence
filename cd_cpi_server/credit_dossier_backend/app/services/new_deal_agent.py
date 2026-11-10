@@ -4,7 +4,7 @@ import json
 import logging
 
 from fastapi import HTTPException
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import text
 

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 
 from ..config import MISTRAL_API_KEY, MISTRAL_MANUFACTURING_TIMEOUT_MS, POLICY_OUTPUT_DIR, MISTRAL_POLICY_MODEL
 from ..database import db_connection

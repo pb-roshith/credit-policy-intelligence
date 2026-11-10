@@ -2,7 +2,7 @@
 import json
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 from mistralai.client.utils.retries import RetryConfig, BackoffStrategy
 from ..config import MISTRAL_API_KEY, MISTRAL_POLICY_MODEL, MISTRAL_TIMEOUT_MS
 from ..telemetry import record_ai_call

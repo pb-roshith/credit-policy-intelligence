@@ -10,7 +10,7 @@ from difflib import SequenceMatcher
 from uuid import uuid4
 from fastapi import HTTPException
 from pydantic import ValidationError
-from mistralai.client import Mistral
+from app.ai_provider import AIClient as Mistral
 from mistralai.client.utils.retries import RetryConfig, BackoffStrategy
 from ..config import MISTRAL_API_KEY, MISTRAL_POLICY_MODEL, MISTRAL_TIMEOUT_MS, RULE_EXTRACTION_RETRIES, RULE_CLAUSE_BATCH_SIZE, RULE_INVENTORY_WORKERS
 from ..database import shared_policy_connection
