@@ -74,6 +74,32 @@ class NetworkXGraphRepository(GraphRepository):
         view = self._graph.to_undirected(as_view=True)
         return set(nx.single_source_shortest_path_length(view, identifier, cutoff=depth))
 
+    def governed_rule_paths(self):
+        """Exact policy -> clause <- approved, current governed rule paths."""
+        paths = {}
+        for rid, node in self._graph.nodes(data=True):
+            if node.get('type') != 'GovernedPolicyRule' or node.get('status') not in ('APPROVED', 'ACTIVE'):
+                continue
+            payload = node.get('payload') or {}
+            if payload.get('review_required') or not payload.get('approved_by'):
+                continue
+            if (payload.get('definition') or {}).get('representation_id'):
+                if not payload.get('graph_compilation_verified'):
+                    continue
+                links=[target for _,target,edge in self._graph.out_edges(rid,data=True)
+                       if edge['predicate']=='COMPILED_FROM' and self._graph.nodes[target].get('type')=='PolicyRequirement'
+                       and self._graph.nodes[target].get('status') in ('VALIDATED','APPROVED')]
+                if len(links)!=1:continue
+            for _, clause, edge in self._graph.out_edges(rid, data=True):
+                if edge['predicate'] != 'DERIVED_FROM' or self._graph.nodes[clause].get('type') != 'PolicyClause':
+                    continue
+                for parent, _, contains in self._graph.in_edges(clause, data=True):
+                    if contains['predicate'] == 'CONTAINS' and self._graph.nodes[parent].get('type') == 'PolicyDocument':
+                        paths[rid] = [parent, clause, rid]
+                        if (payload.get('definition') or {}).get('representation_node_id'):
+                            paths[rid].append(payload['definition']['representation_node_id'])
+        return paths
+
 
 # Compatibility for existing imports; there is only one in-memory implementation.
 InMemoryGraphRepository = NetworkXGraphRepository
@@ -118,7 +144,7 @@ def build_graph(repo, graph):
         edges.append({'id': uid('EDGE-', f'{a}|{p}|{b}'), 'source': a, 'predicate': p, 'target': b,
                       'provenance': source, 'status': status})
     for c in repo.all('taxonomy_concepts'):
-        node(c['concept_id'], c['preferred_name'], c['kind'], c['status'], c['source'], c['risk_domain'])
+        node(c['concept_id'], c['preferred_name'], c['kind'], c['status'], c['source'], c['risk_domain'], payload=c)
     for c in repo.all('taxonomy_concepts'):
         if c['parent_concept'] in nodes:
             edge(c['parent_concept'], 'CONTAINS', c['concept_id'], c['source'], c['status'])

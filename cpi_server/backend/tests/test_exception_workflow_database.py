@@ -38,6 +38,8 @@ class ExceptionWorkflowDatabaseTests(unittest.TestCase):
             app = FastAPI()
             app.include_router(router)
             app.dependency_overrides[current_user] = lambda: user
+            from app.services.semantic_matching import load_matcher
+            fingerprint=load_matcher().fingerprint
             rationale = {key: 'Integration test rationale' for key in (
                 'why_detected', 'business_justification', 'risk_implication',
                 'recommended_remediation', 'escalation_required')}
@@ -50,12 +52,13 @@ class ExceptionWorkflowDatabaseTests(unittest.TestCase):
                  patch('app.routers.exceptions.db_connection', scoped), \
                  patch('app.routers.exceptions.shared_policy_connection', shared), \
                  patch('app.routers.exceptions.run_db_transaction', persist), \
-                 patch('app.routers.exceptions.generate_exception_rationale', return_value=rationale):
+                 patch('app.routers.exceptions.generate_exception_rationale', return_value=rationale), \
+                 patch('app.routers.exceptions.latest_stored_compliance_review',return_value={'knowledge_fingerprint':fingerprint,'findings':[{'rule_id':'urn:workflow-test','policy_id':1}]}):
                 created = []
                 for manager in managers:
                     user['user_id'] = manager['user_id']
                     payload = {'credit_request_number': manager['credit_request_number'],
-                        'exception_type': 'Integration test', 'clause_code': 'TEST-1', 'owner': user['user_id'],
+                        'semantic_rule_id':'urn:workflow-test', 'exception_type': 'Integration test', 'clause_code': 'TEST-1', 'owner': user['user_id'],
                         'due_date': str(date.today() + timedelta(days=30)), 'status': 'Pending Approval',
                         'description': 'Temporary integration test exception.'}
                     response = client.post('/api/exceptions', json=payload)

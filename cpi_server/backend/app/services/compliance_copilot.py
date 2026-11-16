@@ -7,7 +7,7 @@ from collections import Counter
 def copilot_prompt(review: dict, question: str) -> str:
     fields = ('rule_version_id', 'rule_name', 'policy_clause', 'policy_type',
               'result', 'severity', 'actual', 'expected_condition', 'threshold',
-              'variance', 'rationale', 'missing_inputs')
+              'variance', 'rationale', 'missing_inputs', 'evidence', 'matching_trace')
     findings = review.get('findings') or []
     terms = set(re.findall(r'[\w-]{3,}', question.casefold()))
 
@@ -35,6 +35,8 @@ def copilot_prompt(review: dict, question: str) -> str:
         'included_findings': len(selected),
         'omitted_findings': len(findings) - len(selected),
         'findings': selected,
+        'graph_retrieval': {key:review.get('applicability_report',{}).get(key) for key in
+            ('matching_method','knowledge_fingerprint','graph_rule_count','applicable_rule_count','unresolved_rule_count','excluded_rule_count')},
     }
     return (
         "You are Compliance Copilot. Answer only from the supplied saved assessment. "

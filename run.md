@@ -1,4 +1,4 @@
-# Start both applications
+# Start the applications
 
 The shared AI provider lives in `cd_cpi_server/ai_runtime.py`, with its tests
 in `cd_cpi_server/tests`. CPI and Dossier both load this shared implementation.
@@ -30,12 +30,12 @@ providers; re-upload documents stored only in the previous provider. Keep the
 original Mistral key configured if you plan to switch back later.
 
 Start PostgreSQL, then double-click `start_all.bat` in this folder. It opens
-one Windows Terminal window with five named Command Prompt tabs using the existing
+one Windows Terminal window with seven named Command Prompt tabs using the existing
 Python environments and Node dependencies. Windows Terminal is required.
 Keep the tabs open while using the applications. Double-click `stop_all.bat` to
-stop all five servers together, or press Ctrl+C in a tab to stop one server.
+stop all seven servers together, or press Ctrl+C in a tab to stop one server.
 The self-contained `stop_all.bat` identifies this project's processes
-on the five server ports and stop their child processes too. Server tabs remain
+on the seven server ports and stop their child processes too. Server tabs remain
 open and can be closed afterward. PostgreSQL stays running.
 If a port is already occupied, stop its existing server before starting again.
 
@@ -46,6 +46,8 @@ If a port is already occupied, stop its existing server before starting again.
 | Credit Dossier frontend | 8081 |
 | Credit Policy Intelligence backend | 8002 |
 | Credit Policy Intelligence frontend | 5173 |
+| Data Manufacturing backend | 8005 |
+| Data Manufacturing frontend | 5174 |
 
 Open Credit Dossier at http://localhost:8081 and Credit Policy Intelligence at
 http://localhost:5173 after their terminals report that startup is complete.
@@ -55,3 +57,5 @@ First-time setup and individual startup instructions are in
 Shared frontend components are stored in `cd_cpi_server/credit_dossier_backend/shared`.
 Credit analysts see deals from all relationship managers in both applications.
 Relationship managers see their own deals.
+
+Data Manufacturing is now a separate application at http://localhost:5174. The CPI application retains its other pages. Setup and individual startup instructions: [dm_server/run.md](dm_server/run.md). DM shares account credentials and generated data with CPI, with independent login sessions.

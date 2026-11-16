@@ -24,6 +24,7 @@ export default defineConfig(({ command, isPreview }) => {
     : csp;
 
   return {
+    cacheDir: "node_modules/.vite-cpi-dev",
     plugins: [
       react(),
       {

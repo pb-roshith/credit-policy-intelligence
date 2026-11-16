@@ -9,6 +9,8 @@ from ..services.portfolio_agent import PortfolioChatAgent
 from ..services.shared_deals import call_shared_deals
 from ..services.dashboard_requests import request_totals
 from ..services.portfolio_concentration import concentrations
+from ..services.current_knowledge import bind_current_views,current_reviews
+from ..services.semantic_matching import load_matcher
 
 router = APIRouter()
 
@@ -37,6 +39,7 @@ def _top_violated_policies(counts, catalog):
 
 @router.get("/api/dashboard")
 def dashboard(_: dict = Depends(current_user)):
+    knowledge=load_matcher()
     source_warning = None
     try:
         deals = call_shared_deals(_)
@@ -45,6 +48,7 @@ def dashboard(_: dict = Depends(current_user)):
         source_warning = "Credit Dossier deals could not be loaded. Totals currently include only account CPI requests."
     with db_connection() as connection:
         connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
+        bind_current_views(connection,knowledge.fingerprint)
         metrics = dict(connection.execute("""
             SELECT COUNT(*) FILTER (WHERE status IN ('In Review', 'Escalated', 'Pending')) AS active_requests,
                    ROUND(AVG(compliance_score), 1) AS policy_compliance
@@ -53,13 +57,13 @@ def dashboard(_: dict = Depends(current_user)):
         metrics.update(connection.execute("""
             SELECT COUNT(*) AS open_exceptions,
                    COUNT(*) FILTER (WHERE severity = 'High') AS high_severity
-            FROM credit_request_exceptions WHERE status <> 'Closed'
+            FROM current_policy_exceptions WHERE status <> 'Closed'
         """).fetchone())
         metrics['exception_exposure'] = connection.execute("""
             SELECT COALESCE(SUM(exposure), 0) AS total FROM (
                 SELECT COALESCE(source_request_id, credit_request_number) AS request_id,
                        MAX(exposure) AS exposure
-                FROM credit_request_exceptions WHERE status <> 'Closed'
+                FROM current_policy_exceptions WHERE status <> 'Closed'
                 GROUP BY CASE WHEN COALESCE(source_request_id, credit_request_number) LIKE 'CR-%' THEN user_id ELSE NULL END, COALESCE(source_request_id, credit_request_number)
             ) affected_requests
         """).fetchone()['total']
@@ -68,17 +72,17 @@ def dashboard(_: dict = Depends(current_user)):
                        WHEN 'Pending Approval' THEN 'Approved'
                        WHEN 'Remediation' THEN 'Remediated'
                        ELSE 'Detected' END AS label, COUNT(*) AS value
-            FROM credit_request_exceptions WHERE status <> 'Closed'
+            FROM current_policy_exceptions WHERE status <> 'Closed'
             GROUP BY status ORDER BY label
         """).fetchall()
         types = connection.execute("""
             SELECT exception_type AS label, SUM(exposure) AS value
-            FROM credit_request_exceptions WHERE status <> 'Closed'
+            FROM current_policy_exceptions WHERE status <> 'Closed'
             GROUP BY exception_type ORDER BY value DESC, label
         """).fetchall()
         policy_counts = connection.execute("""
             SELECT clause_code, exception_type, COUNT(*) AS value
-            FROM credit_request_exceptions WHERE status <> 'Closed'
+            FROM current_policy_exceptions WHERE status <> 'Closed'
             GROUP BY clause_code, exception_type
         """).fetchall()
         trend = connection.execute(r"""
@@ -87,13 +91,13 @@ def dashboard(_: dict = Depends(current_user)):
                                        date_trunc('month', CURRENT_DATE), INTERVAL '1 month') AS month
             ), closures AS (
                 SELECT e.exception_id, MIN((event->>'date')::date) AS closed_on
-                FROM credit_request_exceptions e CROSS JOIN LATERAL jsonb_array_elements(e.history) event
+                FROM current_policy_exceptions e CROSS JOIN LATERAL jsonb_array_elements(e.history) event
                 WHERE event->>'event' IN ('Closed exception', 'Remediated exception')
                   AND event->>'date' ~ '^\d{4}-\d{2}-\d{2}$'
                 GROUP BY e.user_id, e.exception_id
             )
             SELECT to_char(month, 'Mon YYYY') AS label,
-                   (SELECT COUNT(*) FROM credit_request_exceptions e
+                   (SELECT COUNT(*) FROM current_policy_exceptions e
                     WHERE e.created_at >= month AND e.created_at < month + INTERVAL '1 month') AS detected,
                    (SELECT COUNT(*) FROM closures c
                     WHERE c.closed_on >= month AND c.closed_on < month + INTERVAL '1 month') AS remediated
@@ -109,7 +113,7 @@ def dashboard(_: dict = Depends(current_user)):
             ) latest GROUP BY payment_status ORDER BY label
         """).fetchall()
         generated_at = connection.execute("SELECT CURRENT_TIMESTAMP AS value").fetchone()['value']
-        stored = connection.execute('''SELECT insights, generated_at, source_generated_at
+        stored = connection.execute('''SELECT insights, generated_at, source_generated_at, knowledge_fingerprint
             FROM dashboard_insights WHERE user_id = %s''', (_['user_id'],)).fetchone()
         requests = connection.execute('''SELECT user_id AS account_user_id, credit_request_number, shared_deal_id,
             status, requested_amount, compliance_score FROM credit_requests''').fetchall()
@@ -117,6 +121,8 @@ def dashboard(_: dict = Depends(current_user)):
             user_id AS account_user_id, COALESCE(source_request_id, credit_request_number) AS request_id, review, created_at
             FROM ai_compliance_reviews
             ORDER BY user_id, COALESCE(source_request_id, credit_request_number), created_at DESC, review_id DESC''').fetchall()
+    if stored and stored.get('knowledge_fingerprint')!=knowledge.fingerprint:stored=None
+    reviews=current_reviews(reviews,knowledge.fingerprint)
     totals = request_totals(deals, requests, reviews)
     metrics.update({key: totals[key] for key in ('active_requests', 'total_requests',
         'assessed_requests', 'unassessed_requests', 'policy_compliance')})
@@ -134,7 +140,7 @@ def dashboard(_: dict = Depends(current_user)):
                 trend=trend, payments=payments, insights=stored['insights'] if stored else [],
                 insights_generated_at=stored['generated_at'] if stored else None,
                 insights_source_generated_at=stored['source_generated_at'] if stored else None,
-                generated_at=generated_at)
+                generated_at=generated_at,knowledge_fingerprint=knowledge.fingerprint)
 
 
 @router.post("/api/dashboard/insights")
@@ -151,6 +157,7 @@ def dashboard_chat(payload: PortfolioChatRequest, user: dict = Depends(current_u
 @router.get("/api/portfolio")
 def portfolio(_: dict = Depends(portfolio_analyst)):
     """Return authorized portfolio data, including Dossier deals in concentrations."""
+    knowledge=load_matcher()
     source_warning = None
     try:
         deals = call_shared_deals(_)
@@ -159,16 +166,16 @@ def portfolio(_: dict = Depends(portfolio_analyst)):
         source_warning = "Credit Dossier deals could not be loaded. Concentrations currently include only CPI requests."
     with db_connection() as connection:
         connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
+        bind_current_views(connection,knowledge.fingerprint)
         requests = connection.execute("""
             SELECT cr.user_id AS account_user_id, cr.credit_request_number, cr.shared_deal_id,
-                   cr.industry, cr.geography, cr.exposure, cc.geography_risk
+                   cr.industry, cr.geography, cr.exposure, NULL::text AS geography_risk
             FROM credit_requests cr
-            LEFT JOIN credit_request_compliance cc USING (user_id, credit_request_number)
         """).fetchall()
         exceptions = connection.execute("""
             SELECT user_id AS account_user_id,
                    COALESCE(source_request_id, credit_request_number) AS request_id, COUNT(*) AS count
-            FROM credit_request_exceptions WHERE status <> 'Closed'
+            FROM current_policy_exceptions WHERE status <> 'Closed'
             GROUP BY user_id, COALESCE(source_request_id, credit_request_number)
         """).fetchall()
         trend = connection.execute(r"""
@@ -177,14 +184,14 @@ def portfolio(_: dict = Depends(portfolio_analyst)):
                                        date_trunc('month', CURRENT_DATE), INTERVAL '1 month') AS month
             ), closures AS (
                 SELECT e.exception_id, MIN((event->>'date')::date) AS closed_on
-                FROM credit_request_exceptions e
+                FROM current_policy_exceptions e
                 CROSS JOIN LATERAL jsonb_array_elements(e.history) event
                 WHERE event->>'event' IN ('Closed exception', 'Remediated exception')
                   AND event->>'date' ~ '^\d{4}-\d{2}-\d{2}$'
                 GROUP BY e.user_id, e.exception_id
             )
             SELECT to_char(month, 'Mon YYYY') AS label,
-                   (SELECT COUNT(*) FROM credit_request_exceptions e
+                   (SELECT COUNT(*) FROM current_policy_exceptions e
                     WHERE e.created_at >= month AND e.created_at < month + INTERVAL '1 month') AS detected,
                    (SELECT COUNT(*) FROM closures c
                     WHERE c.closed_on >= month AND c.closed_on < month + INTERVAL '1 month') AS remediated
@@ -225,7 +232,7 @@ def portfolio(_: dict = Depends(portfolio_analyst)):
         """).fetchall()
         clauses = connection.execute("""
             SELECT clause_code AS label, COUNT(*) AS breaches
-            FROM credit_request_exceptions WHERE status <> 'Closed'
+            FROM current_policy_exceptions WHERE status <> 'Closed'
             GROUP BY clause_code ORDER BY breaches DESC, label LIMIT 5
         """).fetchall()
         generated_at = connection.execute(
@@ -234,7 +241,7 @@ def portfolio(_: dict = Depends(portfolio_analyst)):
     concentration = concentrations(deals, requests, exceptions)
     return dict(**concentration, source_warning=source_warning,
                 concentration_basis="CPI request exposure and Dossier deal exposure; deal amount is used when exposure is unavailable. Percentages are calculated separately for each currency.",
-                trend=trend, rwa=rwa, ecl=ecl, clauses=clauses, generated_at=generated_at)
+                trend=trend, rwa=rwa, ecl=ecl, clauses=clauses, generated_at=generated_at,knowledge_fingerprint=knowledge.fingerprint)
 
 
 @router.post("/api/portfolio/chat")

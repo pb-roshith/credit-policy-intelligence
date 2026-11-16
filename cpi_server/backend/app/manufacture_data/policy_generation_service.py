@@ -5,6 +5,7 @@ import re
 import time
 
 from app.ai_provider import AIClient as Mistral
+from pypdf import PdfReader
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import LETTER
@@ -307,7 +308,7 @@ def run_policy_generation(job_id: str, db_connection, api_key: str, output_dir: 
                         UPDATE policy_generation_jobs
                         SET current_policy = %s, message = %s, completed_documents = %s
                         WHERE job_id = %s
-                    """, (display_title, f"Generating policy {sequence} of {GENERATED_DOCUMENT_COUNT}", completed, job_id))
+                    """, (display_title, f"Preparing policy {sequence} of {GENERATED_DOCUMENT_COUNT}", completed, job_id))
                 if existing:
                     old_path = Path(existing["local_pdf_path"])
                     new_path = output_dir / file_name
@@ -330,20 +331,31 @@ def run_policy_generation(job_id: str, db_connection, api_key: str, output_dir: 
                     completed += 1
                     continue
 
-                response = _start_conversation(client,
-                    agent_id=agent_id,
-                    inputs=_policy_prompt(parent, clause, title, sequence),
-                    store=False,
-                )
-                policy_data = _json_object(_response_text(response))
-                sections = policy_data.get("sections", [])
-                if len(sections) < 10 or any(not section.get("heading") or len(section.get("paragraphs", [])) < 4 for section in sections[:10]):
-                    raise ValueError(f"Mistral returned incomplete policy content for {display_title}")
-
                 pdf_path = output_dir / file_name
-                page_count = _render_pdf(pdf_path, f"{parent} Â§{clause}", display_title, sections)
-                if page_count < 10:
-                    raise ValueError(f"Generated PDF {file_name} has only {page_count} pages")
+                if pdf_path.exists():
+                    # Existing source files are authoritative, including on a fresh database.
+                    # Fail on invalid PDFs rather than replacing their contents.
+                    try:
+                        page_count = len(PdfReader(pdf_path).pages)
+                        if not page_count:
+                            raise ValueError("PDF has no pages")
+                    except Exception as error:
+                        raise ValueError(f"Cannot read existing policy PDF {file_name}; repair the source file") from error
+                else:
+                    response = _start_conversation(client,
+                        agent_id=agent_id,
+                        inputs=_policy_prompt(parent, clause, title, sequence),
+                        store=False,
+                    )
+                    policy_data = _json_object(_response_text(response))
+                    sections = policy_data.get("sections", [])
+                    if len(sections) < 10 or any(not section.get("heading") or len(section.get("paragraphs", [])) < 4 for section in sections[:10]):
+                        raise ValueError(f"Mistral returned incomplete policy content for {display_title}")
+
+                    pdf_path = output_dir / file_name
+                    page_count = _render_pdf(pdf_path, f"{parent} Â§{clause}", display_title, sections)
+                    if page_count < 10:
+                        raise ValueError(f"Generated PDF {file_name} has only {page_count} pages")
                 library_documents = client.beta.libraries.documents.list(
                     library_id=library_id, page_size=100, page=0
                 ).data

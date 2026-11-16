@@ -17,3 +17,8 @@ networkx>=3.4,<4
 
 # Gemini SDK (AI_PROVIDER=gemini)
 google-genai>=1.0,<3
+
+# Business semantic schema and portable OWL/SHACL validation.
+jsonschema>=4.23,<5
+rdflib>=7.1,<8
+pyshacl>=0.30,<1

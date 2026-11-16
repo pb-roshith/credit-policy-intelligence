@@ -14,7 +14,7 @@ from .repositories import PostgreSQLRepository
 from .service import IntelligenceService, ROOT
 from ..services.automatic_approval import approve_knowledge,approve_rules
 
-PIPELINE_VERSION = 'risk-knowledge-v1'
+PIPELINE_VERSION = 'policy-semantic-llm-v1'
 STAGES = [('schema','Risk schema'), ('taxonomy','Taxonomy proposals'),
           ('ingestion','Source ingestion'), ('classification','Clause classification'),
           ('ontology','Ontology discovery'), ('extraction','Rule extraction'),
@@ -311,29 +311,8 @@ class PolicyKnowledgePipeline:
 
 
 def process_policy(policy_id,user,job_id=None,progress=None):
-    # These adapters are shared with CPI's existing inventory and transactional tests.
-    from ..services import rule_extraction as inventory
-    service=IntelligenceService(repository=PostgreSQLRepository(inventory.shared_policy_connection,user['user_id']))
-    pipeline=PolicyKnowledgePipeline(service,inventory.shared_policy_connection,user,job_id,progress)
-    try:
-        pipeline.bootstrap()
-        pipeline.stage('ingestion')
-        pipeline.prepare_source(inventory.ingest_policy(policy_id))
-        pipeline.classify()
-        pipeline.discover_ontology()
-        pipeline.stage('extraction')
-        result=inventory.process_policy(policy_id,user,job_id,pipeline.batch_progress,knowledge=pipeline)
-        if result['status']=='Failed':
-            if pipeline.annotated:
-                return pipeline.finish(result,partial=True)
-            pipeline.fail()
-            return {**result,**pipeline.counts,'pipeline':PIPELINE_VERSION,'stages':pipeline.stages}
-        return pipeline.finish(result)
-    except Exception:
-        running=next((stage['id'] for stage in pipeline.stages if stage['status']=='Running'),None)
-        if running:
-            pipeline.fail()
-        raise
+    from .semantic_pipeline import process_policy as semantic_process
+    return semantic_process(policy_id,user,job_id,progress)
 
 
 def refresh_rule_evidence(row,user,connection_factory):

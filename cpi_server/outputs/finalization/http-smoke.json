@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "authenticated_read_only_endpoints": {
+    "/api/risk-knowledge/state": 200,
+    "/api/risk-knowledge/semantic-knowledge": 200,
+    "/api/risk-knowledge/semantic-model": 200,
+    "/api/risk-knowledge/semantic-graph?policy_id=1": 200,
+    "/api/risk-knowledge/semantic-policies/1/representation": 200,
+    "/api/risk-knowledge/policy-taxonomy": 200,
+    "/api/controls": 200,
+    "/api/requests": 200,
+    "/api/exceptions": 200,
+    "/api/dashboard": 200,
+    "/api/observability": 200,
+    "/api/compliance-review/current-summaries": 200,
+    "/api/summary": 200
+  },
+  "scope": "One authorized relationship manager account; response content and identity omitted."
+}

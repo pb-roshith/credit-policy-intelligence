@@ -18,7 +18,7 @@ export const META = {
   ],
   manufacturing: [
     "Data Manufacturing",
-    "Generate realistic test data for the credit workflow.",
+    "Generate data for credit workflows.",
   ],
   policy: [
     "Policy Intelligence",

@@ -12,15 +12,36 @@ def read_catalog(connection_factory):
                               JOIN inventory_documents doc ON doc.id=cl.document_id JOIN policy_documents p ON p.policy_id=pv.policy_id
                               ORDER BY cl.id''').fetchall()
         rules = db.execute('''SELECT r.*,e.rule_code,p.title,cl.source_excerpt,cl.section_heading,cl.clause_number,cl.page_number,
-                            cl.document_id AS inventory_document_id,rk.payload AS risk_knowledge,
+                            cl.document_id AS inventory_document_id,rk.payload AS risk_knowledge,pv.checksum AS source_checksum,
+                            representation.payload->>'content_digest' AS current_representation_digest,
+                            representation.payload AS source_representation,
                             (r.policy_version_id IS NULL OR NOT COALESCE(pv.is_current,false)
                              OR p.version<>r.policy_version OR md5(p.summary)<>r.policy_fingerprint) AS review_required
                             FROM policy_rule_versions r JOIN policy_documents p USING(policy_id)
                             LEFT JOIN policy_rule_entities e ON e.id=r.rule_entity_id
                             LEFT JOIN policy_clauses cl ON cl.id=r.clause_id LEFT JOIN policy_versions pv ON pv.id=r.policy_version_id
                             LEFT JOIN risk_knowledge_objects rk ON rk.kind='metadata' AND rk.owner_id='' AND rk.id='CPI-RULE-'||r.id::text
+                            LEFT JOIN risk_knowledge_objects representation ON representation.kind='metadata' AND representation.owner_id='' AND representation.id=r.definition->>'representation_id'
                             WHERE NOT EXISTS(SELECT 1 FROM policy_rule_versions newer WHERE newer.rule_key=r.rule_key AND newer.version>r.version)
                             ORDER BY r.id''').fetchall()
+    compiled_cache={}
+    for rule in rules:
+        from .policy_representation import representation_id
+        definition=rule['definition']
+        expected=representation_id(rule.get('policy_version_id'),rule.get('source_checksum'))
+        rep=rule.pop('source_representation',None)
+        if not definition.get('representation_id') or definition['representation_id']!=expected:
+            rule['review_required']=True
+        elif rep:
+            from .representation_governance import check_definition
+            from .policy_representation import compile_graph
+            from fastapi import HTTPException
+            try:
+                current_clauses=[c for c in clauses if c['policy_version_id']==rule['policy_version_id']]
+                if rep['id'] not in compiled_cache:compiled_cache[rep['id']]=compile_graph(rep,current_clauses)
+                check_definition(rule,rep,current_clauses,compiled=compiled_cache[rep['id']])
+            except (HTTPException,ValueError):rule['review_required']=True
+        else:rule['review_required']=True
     return policies, clauses, rules
 
 
@@ -39,7 +60,7 @@ def documents_from_catalog(policies, clauses):
     return result
 
 
-def project_catalog(graph, policies, clauses, rules, annotations=None):
+def project_catalog(graph, policies, clauses, rules, annotations=None, scopes=None):
     snapshot = graph.snapshot()
     nodes = {n['id']: n for n in snapshot['nodes']}
     edges = list(snapshot['edges'])
@@ -75,7 +96,7 @@ def project_catalog(graph, policies, clauses, rules, annotations=None):
         label = r['definition'].get('rule_name') or r.get('rule_code') or identifier
         annotation=(annotations or {}).get(r['id']) or r.get('risk_knowledge')
         node(identifier, label, 'GovernedPolicyRule', r['status'].upper().replace(' ', '_'), source,
-             {'rule_version_id': r['id'], 'active': r['active'], 'review_required': r['review_required'], 'definition': r['definition'],
+             {'rule_version_id': r['id'], 'active': r['active'], 'approved_by': r.get('approved_by'), 'review_required': r['review_required'], 'definition': r['definition'], 'graph_compilation_verified':r.get('graph_compilation_verified',False),
               'risk_knowledge':annotation})
         if annotation:
             for mapping in annotation.get('taxonomy_mappings',[]):
@@ -96,4 +117,35 @@ def project_catalog(graph, policies, clauses, rules, annotations=None):
             aid = identifier + ':approval'
             node(aid, approval, 'ApprovalRequirement', r['status'].upper(), source, approval)
             edge(identifier, 'REQUIRES', aid, source, r['status'].upper())
+    for scope in scopes or []:
+        pid = 'CPI-POLICY-' + str(scope['policy_id'])
+        clause = 'CPI-CLAUSE-' + str(scope['clause_id'])
+        if pid not in nodes or clause not in nodes:
+            continue
+        source, sid = scope['source'], pid + ':scope'
+        source_clause = next((c for c in clauses if c['id'] == scope['clause_id']), {})
+        current = (source.get('version') == nodes[pid]['provenance'].get('version')
+                   and source_clause.get('policy_id') == scope['policy_id']
+                   and source_clause.get('policy_version_id') == scope['policy_version_id']
+                   and source_clause.get('checksum') == scope.get('source_checksum')
+                   and source.get('passage') and source['passage'] in nodes[clause]['provenance']['passage'])
+        status = scope['status'] if current else 'REQUIRES_REVIEW'
+        node(sid, 'Policy scope', 'PolicyScope', status, source, scope)
+        edge(pid, 'HAS_SCOPE', sid, source, status)
+        edge(sid, 'DERIVED_FROM', clause, source, status)
+        def scope_condition(condition, identifier, predicate, parent):
+            label = condition.get('field') or ('AND' if condition.get('all') else 'OR')
+            node(identifier, 'Scope ' + label, 'Condition', status, source, condition)
+            edge(parent, predicate, identifier, source, status)
+            field = condition.get('field')
+            for target, concept in list(nodes.items()):
+                payload = concept.get('payload')
+                if concept['status'] == 'APPROVED' and isinstance(payload, dict) and field and payload.get('metadata', {}).get('request_attribute') == field:
+                    edge(identifier, 'MAPS_TO', target, source, status)
+            for group in ('all', 'any'):
+                for index, child in enumerate(condition.get(group) or []):
+                    scope_condition(child, identifier + ':' + str(index), predicate, identifier)
+        for key, predicate in (('conditions', 'HAS_CONDITION'), ('exclusions', 'HAS_EXCEPTION')):
+            if scope.get(key):
+                scope_condition(scope[key], sid + ':' + key, predicate, sid)
     graph.replace(list(nodes.values()), list({e['id']:e for e in edges}.values()))

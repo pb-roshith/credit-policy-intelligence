@@ -42,7 +42,7 @@ import {
   Factory,
 } from "lucide-react";
 import { API, apiRequest } from "../api/client";
-import { META, POLICY_TYPE_ORDER, policyDisplayName } from "../config";
+import { META, POLICY_TYPE_ORDER, policyDisplayName, CPI_URL } from "../config";
 import { AuthField, Badge, Bars, Card, DataTable, Heading, Insight, LineChart, Metric, NO_CLIPBOARD, PasswordPolicy, SecretInput, money } from "../components/ui";
 
 export default function DataManufacturing({ session, notify }) {
@@ -274,7 +274,7 @@ export default function DataManufacturing({ session, notify }) {
         {menuItem === "credit-requests" && (
           <Card title="Generate Credit Requests" action={<Factory size={17} />}>
             <form className="manufacturing-form" onSubmit={generate}>
-              <p>Create new sample deals with borrower, facility, financials, collateral, risk and compliance data. No documents are generated.</p>
+              <p>Create new deals with borrower, facility, financials, collateral, risk and compliance data. No documents are generated.</p>
               <label>
                 <span>Number of credit requests</span>
                 <input
@@ -301,7 +301,7 @@ export default function DataManufacturing({ session, notify }) {
                   {generating ? "Generating..." : "Generate Credit Requests"}
                 </button>
                 {result && (
-                  <button className="btn secondary" type="button" onClick={() => { location.hash = "requests"; }}>
+                  <button className="btn secondary" type="button" onClick={() => { window.open(CPI_URL+"/#requests","_blank","noopener,noreferrer"); }}>
                     View Credit Requests
                     <ArrowRight size={15} />
                   </button>
@@ -400,7 +400,7 @@ export default function DataManufacturing({ session, notify }) {
                   {generating ? "Generating..." : `Generate Exceptions (${selectedRequests.length})`}
                 </button>
                 {result && (
-                  <button className="btn secondary" type="button" onClick={() => { location.hash = "exceptions"; }}>
+                  <button className="btn secondary" type="button" onClick={() => { window.open(CPI_URL+"/#exceptions","_blank","noopener,noreferrer"); }}>
                     View Exception Management
                     <ArrowRight size={15} />
                   </button>
@@ -413,12 +413,12 @@ export default function DataManufacturing({ session, notify }) {
           <Card title="Generate Policy Controls" action={<ShieldCheck size={17} />}>
             <form className="manufacturing-form" onSubmit={generate}>
               <p>
-                Manufacture controls for every policy document in the Policy Library and store
+                Add controls to every policy document in the Policy Library and store
                 their policy mapping, ownership, type, automation, frequency, effectiveness,
-                status, testing, and assessment data in <code>credit_data.policy_controls</code>.
+                status, testing, and assessment data.
               </p>
               <label>
-                <span>Controls per policy document</span>
+                <span>Additional controls per policy document</span>
                 <input
                   type="number"
                   min="1"
@@ -428,7 +428,7 @@ export default function DataManufacturing({ session, notify }) {
                   onChange={(event) => setCount(event.target.value)}
                   required
                 />
-                <small>Choose 1-5 controls for each available policy document.</small>
+                <small>Add 1-5 controls per policy on each submission. Existing controls are kept. For example, 5 + 2 = 7.</small>
               </label>
               {error && <div className="data-message error">{error}</div>}
               {result && !error && (
@@ -443,7 +443,7 @@ export default function DataManufacturing({ session, notify }) {
                   {generating ? "Generating..." : "Generate Policy Controls"}
                 </button>
                 {result && (
-                  <button className="btn secondary" type="button" onClick={() => { sessionStorage.setItem("policyExplorerTab", "controls"); location.hash = "policy"; }}>
+                  <button className="btn secondary" type="button" onClick={() => { window.open(CPI_URL+"/?view=controls&controlSource=generated#policy","_blank","noopener,noreferrer"); }}>
                     View Controls Register
                     <ArrowRight size={15} />
                   </button>
@@ -456,8 +456,8 @@ export default function DataManufacturing({ session, notify }) {
           <Card title="Generate Policy PDFs" action={<BookOpen size={17} />}>
             <form className="manufacturing-form" onSubmit={generate}>
               <p>
-                Generate 25 synthetic credit policy PDFs and add the 10 documents from
-                the policy document folder to one shared Mistral library. The resulting
+                Generate 25 credit policy PDFs and add the 10 documents from
+                the policy document folder to the policy source library. The resulting
                 35-file Policy Intelligence library is available to every user role.
               </p>
               <div className="policy-generation-facts">
@@ -495,7 +495,7 @@ export default function DataManufacturing({ session, notify }) {
                       : "Generate 25 PDFs + Add 10 Documents"}
                 </button>
                 {policyJob?.completed_documents >= 35 && (
-                  <button className="btn secondary" type="button" onClick={() => { location.hash = "policy"; }}>
+                  <button className="btn secondary" type="button" onClick={() => { window.open(CPI_URL+"/#policy","_blank","noopener,noreferrer"); }}>
                     View Policy Library
                     <ArrowRight size={15} />
                   </button>

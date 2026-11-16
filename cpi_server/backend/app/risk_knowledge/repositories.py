@@ -47,6 +47,18 @@ class SQLiteRepository:
     def put(self, table, identifier, item, audit=None):
         self.put_many(table, [(identifier, item)], audit)
 
+    def compare_and_put(self,table,identifier,item,expected_digest,audit=None):
+        self._check(table)
+        payload=json.dumps(item,ensure_ascii=False,allow_nan=False)
+        with self.connection() as db:
+            if expected_digest is None:
+                result=db.execute(f'INSERT INTO {table}(id,payload) VALUES (?,?) ON CONFLICT(id) DO NOTHING',(identifier,payload))
+            else:
+                result=db.execute(f"UPDATE {table} SET payload=? WHERE id=? AND json_extract(payload,'$.content_digest')=?",(payload,identifier,expected_digest))
+            if result.rowcount!=1:return False
+            if audit:db.execute('INSERT INTO audit(occurred_at,payload) VALUES (?,?)',(datetime.now(timezone.utc).isoformat(),json.dumps(audit,ensure_ascii=False)))
+        return True
+
     def put_new(self, table, identifier, item):
         self._check(table)
         with self.connection() as db:
@@ -96,6 +108,20 @@ class PostgreSQLRepository:
 
     def put(self, table, identifier, item, audit=None):
         self.put_many(table, [(identifier, item)], audit)
+
+    def compare_and_put(self,table,identifier,item,expected_digest,audit=None):
+        from psycopg.types.json import Jsonb
+        owner=self._owner(table)
+        with self.connection_factory() as db:
+            if expected_digest is None:
+                result=db.execute('INSERT INTO risk_knowledge_objects(kind,owner_id,id,payload) VALUES (%s,%s,%s,%s) ON CONFLICT(kind,owner_id,id) DO NOTHING',(table,owner,identifier,Jsonb(item)))
+            else:
+                result=db.execute("UPDATE risk_knowledge_objects SET payload=%s WHERE kind=%s AND owner_id=%s AND id=%s AND payload->>'content_digest'=%s",(Jsonb(item),table,owner,identifier,expected_digest))
+            if result.rowcount!=1:return False
+            if audit:
+                db.execute('INSERT INTO audit_events(entity_type,entity_id,new_value,action,actor,reason) VALUES (%s,%s,%s,%s,%s,%s)',
+                           ('RiskKnowledge:'+table,str(audit.get('entity_id',identifier)),Jsonb(audit),audit.get('action','Update'),audit.get('actor',self.owner_id),audit.get('notes','Conditional knowledge update')))
+        return True
 
     def put_new(self, table, identifier, item):
         from psycopg.types.json import Jsonb

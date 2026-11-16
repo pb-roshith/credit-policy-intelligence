@@ -70,6 +70,8 @@ def comparison_definition(definition):
 def refresh_finding_comparisons(review):
     """Refresh display metadata for both newly run and previously saved reviews."""
     result = deepcopy(review)
+    if result.get('assessment_scope') == 'current-semantic-graph':
+        return result  # Semantic outcomes/units are already frozen graph results.
     definitions = {str(rule['id']): rule['definition'] for rule in result.get('rule_snapshots', [])}
     for finding in result.get('findings', []):
         original = definitions.get(str(finding.get('rule_version_id')))

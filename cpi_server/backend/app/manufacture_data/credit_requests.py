@@ -149,11 +149,12 @@ def generate_exceptions(payload: GenerateExceptionsRequest, user: dict = Depends
             due_date = date.today() + timedelta(days=30 + secrets.randbelow(31))
             exception_id = f"EX-{next_number + offset}"
             description = (
-                f"Manufactured {exception_type.lower()} exception for {request_number} "
+                f"{exception_type.capitalize()} exception for {request_number} "
                 f"to support exception workflow testing."
             )
             rationale = {
-                "why_detected": f"The selected {request['industry']} request was assigned a synthetic {exception_type.lower()} policy exception.",
+                "synthetic": True, "data_origin": "DATA_MANUFACTURING",
+                "why_detected": f"The selected {request['industry']} request was assigned a {exception_type.lower()} policy exception.",
                 "business_justification": "Generated for controlled testing of the exception review and remediation workflow.",
                 "risk_implication": f"The exception represents illustrative {exception_type.lower()} risk against {clause}.",
                 "recommended_remediation": "Review the selected request, document mitigating controls, and complete the remediation workflow.",

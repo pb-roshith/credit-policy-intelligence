@@ -79,48 +79,9 @@ export default function Exceptions({ session, notify }) {
     if (deleteTarget) deleteDialog.current?.showModal();
     else deleteDialog.current?.close();
   }, [deleteTarget]);
-  const [creating, setCreating] = useState(false), [saving, setSaving] = useState(false), [createError, setCreateError] = useState("");
-  const [requests, setRequests] = useState([]);
-  const [form, setForm] = useState({ credit_request_number: "", exception_type: "Policy", clause_code: "", owner: session.user.user_id, due_date: "", status: "Active", description: "" });
   const canApprove = session.user.role === "credit_analyst";
   const canCreate = session.user.role === "relationship_manager";
-  const changeField = event => setForm(current => ({ ...current, [event.target.name]: event.target.value }));
-  const openCreate = async () => {
-    setCreating(true);
-    setCreateError("");
-    const result = await loadRequestList(session.token, apiRequest);
-    setRequests(result.rows);
-    if (result.error) setCreateError(result.error);
-  };
-  const submitCreate = async event => {
-    event.preventDefault();
-    setSaving(true);
-    setCreateError("");
-    try {
-      const created = await apiRequest("/api/exceptions", { method: "POST", body: JSON.stringify(form) });
-      const updated = await apiRequest("/api/exceptions");
-      setExceptions(updated);
-      setSelected(created);
-      setTab("Active");
-      setQuery("");
-      setCreating(false);
-      notify(created.rationale?.generation_notice || `${created.id} created as Active`);
-    } catch (error) { setCreateError(error.message); }
-    finally { setSaving(false); }
-  };
-  const creation = <>
-    <Heading page="exceptions">{canCreate && <button className="btn primary" onClick={openCreate}><Plus size={14} />Create Exception</button>}</Heading>
-    {canCreate && creating && <Card title="Create Exception"><form className="credit-request-form" onSubmit={submitCreate}>
-      <label><span>Credit request</span><select name="credit_request_number" required value={form.credit_request_number} onChange={changeField}><option value="">Select a credit request</option>{requests.map(request => <option key={request.credit_request_number} value={request.credit_request_number}>{request.borrower_name} ({request.credit_request_number})</option>)}</select></label>
-      <label><span>Exception type</span><input name="exception_type" required minLength={2} maxLength={80} value={form.exception_type} onChange={changeField} /></label>
-      <label><span>Policy clause</span><input name="clause_code" required maxLength={40} value={form.clause_code} onChange={changeField} /></label>
-      <label><span>Owner</span><input name="owner" required minLength={2} maxLength={120} value={form.owner} onChange={changeField} /></label>
-      <label><span>Due date</span><input name="due_date" type="date" required value={form.due_date} onChange={changeField} /></label>
-      <label className="form-wide"><span>Description</span><textarea name="description" required minLength={10} maxLength={4000} value={form.description} onChange={changeField} /></label>
-      {createError && <p role="alert" className="data-message error">{createError}</p>}
-      <div className="button-row"><button className="btn primary" disabled={saving || !requests.length}>{saving ? "Creating..." : "Create Exception"}</button><button type="button" className="btn secondary" disabled={saving} onClick={() => setCreating(false)}>Cancel</button></div>
-    </form></Card>}
-  </>;
+  const creation = <Heading page="exceptions">{session.user.role==='relationship_manager'&&<button className="btn primary" onClick={()=>{location.hash='compliance'}}><Plus size={14}/>Create Exception</button>}</Heading>;
   useEffect(() => {
     apiRequest("/api/exceptions", {}, session.token)
       .then((data) => {
@@ -215,7 +176,7 @@ export default function Exceptions({ session, notify }) {
             rows={rows}
             selected={row ? rows.find((item) => item[0] === row.id && item[9] === row.account_user_id) : null}
             onSelect={(r) => setSelected(exceptions.find((x) => x.id === r[0] && x.account_user_id === r[9]))}
-            render={(v, i) =>
+            render={(v, i, tableRow) =>
               i === 0 ? (
                 <strong>{v}</strong>
               ) : i === 4 || i === 8 ? (
@@ -232,7 +193,7 @@ export default function Exceptions({ session, notify }) {
           action={<Badge>{row.severity}</Badge>}
         >
           <h3>{row.type} exception - {row.clause} · {row.credit_request_number}</h3>
-          <Rationale title="Exception description">{row.description}</Rationale>
+          <Rationale title="Exception description">{row.rationale?.synthetic?row.description.replace(/^Manufactured /,''):row.description}</Rationale>
           <div className="workflow">
             {row.workflow.map(
               (x, i) => (
@@ -247,7 +208,7 @@ export default function Exceptions({ session, notify }) {
           <h3>{row.rationale.generation_status === "pending" ? "AI Exception Rationale — Pending" : "AI Exception Rationale"}</h3>
           {row.rationale.generation_status === "pending" && <p className="exception-rationale-notice" role="status">{row.rationale.generation_notice}</p>}
           <Rationale title="Why detected">
-            {row.rationale.why_detected}
+            {row.rationale.synthetic?row.rationale.why_detected.replace(/a synthetic /g,'a '):row.rationale.why_detected}
           </Rationale>
           <Rationale title="Business justification">
             {row.rationale.business_justification}

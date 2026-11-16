@@ -2,6 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {extractionPolicyIds,ruleExtractionSummary} from '../src/api/riskKnowledgeExtraction.js';
 
+test('graph extraction reports unresolved coverage even when no rule can compile',()=>{
+ const result=ruleExtractionSummary({status:'Failed',report:{pipeline:'policy-graph-first-v1',rules_proposed:0,unresolved_spans:7}});
+ assert.equal(result.status,'Completed with errors');
+ assert.match(result.message,/0 drafts compiled.*7 source passages.*cannot execute/);
+});
+
+test('complete graph coverage does not claim drafts are operationally approved',()=>{
+ const result=ruleExtractionSummary({status:'Completed',report:{pipeline:'policy-graph-first-v1',rules_proposed:3,unresolved_spans:0}});
+ assert.match(result.message,/3 drafts.*approval is still required/);
+});
+
 test('saved rules retain partial failures and allow retry',()=>{
   const result=ruleExtractionSummary({status:'Completed with errors',report:{rules_proposed:23},progress:[{error:'source error',unresolved_mappings:64}]});
   assert.equal(result.status,'Completed with errors');

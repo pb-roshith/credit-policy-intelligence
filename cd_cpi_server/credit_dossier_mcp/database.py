@@ -27,6 +27,9 @@ def connection(database: str | None = None) -> Iterator[psycopg.Connection]:
 
 def ensure_database() -> None:
     """Create the configured local database when it does not exist."""
+    if settings.database_url:
+        # Hosted databases such as Neon are provisioned before app deployment.
+        return
     with psycopg.connect(
         **settings.postgres_kwargs("postgres"),
         autocommit=True,

@@ -24,6 +24,7 @@ load_runtime_secrets("mcp")
 
 @dataclass(frozen=True)
 class Settings:
+    database_url: str = os.getenv('MCP_DATABASE_URL', '')
     postgres_host: str = os.getenv("POSTGRES_HOST", "127.0.0.1")
     postgres_port: int = int(os.getenv("POSTGRES_PORT", "5432"))
     postgres_database: str = os.getenv("POSTGRES_DB", "cpi_credit_dossier_mcp")
@@ -37,6 +38,8 @@ class Settings:
     mcp_transport: str = os.getenv("MCP_TRANSPORT", "sse")
 
     def postgres_kwargs(self, database: str | None = None) -> dict[str, object]:
+        if self.database_url:
+            return {'conninfo': self.database_url}
         return {
             "host": self.postgres_host,
             "port": self.postgres_port,

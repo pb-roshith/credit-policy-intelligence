@@ -336,6 +336,11 @@ for pdf_filename in PDF_FILES:
 def main() -> None:
     logger.info("Initialising local PostgreSQL MCP database")
     init_db()
+    from app.services.dossier_data import package as dossier_data_package
+    from database import connection
+    restored = dossier_data_package.autoload_mcp(factory=connection)
+    if restored:
+        logger.info('Loaded existing Dossier company documents: %s', restored)
     logger.info(
         "Starting local MCP on %s:%s using %s",
         settings.mcp_host,

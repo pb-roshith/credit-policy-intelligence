@@ -12,11 +12,9 @@ def health():
 
 @router.get("/api/summary")
 def summary(_: dict = Depends(current_user)):
-    with db_connection() as connection:
-        active_requests = connection.execute(
-            "SELECT COUNT(*) AS count FROM credit_requests"
-        ).fetchone()["count"]
-    return {"exposure": 4_820_000_000, "ecl_provision": 312_600_000, "policy_compliance": 92, "open_exceptions": 148, "active_requests": active_requests}
+    from .dashboard import dashboard
+    snapshot=dashboard(_)
+    return {**snapshot['metrics'],'knowledge_fingerprint':snapshot['knowledge_fingerprint']}
 
 @router.get("/api/requests")
 def credit_requests(status: str | None = None, _: dict = Depends(current_user)):
@@ -41,10 +39,22 @@ def credit_requests(status: str | None = None, _: dict = Depends(current_user)):
     query += " ORDER BY cr.compliance_score ASC, cr.credit_request_number ASC"
     with db_connection() as connection:
         rows = connection.execute(query, parameters).fetchall()
+    from ..services.current_knowledge import current_reviews
+    from ..services.semantic_matching import load_matcher
+    fingerprint=load_matcher().fingerprint
+    with db_connection() as db:
+        saved=db.execute('''SELECT DISTINCT ON (user_id,COALESCE(source_request_id,credit_request_number))
+            user_id AS account_user_id,COALESCE(source_request_id,credit_request_number) AS request_id,review
+            FROM ai_compliance_reviews ORDER BY user_id,COALESCE(source_request_id,credit_request_number),created_at DESC,review_id DESC''').fetchall()
+    by_request={(r['account_user_id'],r['request_id']):r['review'] for r in current_reviews(saved,fingerprint)}
     result = []
     for row in rows:
         item = public_credit_request(row)
         item['account_user_id'] = row['account_user_id']
+        assessment=by_request.get((row['account_user_id'],row.get('shared_deal_id') or row['credit_request_number']))
+        item['compliance_score']=assessment.get('overall_score') if assessment else None
+        item['compliance_status']=assessment.get('compliance_status') if assessment else 'Not assessed'
+        item['assessment_scope']='current-semantic-graph' if assessment else None
         if _['role'] == 'credit_analyst' and row['account_user_id'] != _['user_id'] and not row.get('shared_deal_id'):
             item['credit_request_number'] += '@' + row['account_user_id']
         result.append(item)
@@ -65,20 +75,9 @@ def create_shared_deal(payload: dict, user: dict = Depends(current_user)):
 
 @router.get("/api/requests/{credit_request_number}/compliance-score")
 def get_credit_request_compliance(credit_request_number: str, _: dict = Depends(current_user)):
-    with db_connection() as connection:
-        row = connection.execute("""
-            SELECT overall_score, compliance_status, category_scores,
-                   findings, breached_rules, recommendations
-            FROM credit_request_compliance
-            WHERE credit_request_number = %s
-        """, (credit_request_number.upper(),)).fetchone()
-    if not row:
-        raise HTTPException(status_code=404, detail="Compliance score not found for this credit request")
-    return {
-        "overallScore": float(row["overall_score"]),
-        "complianceStatus": row["compliance_status"],
-        "categoryScores": row["category_scores"],
-        "findings": row["findings"],
-        "breachedRules": row["breached_rules"],
-        "recommendations": row["recommendations"],
-    }
+    from ..services.compliance_agent import latest_stored_compliance_review
+    review=latest_stored_compliance_review(credit_request_number,user=_)
+    if not review:raise HTTPException(404,'Run a knowledge graph assessment for this request.')
+    return {'overallScore':review.get('overall_score'),'complianceStatus':review['compliance_status'],
+        'categoryScores':{},'findings':review['findings'],'breachedRules':[f for f in review['findings'] if f['result']=='Breach'],
+        'recommendations':review.get('recommendations',[])}

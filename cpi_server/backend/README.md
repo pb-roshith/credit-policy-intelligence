@@ -1,5 +1,26 @@
 # Backend
 
+For a fresh deployment without re-extraction, see
+[portable policy knowledge](policy_knowledge/README.md). CPI can automatically
+load the packaged policy catalog, rules and evidence into an empty database.
+This seed replaces the manual document-import step described below when present.
+
+## Reusing policy documents on a fresh deployment
+
+Include the 25 PDFs in `backend/generated_policies` and the 10 DOCX files in
+`backend/policy doc` in the deployment. From Data Manufacturing, run the existing
+Policy PDF action once to populate a fresh policy catalog. For each expected PDF,
+the workflow uses the existing file, counts its actual pages, uploads it if needed,
+and stores its catalog entry and summary. It generates a new PDF only when that
+file is absent. An unreadable existing PDF fails the job without overwriting the
+source. The 10 DOCX files continue through the existing import workflow.
+
+This action requires the configured AI provider for uploads and summaries; it does
+not extract rules. Folder ingestion is explicit, rather than running at API startup.
+Existing catalog entries are reused on subsequent runs. Keep these source files
+available in deployment storage. The generated PDF folder's PDFs are allowed by
+`.gitignore` so they can be committed and included in Git-based deployments.
+
 The [credit data and evidence layer](../docs/credit-data-and-evidence.md) documents
 the canonical fact contract, attribute registry, actual-value resolution, synthetic
 scenarios, coverage exports and future ingestion interfaces.

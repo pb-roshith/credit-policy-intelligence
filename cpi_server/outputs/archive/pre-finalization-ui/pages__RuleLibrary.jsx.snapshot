@@ -1,0 +1,146 @@
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Eye, X } from "lucide-react";
+import { extractionProgress } from "../api/extractionProgress";
+import { extractionPolicyIds } from "../api/riskKnowledgeExtraction";
+import { validateRuleForm } from "../api/ruleForm";
+import { API, apiRequest } from "../api/client";
+import { Card, Badge } from "../components/ui";
+import RuleReviewPanel from "../components/RuleReviewPanel";
+import SemanticKnowledge from "../features/riskKnowledge/pages/SemanticKnowledge";
+
+const initialDefinition = { clause_id:0, rule_sequence:1, rule_name:"", rule_description:"", source_excerpt:"", requirement_kind:"mandatory", rule_type:"quantitative", check_question:"", metric_name:null, metric_definition:null, operator:null, threshold_value:null, threshold_unit:null, lower_bound:null, upper_bound:null, threshold_source:null, calculation_logic:null, input_data_fields:[], data_source:null, evidence_requirements:[], applicability_conditions:null, applicable_stage:null, severity:null, breach_consequence:null, exception_allowed:null, approval_or_escalation_requirement:null, extraction_confidence:0, extraction_notes:null, missing_information:[], dependencies:[], change_rationale:"" };
+const operators=["equals","not_equals","greater_than","greater_than_or_equal","less_than","less_than_or_equal","between","in_list","not_in_list","exists","does_not_exist"];
+const textValue = value => value == null ? "Not stated" : typeof value === "object" ? JSON.stringify(value) : String(value);
+
+function RuleDialog({rule,onClose,children}) {
+  const dialog=useRef(null);
+  useEffect(()=>{
+    const previousOverflow=document.body.style.overflow;
+    document.body.style.overflow="hidden";
+    dialog.current.showModal();
+    return ()=>{document.body.style.overflow=previousOverflow;};
+  },[]);
+  return createPortal(<dialog ref={dialog} className="rule-details-dialog" onCancel={onClose} onClick={e=>{if(e.target===e.currentTarget)onClose();}} aria-labelledby="rule-dialog-title">
+    <div className="rule-dialog-header"><div><h2 id="rule-dialog-title">{rule.definition.rule_name||rule.definition.name}</h2><p>{rule.rule_code||rule.rule_key} ? Version {rule.version}</p></div><button type="button" className="icon-button" aria-label="Close rule details" onClick={onClose} autoFocus><X size={20}/></button></div>
+    <div className="rule-dialog-body">{children}</div>
+  </dialog>,document.body);
+}
+
+function JsonField({label,value,onChange}) {
+  const [text,setText]=useState(JSON.stringify(value,null,2));
+  const [invalid,setInvalid]=useState(false);
+  return <label className="inventory-form-wide"><span>{label}</span><textarea rows="4" value={text} onChange={e=>{setText(e.target.value);try {onChange(JSON.parse(e.target.value));setInvalid(false);}catch {setInvalid(true);}}} />{invalid&&<small role="alert">Enter valid JSON before saving.</small>}<input className="inventory-validity" tabIndex={-1} aria-hidden="true" required value={invalid ? "" : "valid"} onChange={()=>{}} /></label>;
+}
+
+function CalculationEditor({value,onChange}) {
+  const method=value?.method||"";
+  const fields=method==="ratio"||method==="percentage"?["numerator","denominator"]:method==="document_presence"?["document_key"]:["direct","date_age","approval_authority"].includes(method)?method==="date_age"?["field","as_of_field"]:["field"]:[];
+  return <div className="inventory-form-wide inventory-calculation"><label><span>Calculation method</span><select value={method} onChange={e=>onChange(e.target.value?{method:e.target.value}:null)}><option value="">Not stated</option>{["direct","ratio","percentage","date_age","document_presence","approval_authority","compound","manual"].map(m=><option key={m}>{m}</option>)}</select></label>{fields.map(key=><label key={key}><span>{key.replaceAll("_"," ")}</span><input value={value?.[key]||""} onChange={e=>onChange({...value,[key]:e.target.value||null})}/></label>)}{method==="compound"&&<JsonField label="Compound AND/OR condition" value={value?.condition||null} onChange={condition=>onChange({...value,condition})}/>}</div>;
+}
+
+function RuleEditor({record,clauses,existingRules,onSave,onCancel,busy}) {
+  const [form,setForm]=useState(record);
+  const d=form.definition;
+  const update=(key,value)=>setForm(v=>({...v,definition:{...v.definition,[key]:value}}));
+  const textFields=["rule_name","rule_description","check_question","metric_name","metric_definition","threshold_unit","threshold_source","data_source","breach_consequence","approval_or_escalation_requirement","extraction_notes","change_rationale"];
+  const enumField=(key,choices)=><label key={key}><span>{key==="severity"?"Outcome when check fails":key.replaceAll("_"," ")}</span><select value={d[key]??""} onChange={e=>update(key,e.target.value||null)}><option value="">Not stated</option>{choices.map(v=><option key={v}>{v}</option>)}</select></label>;
+  return <form className="inventory-editor" onSubmit={e=>{e.preventDefault();onSave(form);}}>
+    <h3 className="inventory-form-wide">{record.id ? "Create new rule version" : "Create rule"}</h3>
+    <label className="inventory-form-wide"><span>Source clause</span><select required value={d.clause_id||""} onChange={e=>{const clause=clauses.find(c=>c.id===Number(e.target.value));update("clause_id",clause.id);update("source_excerpt",clause.source_excerpt);if(!record.id)update("rule_sequence",Math.max(0,...existingRules.filter(r=>r.clause_id===clause.id).map(r=>r.definition.rule_sequence||0))+1);}}><option value="">Select an ingested clause</option>{clauses.map(c=><option key={c.id} value={c.id}>{c.sequence}. {c.clause_number||"Un-numbered"} {c.section_heading?.slice(0,70)} {c.page_number ? ` · Page ${c.page_number}` : ""}</option>)}</select></label>
+    <label className="inventory-form-wide"><span>Exact source excerpt</span><textarea required rows="5" value={d.source_excerpt} onChange={e=>update("source_excerpt",e.target.value)}/></label>
+    {textFields.map(key=><label key={key}><span>{key.replaceAll("_"," ")}</span><textarea rows={key==="rule_description"?3:2} required={["rule_name","rule_description","check_question","change_rationale"].includes(key)} value={d[key]??""} onChange={e=>update(key,e.target.value||null)}/></label>)}
+    {enumField("requirement_kind",["mandatory","prohibition","conditional","target","unspecified","guidance"])}{enumField("operator",operators)}{enumField("severity",["WARNING","BREACH"])}{enumField("risk_severity",["CRITICAL","HIGH","MEDIUM","LOW"])}
+    <label><span>Rule sequence within clause</span><input required type="number" min="1" value={d.rule_sequence} onChange={e=>update("rule_sequence",Number(e.target.value))}/></label>
+    {["lower_bound","upper_bound"].map(key=><label key={key}><span>{key.replaceAll("_"," ")}</span><input type="number" step="any" value={d[key]??""} onChange={e=>update(key,e.target.value===""?null:Number(e.target.value))}/></label>)}
+    <label><span>Exception allowed</span><select value={d.exception_allowed==null?"":String(d.exception_allowed)} onChange={e=>update("exception_allowed",e.target.value===""?null:e.target.value==="true")}><option value="">Not stated</option><option value="true">Yes</option><option value="false">No</option></select></label>
+    <label><span>Effective from</span><input required type="date" value={form.effective_from} onChange={e=>setForm(v=>({...v,effective_from:e.target.value}))}/></label><label><span>Effective to</span><input type="date" min={form.effective_from} value={form.effective_to||""} onChange={e=>setForm(v=>({...v,effective_to:e.target.value||null}))}/></label>
+    <p className="inventory-form-wide">Use null for properties not stated in the policy. Calculation and conditions are managed data; executable code is prohibited. Input examples: requested_amount, currency, rating, customer_segment, documents.</p>
+    <CalculationEditor value={d.calculation_logic} onChange={value=>update("calculation_logic",value)}/>
+    {["threshold_value","input_data_fields","evidence_requirements","applicability_conditions","applicable_stage","dependencies","input_field_definitions","data_sources","ambiguities"].map(key=><JsonField key={key} label={key.replaceAll("_"," ")} value={d[key]} onChange={value=>{update(key,value);if(key==="applicability_conditions")update("applicability_unresolved",false);}}/>)}
+    <div className="inventory-form-wide rule-toolbar"><button className="btn primary" disabled={busy}>Save {record.id ? "new rule version" : "rule"}</button><button type="button" className="btn secondary" onClick={onCancel}>Cancel</button></div>
+  </form>;
+}
+
+export default function RuleLibrary({session,policies,onOpenEvidence}) {
+  return <SemanticKnowledge policies={policies} onOpenEvidence={onOpenEvidence} canReview={['admin','credit_analyst'].includes(session.user.role)} canExtract={['relationship_manager','admin','credit_analyst'].includes(session.user.role)} initialView="rules" initialPolicy={sessionStorage.getItem('ruleLibraryPolicy')||''} title="Policy Rule Library"/>;
+}
+
+export function OperationalRuleLibrary({session,policies}) {
+  const [operationResult,setOperationResult]=useState(null),[rules,setRules]=useState([]),[clauses,setClauses]=useState([]),[jobs,setJobs]=useState([]),[qualityReports,setQualityReports]=useState({}),[agentReports,setAgentReports]=useState(null),[previewClause,setPreviewClause]=useState("");
+  const [filters,setFilters]=useState({query:"",origin:"graph",policy:sessionStorage.getItem("ruleLibraryPolicy")||"",stage:"",severity:"",type:"",effective:"",quality:""});
+  const [selectedPolicies,setSelectedPolicies]=useState([]),[policiesExpanded,setPoliciesExpanded]=useState(false);
+  const canExtract=["relationship_manager","credit_analyst","admin"].includes(session.user.role);
+  const extractionPolicies=policies.filter(p=>["active","pending metadata"].includes((p.status||"").toLowerCase()));
+  const [openRuleId,setOpenRuleId]=useState(null),[reviewNote,setReviewNote]=useState("");
+  const openRule=rules.find(r=>r.id===openRuleId);
+  const [page,setPage]=useState(1),[error,setError]=useState(""),[busy,setBusy]=useState(false),[edit,setEdit]=useState(null),[detail,setDetail]=useState({});
+  const reviewer=["credit_analyst","admin"].includes(session.user.role),admin=session.user.role==="admin";
+  const setFilter=(key,value)=>{if(key==="policy"){setPreviewClause("");setAgentReports(null);}setFilters(v=>({...v,[key]:value}));setPage(1);};
+  const load=async()=>{const [inventory,history]=await Promise.all([apiRequest("/api/policy-rules?origin=graph"),apiRequest("/api/inventory/jobs")]);setRules(inventory.filter(rule=>rule.origin==="graph"));setJobs(history);};
+  useEffect(()=>{let active=true;load().catch(e=>setError(e.message));return ()=>{active=false;};},[session.user.user_id]);
+  useEffect(()=>{setClauses([]);if(!filters.policy)return;let active=true;apiRequest(`/api/policies/${filters.policy}/clauses`).then(c=>{if(active)setClauses(c);}).catch(e=>setError(e.message));return ()=>{active=false;};},[filters.policy,jobs[0]?.status]);
+  const running=jobs.some(j=>["Queued","Running"].includes(j.status));
+  const currentJob=jobs.find(j=>["Queued","Running"].includes(j.status))||jobs[0];
+  const progress=extractionProgress(currentJob);
+  const targets=extractionPolicyIds(filters.policy,selectedPolicies);
+  const policiesWithRules=new Set(rules.map(r=>String(r.policy_id)));
+  useEffect(()=>{if(!running)return;const timer=setInterval(()=>load().catch(e=>setError(e.message)),3000);return ()=>clearInterval(timer);},[running]);
+  const perform=async fn=>{setBusy(true);setError("");try{await fn();await load();}catch(e){setError(e.message);}finally{setBusy(false);}};
+  
+  const inspect=r=>perform(async()=>{const [details,audit]=await Promise.all([apiRequest(`/api/policy-rules/${r.id}/details`),apiRequest(`/api/policy-rules/${r.id}/audit`)]);setDetail(v=>({...v,[r.id]:{...details,audit}}));});
+  const rows=rules.filter(r=>{
+    const d=r.definition;
+    return (!filters.origin||r.origin===filters.origin)&&(!filters.quality||(filters.quality==="Not reviewed"?!r.quality_status:filters.quality==="Failed"?r.quality_status==="Failed":filters.quality==="Stale"?r.quality_stale:r.quality_report?.review_result===filters.quality))&&(!filters.policy||String(r.policy_id)===filters.policy)&&(!filters.type||d.rule_type===filters.type)&&(!filters.severity||d.severity===filters.severity)&&(!filters.stage||d.applicable_stage?.includes(filters.stage))&&(!filters.effective||(r.effective_from<=filters.effective&&(!r.effective_to||r.effective_to>=filters.effective)))&&JSON.stringify(r).toLowerCase().includes(filters.query.toLowerCase());
+  });
+  const policyRows=rules.filter(r=>!filters.policy||String(r.policy_id)===filters.policy);
+  const currentRuleCount=policyRows.length;
+  const pages=Math.max(1,Math.ceil(rows.length/15)),safePage=Math.min(page,pages);
+  const select=(key,values,label)=><label className="rule-filter"><span>{label.replace(/^All /, "").replace("Any activation state", "Activation state")}</span><select aria-label={label} value={filters[key]} onChange={e=>setFilter(key,e.target.value)}><option value="">{label}</option>{values.map(v=><option key={v} value={v}>{v}</option>)}</select></label>;
+  const generate=()=>perform(()=>apiRequest("/api/risk-knowledge/extractions",{method:"POST",body:JSON.stringify({policy_ids:targets})}));
+  const startEdit=async r=>{setFilter("policy",String(r.policy_id));const source=await apiRequest(`/api/policies/${r.policy_id}/clauses`);setClauses(source);setEdit({id:r.id,status:r.status,policy_id:r.policy_id,definition:r.definition.rule_name?{...initialDefinition,...r.definition}:{...initialDefinition,rule_name:r.definition.name||"",rule_description:r.definition.check||"",check_question:r.definition.check||"",metric_name:r.definition.metric||null,operator:({"<=":"less_than_or_equal",">=":"greater_than_or_equal","<":"less_than",">":"greater_than","==":"equals","!=":"not_equals"})[r.definition.operator]||null,threshold_value:r.definition.threshold??null,calculation_logic:{method:"direct",field:r.definition.metric},input_data_fields:[r.definition.metric].filter(Boolean),data_source:r.definition.data_source||null,severity:r.definition.severity||null,change_rationale:"Revised legacy rule with exact policy source"},effective_from:r.effective_from,effective_to:r.effective_to});};
+  return <Card className="rule-library-card" title="Current operational rule versions" sub="Current rules from source-backed policy graphs.">
+    <div className="rule-library-body">
+    {error&&<div className="data-message error" role="alert">{error}</div>}
+    {operationResult&&<details className="rule-row" open><summary>Selected-rule / assessment results</summary><pre>{JSON.stringify(operationResult,null,2)}</pre></details>}
+
+    <div className="rule-filters"><label className="rule-filter rule-search"><span>Search rules</span><input aria-label="Search inventory" placeholder="Search rules, clauses or metrics" value={filters.query} onChange={e=>setFilter("query",e.target.value)}/></label><label className="rule-filter rule-policy-filter"><span>Policy</span><select aria-label="Select policy" value={filters.policy} onChange={e=>setFilter("policy",e.target.value)}><option value="">All policies ({policies.length})</option>{policies.map(p=><option key={p.policy_id} value={p.policy_id}>{p.library_policy_id} {p.title}</option>)}</select></label>{select("quality",["ACCEPTABLE_FOR_HUMAN_REVIEW","REVISION_REQUIRED","UNSUPPORTED","Failed","Not reviewed","Stale"],"All quality outcomes")}{select("stage",[...new Set(rules.flatMap(r=>r.definition.applicable_stage||[]))],"All stages")}{select("severity",["WARNING","BREACH"],"All severities")}<label className="rule-filter"><span>Effective on</span><input type="date" value={filters.effective} onChange={e=>setFilter("effective",e.target.value)}/></label><span className="rule-filter-count">{rows.length} displayed | {currentRuleCount} current graph rules</span></div>
+    <div className="rule-toolbar rule-inventory-actions">{canExtract&&<><button className="btn primary" disabled={busy||running||!targets.length} onClick={generate}>Extract Rules</button><button type="button" className="btn secondary" aria-expanded={policiesExpanded} aria-controls="extraction-policy-selection" onClick={()=>setPoliciesExpanded(v=>!v)}>{policiesExpanded?"Collapse policies":"Expand policies"}</button><span>{targets.length} {filters.policy?"policy selected above":"policies selected"}</span></>}<button className="btn tertiary" disabled={busy} onClick={()=>perform(load)}>Refresh</button></div>
+    {canExtract&&policiesExpanded&&<section id="extraction-policy-selection" className="rule-row" aria-label="Policies for rule extraction"><div className="rule-toolbar"><button type="button" disabled={busy||running||!extractionPolicies.length} onClick={()=>setSelectedPolicies(extractionPolicies.map(p=>p.policy_id))}>Select All</button><button type="button" disabled={busy||running||!selectedPolicies.length} onClick={()=>setSelectedPolicies([])}>Clear selection</button></div>{!extractionPolicies.length&&<p>No active policy documents available.</p>}{extractionPolicies.map(p=><label key={p.policy_id} style={{display:"flex",gap:"8px",alignItems:"center",padding:"6px 0"}}><input type="checkbox" disabled={busy||running} checked={selectedPolicies.includes(p.policy_id)} onChange={e=>setSelectedPolicies(current=>e.target.checked?[...current,p.policy_id]:current.filter(id=>id!==p.policy_id))}/><span>{p.library_policy_id} {p.title}{p.file_name?` (${p.file_name})`:""}{policiesWithRules.has(String(p.policy_id))&&<strong className="policy-rules-exist"> [rules exist]</strong>}</span></label>)}</section>}
+    {reviewer&&filters.policy&&clauses.length>0&&<div className="rule-toolbar"><select aria-label="Clause for agent preview" value={previewClause} onChange={e=>setPreviewClause(e.target.value)}><option value="">Select a clause to preview with the agent</option>{clauses.map(c=><option key={c.id} value={c.id}>{c.sequence}. {c.source_excerpt.slice(0,100)}</option>)}</select><button disabled={busy||!previewClause} onClick={()=>perform(async()=>{const report=await apiRequest(`/api/policies/${filters.policy}/rule-extraction-preview`,{method:"POST",body:JSON.stringify({clause_ids:[Number(previewClause)]})});setAgentReports([report]);})}>Preview agent proposals</button><small>Preview saves an extraction report and preserves existing inventory versions.</small></div>}
+    {agentReports&&<details className="rule-row" open><summary>Structured agent output ({agentReports.length} batches)</summary><p>Source risk severity and failed-check outcome are separate fields. Extracted proposals retain source evidence and require review.</p>{!agentReports.length&&<p>No reports using the new extraction contract exist for this policy yet.</p>}{agentReports.map(report=><details key={report.extraction_run_id}><summary>Run {report.extraction_run_id}: {report.rules.length} proposals, {report.non_rule_content.length} non-rule entries</summary><pre>{JSON.stringify(report,null,2)}</pre></details>)}</details>}
+    {running&&currentJob&&progress.total>0&&<section className="extraction-progress" aria-label="Rule extraction progress"><div className="extraction-progress-heading"><strong>{running?"Extracting rules":"Rule extraction"}</strong><span role="status">{progress.completed} of {progress.total} documents processed{progress.failed>0?` (${progress.failed} need retry)`:""}</span></div><progress max={progress.total} value={progress.processed} aria-label="Documents processed"/><p>{currentJob.status==="Queued"?"Waiting to start...":running&&progress.completed===progress.total?"All documents processed. Reviewing rules...":running?"Processing selected policy documents...":"Extraction finished."}</p></section>}
+
+    {edit&&<RuleEditor key={edit.id||"new"} record={edit} clauses={clauses} existingRules={rules} busy={busy} onCancel={()=>setEdit(null)} onSave={form=>perform(async()=>{const errors=validateRuleForm(form);if(errors.length)throw new Error(errors.join(" "));const {id,status,...payload}=form;await apiRequest(id?`/api/policy-rules/${id}`:"/api/policy-rules",{method:id?"PUT":"POST",body:JSON.stringify(payload)});setEdit(null);})}/>}
+    {!rows.length&&<p>No matching rules. Extract a policy document to generate rules.</p>}
+    <div className="rule-table-scroll"><table className="rule-inventory-table" aria-label="Policy rules">
+      <thead><tr><th scope="col">Rule / version</th><th scope="col">Policy / clause</th><th scope="col">Threshold</th><th scope="col">Status</th><th scope="col">Readiness</th><th scope="col">Full details</th></tr></thead>
+      <tbody>{rows.slice((safePage-1)*15,safePage*15).map(r=><tr key={r.id}>
+      <td><strong>{r.definition.rule_name||r.definition.name}</strong><small>{r.rule_code||r.rule_key} ? v{r.version}</small></td>
+      <td>{r.policy_name}<small>Clause: {r.source_clause||"Un-numbered"}</small></td>
+      <td>{textValue(r.definition.threshold_value??r.definition.threshold)} {r.definition.threshold_unit||""}</td>
+      <td><Badge>{r.status}</Badge><small>{r.origin_label}</small></td>
+      <td>{r.operational_status}</td>
+      <td><button type="button" className="icon-button rule-details-button" aria-label={`View full details for ${r.definition.rule_name||r.definition.name}`} title="View full rule details" onClick={()=>{setOpenRuleId(r.id);setReviewNote("");inspect(r);}}><Eye size={19}/></button></td>
+    </tr>)}</tbody>
+    </table></div>
+    <div className="rule-toolbar rule-pagination"><button disabled={safePage<=1} onClick={()=>setPage(p=>p-1)}>Previous</button><span>Page {safePage} of {pages}</span><button disabled={safePage>=pages} onClick={()=>setPage(p=>p+1)}>Next</button></div>
+    {openRule&&<RuleDialog rule={openRule} onClose={()=>setOpenRuleId(null)}>
+      {error&&<div className="data-message error" role="alert">{error}</div>}
+      <p>{openRule.origin==="history"?"Historical record: it is not eligible for graph-first operational selection. ":""}{openRule.policy_name} · Policy version {openRule.policy_version} · {openRule.file_name} · Section {openRule.source_section||"Not stated"} · Clause {openRule.source_clause||"Un-numbered"} · Page {openRule.source_page||"Unavailable"}</p>
+      {openRule.quality_status&&<details><summary>Quality review: {openRule.quality_stale?"Review stale after edit":openRule.quality_report?.review_result||openRule.quality_status}</summary><pre>{JSON.stringify(openRule.quality_report||{error:openRule.quality_error,retry_status:"Retry available"},null,2)}</pre></details>}
+      <blockquote>{openRule.definition.source_excerpt||openRule.definition.source_evidence}</blockquote>
+      {openRule.source_document_id&&<a href={`${API}/api/inventory/documents/${openRule.source_document_id}/source`} target="_blank" rel="noreferrer">Open source document</a>}
+
+      {openRule.origin==="graph"&&<RuleReviewPanel rule={openRule} canReview={reviewer} onApproved={load}/>}
+      <details><summary>Advanced rule fields</summary>
+      <dl className="policy-metadata-list">{Object.entries(openRule.definition).filter(([k])=>!["source_excerpt","clause_id","rule_type","requirement_category","missing_information"].includes(k)).map(([key,value])=><div key={key}><dt>{key.replaceAll("_"," ")}</dt><dd>{textValue(value)}</dd></div>)}{["effective_from","effective_to","superseded_version_id"].map(key=><div key={key}><dt>{key.replaceAll("_"," ")}</dt><dd>{textValue(openRule[key])}</dd></div>)}</dl></details>
+      <div className="rule-toolbar">{reviewer&&<><button disabled={busy} onClick={()=>perform(async()=>{await startEdit(openRule);setOpenRuleId(null);})}>Create new version</button><button disabled={busy} onClick={()=>perform(async()=>{const result=await apiRequest(`/api/policy-rules/${openRule.id}/quality-review`,{method:"POST"});setQualityReports(v=>({...v,[openRule.id]:result}));})}>AI quality review</button></>}<button disabled={busy} onClick={()=>inspect(openRule)}>Version history and audit</button></div>
+      {openRule.origin==="graph"&&openRule.status==="Approved"&&openRule.definition.representation_id&&!openRule.review_required&&<p>{openRule.operational_eligible?"This rule is eligible for applicability checks. The overall policy assessment can still be incomplete.":"Approval is recorded, but the readiness checks above must be satisfied before operational selection."}</p>}
+      {reviewer&&["Inactive","Active"].includes(openRule.status)&&String(openRule.extraction_key||"").startsWith("risk-knowledge:")&&<section className="rule-knowledge-review"><h4>Rule status</h4><label>Reason for status change<textarea value={reviewNote} onChange={e=>setReviewNote(e.target.value)} placeholder="Enter a reason for the status change"/></label><div className="rule-toolbar">{({Inactive:["activate"],Active:["deactivate"]}[openRule.status]||[]).map(action=><button key={action} disabled={busy||reviewNote.trim().length<3} onClick={()=>perform(async()=>{await apiRequest(`/api/policy-rules/${openRule.id}/actions`,{method:"POST",body:JSON.stringify({action,comment:reviewNote})});const [details,audit]=await Promise.all([apiRequest(`/api/policy-rules/${openRule.id}/details`),apiRequest(`/api/policy-rules/${openRule.id}/audit`)]);setDetail(v=>({...v,[openRule.id]:{...details,audit}}));})}>{action.charAt(0).toUpperCase()+action.slice(1)}</button>)}</div>{detail[openRule.id]?.versions.filter(v=>v.id!==openRule.id&&v.status==="Active").map(v=><button key={v.id} disabled={busy||reviewNote.trim().length<3} onClick={()=>perform(async()=>{await apiRequest(`/api/policy-rules/${v.id}/actions`,{method:"POST",body:JSON.stringify({action:"deactivate",comment:reviewNote})});const updated=await apiRequest(`/api/policy-rules/${openRule.id}/details`);setDetail(d=>({...d,[openRule.id]:{...d[openRule.id],...updated}}));})}>Deactivate active predecessor v{v.version}</button>)}</section>}
+      {qualityReports[openRule.id]&&<section aria-label="Advisory quality review"><h4>AI quality review: {qualityReports[openRule.id].report.review_result}</h4><p>Reviewed version {qualityReports[openRule.id].rule_version}. Rerun quality review after editing the rule.</p><p>Advisory findings for human review. Quality findings help identify rules that need correction.</p><pre>{JSON.stringify(qualityReports[openRule.id].report,null,2)}</pre></section>}
+      {detail[openRule.id]&&<><h4>Version history</h4>{detail[openRule.id].versions.map(v=><p key={v.id}>{v.status} ? v{v.version} ·  · {v.effective_from} to {v.effective_to||"open-ended"} · </p>)}<h4>Review history</h4>{detail[openRule.id].reviews.map(h=><p key={h.id}>{h.reviewed_at} · {h.reviewed_by} · {h.decision}: {h.comments}</p>)}<h4>Audit trail</h4>{detail[openRule.id].audit.map(h=><details key={h.id}><summary>{h.created_at} · {h.actor} · {h.action}: {h.reason}</summary><pre>{JSON.stringify({previous:h.previous_value,new:h.new_value},null,2)}</pre></details>)}<h4>Relationships</h4>{detail[openRule.id].relationships.map(rel=><p key={rel.id}>{rel.relationship_type} · Version {rel.related_rule_version_id}: {rel.reason}</p>)}<h4>Assessments in your account</h4>{!detail[openRule.id].assessments.length&&<p>No assessments have used this version in your account.</p>}{detail[openRule.id].assessments.map(a=><p key={a.id}><button onClick={()=>{sessionStorage.setItem(`complianceReviewSelection:${session.user.user_id}`,a.request_id);sessionStorage.setItem("complianceTraceReviewId",String(a.review_id));location.hash="compliance";}}>{a.request_id} · {a.result} · {a.evaluated_at}</button></p>)}</>}
+    </RuleDialog>}
+    </div>
+  </Card>;
+}

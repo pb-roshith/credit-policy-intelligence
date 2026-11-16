@@ -13,7 +13,7 @@ test("both Dossier requests appear even when the local request list is empty", a
     return path === "/api/deals" ? {deals} : [];
   };
   const {rows,error} = await loadRequestList("session",request);
-  assert.deepEqual(calls,["/api/deals","/api/requests"]);
+  assert.deepEqual(calls,["/api/deals","/api/requests","/api/compliance-review/current-summaries"]);
   assert.deepEqual(rows.map(r=>r.credit_request_number),["deal_one","deal_two"]);
   assert.deepEqual(rows.map(r=>r.borrower_name),["Borrower One","Borrower Two"]);
   assert.equal(error,"");
@@ -40,4 +40,12 @@ test("shared-source failure retains local requests and reports the failure", asy
   });
   assert.equal(rows[0].credit_request_number,"CR-100");
   assert.equal(error,"Shared requests unavailable");
+});
+
+test("request list never invents compliance and uses current graph summaries",async()=>{
+ const request=async path=>path==='/api/deals'?{deals}:path==='/api/requests'?[]:[{request_id:'deal_two',compliance_score:70,assessment_scope:'current-semantic-graph'}];
+ const {rows}=await loadRequestList('session',request);
+ assert.equal(rows[0].credit_request_number,'deal_two');
+ assert.equal(rows[0].compliance_score,70);
+ assert.equal(rows[1].compliance_score,null);
 });

@@ -186,6 +186,7 @@ def _create_public_tables(connection) -> None:
             expires_at TIMESTAMPTZ NOT NULL
         )
     """)
+    connection.execute("ALTER TABLE public.sessions ADD COLUMN IF NOT EXISTS application_id TEXT NOT NULL DEFAULT 'cpi'")
     connection.execute(
         "ALTER TABLE public.sessions ADD COLUMN IF NOT EXISTS csrf_token_hash CHAR(64)"
     )
@@ -295,7 +296,7 @@ def _create_shared_tables(connection) -> None:
             policy_id BIGINT NOT NULL REFERENCES credit_data.policy_documents(policy_id) ON DELETE CASCADE,
             policy_code VARCHAR(80) NOT NULL,
             policy_name VARCHAR(200) NOT NULL,
-            control_sequence SMALLINT NOT NULL CHECK (control_sequence BETWEEN 1 AND 5),
+            control_sequence INTEGER NOT NULL CHECK (control_sequence >= 1),
             control_name VARCHAR(240) NOT NULL,
             control_owner VARCHAR(100) NOT NULL,
             clause_number VARCHAR(16) NOT NULL,
@@ -311,6 +312,18 @@ def _create_shared_tables(connection) -> None:
             generated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
             UNIQUE (policy_id, control_sequence)
         )
+    """)
+    connection.execute("""
+        DO $$ BEGIN
+            IF EXISTS (SELECT 1 FROM pg_constraint
+                WHERE conrelid='credit_data.policy_controls'::regclass
+                AND conname='policy_controls_control_sequence_check'
+                AND pg_get_constraintdef(oid) LIKE '%<= 5%') THEN
+                ALTER TABLE credit_data.policy_controls DROP CONSTRAINT policy_controls_control_sequence_check;
+                ALTER TABLE credit_data.policy_controls ALTER COLUMN control_sequence TYPE INTEGER;
+                ALTER TABLE credit_data.policy_controls ADD CONSTRAINT policy_controls_control_sequence_check CHECK (control_sequence >= 1);
+            END IF;
+        END $$
     """)
     connection.execute("""
         CREATE INDEX IF NOT EXISTS policy_controls_policy_idx
@@ -536,10 +549,8 @@ def _create_account_tables(connection) -> None:
             PRIMARY KEY (user_id, scenario_id)
         )
     """)
-    connection.execute("""
-        CREATE UNIQUE INDEX IF NOT EXISTS decision_scenarios_name_unique
-        ON "user".decision_scenarios (user_id, LOWER(BTRIM(scenario_name)))
-    """)
+    from .services.scenario_requests import create_request_scenario_schema
+    create_request_scenario_schema(connection)
     connection.execute("""
         CREATE TABLE IF NOT EXISTS "user".ai_observability_spans (
             span_id VARCHAR(16) NOT NULL,
@@ -644,6 +655,8 @@ def _configure_account_security(connection) -> None:
     connection.execute(
         'GRANT SELECT ON "user".latest_borrower_exposure TO credit_user_runtime'
     )
+    from .services.current_knowledge import create_current_views
+    create_current_views(connection)
 
 
 def initialize_database() -> None:

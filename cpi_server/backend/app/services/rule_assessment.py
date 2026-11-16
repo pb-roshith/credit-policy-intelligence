@@ -76,18 +76,15 @@ def active_rule_candidates(evaluation_date=None):
             JOIN policy_rule_entities e ON e.id=r.rule_entity_id
             JOIN policy_clauses cl ON cl.id=r.clause_id
             JOIN inventory_documents doc ON doc.id=cl.document_id
-            WHERE credit_data.is_quantitative_rule(r.definition)
-                AND (COALESCE(r.extraction_key,'') NOT LIKE 'risk-knowledge:%%'
-                     OR (r.status='Active' AND r.active AND r.approved_by IS NOT NULL)
-                     OR r.status='Approved')
+            WHERE credit_data.is_supported_policy_rule(r.definition)
+                AND r.status IN ('Approved','Active') AND r.approved_by IS NOT NULL
+                AND r.definition->>'representation_version'='policy-representation-v1'
                 AND pv.is_current AND r.policy_version=p.version AND r.policy_fingerprint=md5(p.summary)
                 AND (%s::date IS NULL OR (r.effective_from<=%s AND (r.effective_to IS NULL OR r.effective_to>=%s) AND pv.effective_date<=%s))
                 AND NOT EXISTS (SELECT 1 FROM policy_rule_versions newer
                     WHERE newer.rule_key=r.rule_key AND newer.version>r.version
                     AND newer.policy_version_id=r.policy_version_id
-                    AND (COALESCE(newer.extraction_key,'') NOT LIKE 'risk-knowledge:%%'
-                         OR (newer.status='Active' AND newer.active AND newer.approved_by IS NOT NULL)
-                         OR newer.status='Approved'))
+                    AND newer.status IN ('Approved','Active') AND newer.approved_by IS NOT NULL)
             ORDER BY r.id""",(evaluation_date,evaluation_date,evaluation_date,evaluation_date)).fetchall()
 
 
@@ -100,21 +97,25 @@ def run_rule_assessment(request_number,user_id,*,user=None):
     is_local=request_number.startswith('CR-')
     now=datetime.now(timezone.utc)
     rules=active_rule_candidates(now.date())
-    if not rules:raise HTTPException(409,'No current rule versions are effective. Generate rules in the Policy Rule Library if none exist, and check their source versions and effective dates. Approved rules are available automatically; no activation is required.')
+    if not rules:raise HTTPException(409,'No approved graph-compiled rules are effective. Extract rules to build the source representation, resolve its coverage and review the compiled drafts. Approved rules are available automatically; no activation is required.')
     from .policy_scope import policy_first_applicability
     applicability_report=policy_first_applicability(proposal,rules,proposal.get('status'),now.date())
     applicable_ids={d['candidate_id'] for d in applicability_report['decisions']
-                    if d['candidate_type']=='Rule' and (d['applicability']=='Applicable' or proposal.get('_canonical_record') and d['applicability']=='Unable to Determine')}
-    applicable_rules=[rule for rule in rules if str(rule['id']) in applicable_ids]
+                    if d['candidate_type']=='Rule' and d['applicability']=='Applicable'}
+    from ..risk_knowledge.rule_readiness import effective_rule
+    applicable_rules=[effective_rule(rule,applicability_report.get('dependency_reviews',{}).get(str(rule['id']))) for rule in rules if str(rule['id']) in applicable_ids]
     from ..manufacture_data.assessment_data import (ACTUAL_GENERATOR_VERSION,
         manufacture_assessment_inputs, supplement_actual_resolution, manufacture_observed_actual)
     assessment_data,manufactured_inputs=manufacture_assessment_inputs(request_number,proposal,applicable_rules,now.date())
+    from ..risk_knowledge.taxonomy import apply_normalization
+    normalization=applicability_report.get('taxonomy_normalization',[])
+    assessment_data=apply_normalization(assessment_data,normalization)
     findings=[];snapshots=[]
     for rule in applicable_rules:
         d=rule['definition']
         from .credit_data import resolve_actual
         record=proposal.get('_canonical_record')
-        resolution=resolve_actual(rule,record,as_of=now.date()) if record else None
+        resolution=resolve_actual(rule,record,as_of=now.date(),taxonomy_normalization=normalization) if record else None
         if resolution:
             resolution=supplement_actual_resolution(rule,resolution,assessment_data,manufactured_inputs,now.date())
         evaluation=resolution['evaluation'] if resolution else execute_rule(d,assessment_data,now.date())
@@ -189,6 +190,9 @@ def run_rule_assessment(request_number,user_id,*,user=None):
     counts={status:sum(f.get('severity')==status for f in findings) for status in ('PASS','WARNING','BREACH')}
     outcomes={status:sum(f['result']==status for f in findings) for status in ('Pass','Warning','Breach','Not Applicable','Unable to Assess','Manual Review Required')}
     assessed=sum(counts.values());unknown=outcomes['Unable to Assess']+outcomes['Manual Review Required']
+    unresolved_scope=sum(d['applicability']=='Unable to Determine' for d in applicability_report['decisions'])
+    unknown += unresolved_scope
+    unknown += len(applicability_report.get('incomplete_policy_ids',[]))
     rank={'PASS':0,'WARNING':1,'BREACH':2};heat={}
     for f in findings:
         if f.get('severity') and rank[f['severity']]>=rank.get(heat.get(f['policy_type']),-1):heat[f['policy_type']]=f['severity']

@@ -85,7 +85,7 @@ function creditRequestRow(row) {
     row.rating,
     formatMillions(row.requested_amount, row.currency),
     row.status,
-    row.compliance_score,
+    row.compliance_score ?? row.compliance_status ?? "Not assessed",
     row.recommended_pricing_bps,
     row.recommended_tenor_years,
     row.geography,
@@ -130,6 +130,7 @@ function RequestAssistant({ request, session }) {
       <h3>Applicable policies to review</h3>
       {mappingError ? <p>{mappingError}</p> : !mapping ? <p>Checking policy scope...</p> : <>
         {mapping.policy_mappings.map(policy => <p key={policy.policy_id}>{policy.policy_name} <small>({policy.rule_count} applicable rules)</small></p>)}
+        {!!mapping.unresolved_policy_count && <p>{mapping.unresolved_policy_count} policies need scope review or request information before applicability can be confirmed.</p>}
       </>}
     </Card>
   );

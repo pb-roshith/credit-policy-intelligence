@@ -196,22 +196,23 @@ class InventoryJobTests(unittest.TestCase):
         from app.services.rule_extraction import run_inventory_job
         connection=db.return_value.__enter__.return_value
         connection.execute.return_value.fetchone.return_value={'policy_ids':[1,2],'progress':[
-            {'policy_id':1,'status':'Completed','rules_proposed':5},
+            {'policy_id':1,'status':'Completed','rules_proposed':5,'pipeline':'policy-semantic-llm-v1'},
             {'policy_id':2,'status':'Completed','partial_result':True,'rules_proposed':2}]}
         process.return_value={'policy_id':2,'status':'Completed','rules_proposed':3}
         run_inventory_job('job-1',{'user_id':'analyst'})
         process.assert_called_once()
         self.assertEqual(process.call_args.args[0],2)
         final=next(c for c in reversed(connection.execute.call_args_list) if 'finished_at=' in c.args[0])
-        self.assertEqual(final.args[1][0],'Completed with errors')
+        self.assertEqual(final.args[1][0],'Completed')
         report=json.loads(final.args[1][1])
         self.assertEqual(report['rules_proposed'],8)
         self.assertEqual(report['policies_processed'],2)
+        quality.assert_not_called()
 
     @patch('app.services.inventory_operations.run_quality_reviews',side_effect=ValueError('Review unavailable'))
     @patch('app.services.rule_extraction.shared_policy_connection')
     @patch('app.risk_knowledge.pipeline.process_policy')
-    def test_review_crash_finalizes_job_with_error_and_stops_heartbeat(self,process,db,quality):
+    def test_graph_first_job_does_not_require_model_quality_review(self,process,db,quality):
         from app.services.rule_extraction import run_inventory_job
         connection=db.return_value.__enter__.return_value
         connection.execute.return_value.fetchone.return_value={'policy_ids':[1]}
@@ -219,8 +220,8 @@ class InventoryJobTests(unittest.TestCase):
         with patch('app.services.rule_extraction.logger'):
             run_inventory_job('job-1',{'user_id':'analyst'})
         final=next(c for c in reversed(connection.execute.call_args_list) if 'finished_at=' in c.args[0])
-        self.assertIn("THEN 'Completed with errors' ELSE 'Failed'",final.args[0])
-        self.assertEqual(final.args[1],('Review unavailable','job-1'))
+        self.assertEqual(final.args[1][0],'Completed')
+        quality.assert_not_called()
 
     @patch('app.services.inventory_operations.run_quality_reviews',return_value={})
     @patch('app.services.rule_extraction.shared_policy_connection')

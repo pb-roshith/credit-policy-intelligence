@@ -22,17 +22,28 @@ def request_policy_mapping(credit_request_number: str,user: dict = Depends(curre
 
 @router.post('/api/compliance-review/applicability')
 def check_applicability(payload: ComplianceReviewRequest,user: dict = Depends(current_user)):
-    from ..services.rule_assessment import assessment_request_context,active_rule_candidates
-    from ..services.policy_scope import policy_first_applicability
+    from ..services.rule_assessment import assessment_request_context
+    from ..services.semantic_matching import load_matcher
     request_id,data=assessment_request_context(payload.credit_request_number,user)
-    from datetime import date
-    candidates=active_rule_candidates(date.today())
-    report=policy_first_applicability(data,candidates,data.get('status'))
+    report=load_matcher().match(data)
     return {'request_id':request_id,**report}
+
+@router.get('/api/compliance-review/current-summaries')
+def current_assessment_summaries(user:dict=Depends(current_user)):
+    from ..services.current_knowledge import current_reviews
+    from ..services.semantic_matching import load_matcher
+    with db_connection() as db:
+        rows=db.execute("""SELECT DISTINCT ON (user_id,COALESCE(source_request_id,credit_request_number))
+            user_id AS account_user_id,COALESCE(source_request_id,credit_request_number) AS request_id,review
+            FROM ai_compliance_reviews ORDER BY user_id,COALESCE(source_request_id,credit_request_number),created_at DESC,review_id DESC""").fetchall()
+    return [{'request_id':r['request_id'],'account_user_id':r['account_user_id'],
+        'compliance_score':r['review'].get('overall_score'),'compliance_status':r['review'].get('compliance_status'),
+        'assessment_scope':'current-semantic-graph'} for r in current_reviews(rows,load_matcher().fingerprint)]
+
 
 @router.get("/api/compliance-review/{credit_request_number}/latest")
 def get_latest_compliance_review(credit_request_number: str, _: dict = Depends(current_user)):
-    review = latest_stored_compliance_review(credit_request_number)
+    review = latest_stored_compliance_review(credit_request_number, user=_)
     if not review:
         raise HTTPException(status_code=404, detail="No saved compliance review was found for this credit request")
     return review
@@ -43,13 +54,15 @@ def historical_review(review_id: int, user: dict = Depends(current_user)):
     with db_connection() as connection:
         row=connection.execute("SELECT review_id,review,created_at FROM ai_compliance_reviews WHERE review_id=%s",(review_id,)).fetchone()
     if not row:raise HTTPException(404,"Assessment version not found in your account")
+    from ..services.current_knowledge import current_review
+    if not current_review(row['review']):raise HTTPException(410,'Run a current knowledge graph assessment for this request.')
     from ..services.assessment_comparison import refresh_finding_comparisons
     return refresh_finding_comparisons({**row['review'],"review_id":row['review_id'],"stored_at":row['created_at'],"cached":True})
 
 
 @router.post("/api/compliance-review/run")
 def run_compliance_review(payload: ComplianceReviewRequest, user: dict = Depends(current_user)):
-    from ..services.rule_assessment import run_rule_assessment
+    from ..services.semantic_assessment import run_rule_assessment
     review = run_rule_assessment(normalize_request_id(payload.credit_request_number), user["user_id"], user=user)
     review["cached"] = False
     return review
@@ -59,7 +72,7 @@ def run_compliance_review(payload: ComplianceReviewRequest, user: dict = Depends
 def compliance_review_copilot(payload: ComplianceCopilotRequest, user: dict = Depends(current_user)):
     if not MISTRAL_API_KEY:
         raise HTTPException(status_code=503, detail="MISTRAL_API_KEY is not configured")
-    review = latest_stored_compliance_review(payload.credit_request_number)
+    review = latest_stored_compliance_review(payload.credit_request_number, user=user)
     if not review:
         raise HTTPException(status_code=404, detail="Run the Compliance Review Agent before asking the copilot")
     prompt = copilot_prompt(review, payload.question)

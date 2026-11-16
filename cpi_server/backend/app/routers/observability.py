@@ -19,25 +19,19 @@ def observability(_: dict = Depends(current_user)):
                    COALESCE(SUM(input_tokens), 0) AS input_tokens,
                    COALESCE(SUM(output_tokens), 0) AS output_tokens,
                    COALESCE(SUM(total_tokens), 0) AS total_tokens
-            FROM ai_observability_spans
+            FROM "user".current_ai_observability_spans
         """).fetchone())
         features = connection.execute("""
             WITH catalog(feature, operation, display_name) AS (VALUES
               ('Executive Dashboard', 'portfolio_insights', 'Portfolio Insights'),
-              ('Policy Intelligence', 'policy_copilot', 'Policy Copilot'),
+              ('Policy Intelligence', 'semantic_policy_copilot', 'Policy Copilot'),
               ('Compliance Review', 'compliance_copilot', 'Compliance Copilot'),
               ('Exception Management', 'exception_rationale', 'AI Exception Rationale'),
               ('Decision Simulator', 'scenario_recommendations', 'Scenario Recommendations'),
               ('Portfolio Analytics', 'portfolio_copilot', 'Portfolio Analytics Copilot'),
-              ('Compliance Review', 'policy_applicability', 'Policy Applicability'),
-              ('Policy Rule Library', 'rule_extraction', 'Policy Rule Extraction'),
-              ('Policy Rule Library', 'rule_quality_review', 'Rule Quality Review'),
-              ('Risk Knowledge', 'knowledge_taxonomy_enrichment', 'Taxonomy Enrichment'),
-              ('Risk Knowledge', 'knowledge_ontology_discovery', 'Ontology Discovery'),
-              ('Risk Knowledge', 'knowledge_clause_classification', 'Clause Classification'),
-              ('Risk Knowledge', 'knowledge_rule_extraction', 'Knowledge Rule Extraction'),
-              ('Risk Knowledge', 'knowledge_taxonomy_mapping', 'Taxonomy Mapping'),
-              ('Risk Knowledge', 'knowledge_conflict_explanation', 'Conflict Explanation'),
+              ('Risk Knowledge', 'semantic_policy_extraction', 'Semantic Rule Extraction'),
+              ('Risk Knowledge', 'semantic_policy_scope', 'Policy Scope Extraction'),
+              ('Compliance Review', 'graph_rag_explanation', 'Graph Evidence Explanation'),
               ('Policy Intelligence', 'policy_generation', 'Policy Document Generation'),
               ('Policy Intelligence', 'policy_summary', 'Policy Summary Generation')
             ), aggregate AS (
@@ -49,7 +43,7 @@ def observability(_: dict = Depends(current_user)):
                      COALESCE(SUM(output_tokens), 0) AS output_tokens,
                      COALESCE(SUM(total_tokens), 0) AS total_tokens,
                      MAX(started_at) AS last_request_at
-              FROM ai_observability_spans GROUP BY feature, operation
+              FROM "user".current_ai_observability_spans GROUP BY feature, operation
             )
             , discovered_catalog AS (
               SELECT * FROM catalog
@@ -78,7 +72,7 @@ def observability(_: dict = Depends(current_user)):
                    latency_ms, input_tokens, output_tokens, total_tokens,
                    started_at, ended_at, input_payload, output_payload,
                    retrieved_sources, flow_steps
-            FROM ai_observability_spans
+            FROM "user".current_ai_observability_spans
             ORDER BY started_at DESC LIMIT 200
         """).fetchall()
         generated_at = connection.execute("SELECT CURRENT_TIMESTAMP AS value").fetchone()["value"]

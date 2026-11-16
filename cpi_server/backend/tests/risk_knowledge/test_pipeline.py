@@ -150,21 +150,13 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result['error'],'One source group failed')
         project.assert_called_once()
 
-    def test_pipeline_wraps_existing_inventory_extractor_once_with_knowledge_context(self):
-        pipeline=MagicMock()
-        pipeline.current_stage='extraction'
-        pipeline.counts={}
-        pipeline.stages=[]
-        pipeline.finish.return_value={'status':'Completed','pipeline':PIPELINE_VERSION}
-        with patch('app.risk_knowledge.pipeline.IntelligenceService'),patch('app.risk_knowledge.pipeline.PolicyKnowledgePipeline',return_value=pipeline), \
-             patch('app.services.rule_extraction.ingest_policy',return_value=source_fixture()), \
-             patch('app.services.rule_extraction.process_policy',return_value={'status':'Completed'}) as extract:
+    def test_operational_entrypoint_uses_graph_informed_semantic_extraction(self):
+        with patch('app.risk_knowledge.semantic_pipeline.process_policy',return_value={'status':'Completed','pipeline':PIPELINE_VERSION}) as compile_policy, \
+             patch('app.risk_knowledge.pipeline.PolicyKnowledgePipeline') as legacy:
             result=process_policy(7,{'user_id':'analyst'},'job-1')
         self.assertEqual(result['pipeline'],PIPELINE_VERSION)
-        self.assertEqual(extract.call_args.kwargs['knowledge'],pipeline)
-        pipeline.classify.assert_called_once()
-        pipeline.discover_ontology.assert_called_once()
-        pipeline.finish.assert_called_once()
+        compile_policy.assert_called_once_with(7,{'user_id':'analyst'},'job-1',None)
+        legacy.assert_not_called()
 
     def test_partial_mapping_is_not_reported_as_complete(self):
         self.pipeline.discover_ontology()

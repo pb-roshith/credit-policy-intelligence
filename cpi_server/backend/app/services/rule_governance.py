@@ -53,8 +53,8 @@ def validate_source(c,payload):
 
 
 def store_rule(payload: GovernedRuleInput,user,previous=None,extraction_key=None,c=None,force_draft=False):
-    from .quantitative_rules import is_quantitative_rule
-    if not is_quantitative_rule(payload.definition.model_dump()):
+    from .quantitative_rules import is_supported_inventory_rule
+    if not is_supported_inventory_rule(payload.definition.model_dump()):
         raise HTTPException(422, 'Only quantitative rules with an explicit numeric threshold or bound are supported')
     if c is None:
         with shared_policy_connection() as connection:
@@ -77,7 +77,8 @@ def store_rule(payload: GovernedRuleInput,user,previous=None,extraction_key=None
     else:
         code=f'POL-{payload.policy_id}-C{source["sequence"]}-R{payload.definition.rule_sequence}'
         if extraction_key:
-            code += '-Q'
+            code += ('-G-'+hashlib.sha256(payload.definition.representation_node_id.encode()).hexdigest()[:12]
+                     if payload.definition.representation_node_id else '-Q')
         c.execute('SELECT pg_advisory_xact_lock(hashtext(%s))',(code,))
         entity=c.execute('SELECT * FROM policy_rule_entities WHERE rule_code=%s',(code,)).fetchone()
         if entity:
@@ -92,10 +93,12 @@ def store_rule(payload: GovernedRuleInput,user,previous=None,extraction_key=None
         existing=c.execute('SELECT * FROM policy_rule_versions WHERE extraction_key=%s',(extraction_key,)).fetchone()
         if existing:return dict(existing)
     definition=payload.definition.model_dump(mode='json')
-    if before and str(before.get('extraction_key') or '').startswith('risk-knowledge:'):
+    if definition.get('representation_id'):
+        force_draft=True
+    if before and str(before.get('extraction_key') or '').startswith(('risk-knowledge:','graph-first:')):
         force_draft=True
         if extraction_key is None:
-            extraction_key='risk-knowledge:revision:'+str(uuid4())
+            extraction_key=('graph-first:' if definition.get('representation_id') else 'risk-knowledge:')+'revision:'+str(uuid4())
     extra_columns=',status,active' if force_draft else ''
     extra_values=",'Draft',false" if force_draft else ''
     row=c.execute(f"INSERT INTO policy_rule_versions(rule_key,version,policy_id,policy_version,policy_fingerprint,definition,effective_from,effective_to,created_by,rule_entity_id,policy_version_id,clause_id,superseded_version_id,extraction_key{extra_columns}) VALUES (%s,%s,%s,%s,md5(%s),%s::jsonb,%s,%s,%s,%s,%s,%s,%s,%s{extra_values}) RETURNING *",(key,version,payload.policy_id,source['version'],source['summary'],json.dumps(definition),payload.effective_from,payload.effective_to,user['user_id'],entity_id,source['policy_version_id'],source['id'],superseded,extraction_key)).fetchone()
@@ -105,6 +108,10 @@ def store_rule(payload: GovernedRuleInput,user,previous=None,extraction_key=None
 
 def approval_ready(row,c=None):
     d=row['definition']
+    if d.get('representation_id'):
+        from ..risk_knowledge.representation_governance import validate_compiled_definition
+        if c is None:raise HTTPException(409,'Graph-backed approval requires source validation')
+        validate_compiled_definition(row,c,require_complete=True)
     # Business review may map inputs, but cannot supply a missing policy limit.
     import re
     numeric_values=[]
@@ -117,7 +124,7 @@ def approval_ready(row,c=None):
         tokens={float(token.replace(',','')) for token in re.findall(r'(?<![A-Za-z])[-+]?\d[\d,]*(?:\.\d+)?',source or '')}
         if not source or source not in excerpt or any(float(value) not in tokens for value in numeric_values):
             raise HTTPException(409,'Numeric limits require exact policy source support; missing thresholds must remain unresolved')
-    if row.get('extraction_key') and c is not None:
+    if row.get('extraction_key') and c is not None and not d.get('representation_id'):
         document=c.execute('SELECT doc.extraction_status FROM policy_clauses cl JOIN inventory_documents doc ON doc.id=cl.document_id WHERE cl.id=%s',(row['clause_id'],)).fetchone()
         if not document or document['extraction_status']!='Completed':
             raise HTTPException(409,'Complete or retry source extraction before approving an AI-generated rule')
@@ -148,16 +155,23 @@ def change_status(rule_id,action,comment,user):
         with shared_policy_connection() as c:
             target=c.execute("SELECT r.*,EXISTS(SELECT 1 FROM policy_rule_versions related WHERE related.rule_key=r.rule_key AND related.extraction_key LIKE 'risk-knowledge:%%') AS knowledge_family FROM policy_rule_versions r WHERE r.id=%s",(rule_id,)).fetchone()
         family_retirement=target and target.get('knowledge_family') is True and action in ('deactivate','retire')
-        if not target or not str(target.get('extraction_key') or '').startswith('risk-knowledge:') and not family_retirement:
+        if target and action in ('submit','approve','activate') and not target['definition'].get('representation_id'):
+            raise HTTPException(409,'Rebuild this legacy extraction as a source-backed policy representation before reviewing or approving operational rules')
+        if not target or not str(target.get('extraction_key') or '').startswith(('risk-knowledge:','graph-first:')) and not family_retirement:
             raise HTTPException(410,'Legacy rules remain available by default; review actions apply to Risk Knowledge candidates')
         if action=='submit':
             if target['created_by']!=user['user_id']:
                 reviewer(user)
-            from ..risk_knowledge.pipeline import refresh_rule_evidence
-            try:
-                refresh_rule_evidence(dict(target),user,shared_policy_connection)
-            except ValueError as error:
-                raise HTTPException(422,str(error)) from None
+            if str(target.get('extraction_key') or '').startswith('graph-first:'):
+                from ..risk_knowledge.representation_governance import validate_compiled_definition
+                with shared_policy_connection() as connection:
+                    validate_compiled_definition(dict(target),connection,require_complete=True)
+            else:
+                from ..risk_knowledge.pipeline import refresh_rule_evidence
+                try:
+                    refresh_rule_evidence(dict(target),user,shared_policy_connection)
+                except ValueError as error:
+                    raise HTTPException(422,str(error)) from None
             with shared_policy_connection() as c:
                 refreshed=c.execute('SELECT * FROM policy_rule_versions WHERE id=%s',(rule_id,)).fetchone()
             if refreshed and refreshed['status']=='Approved' and refreshed.get('approved_by')=='system:auto-approval':

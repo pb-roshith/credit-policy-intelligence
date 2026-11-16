@@ -10,8 +10,8 @@ const title = (value = "") => value.split("_").map((part) => part.charAt(0).toUp
 const legacyFlow = (trace, sources) => [
   { name: "AI feature triggered", timestamp: trace.started_at, status: "success", description: `User started ${title(trace.operation)} in ${trace.feature}.` },
   { name: "Live sources retrieved", source_count: sources.length, sources, status: "success", description: `${sources.length} source${sources.length === 1 ? " was" : "s were"} supplied to ground this request.` },
-  { name: "Request sent to Mistral", model: trace.model, status: "success", description: `The captured input was sent to ${trace.model || "Mistral"}.` },
-  { name: "Mistral response received", timestamp: trace.ended_at, duration_ms: trace.latency_ms, status: trace.status, input_tokens: trace.input_tokens, output_tokens: trace.output_tokens, total_tokens: trace.total_tokens, description: trace.status === "failed" ? "The request failed before a usable response was returned." : "Mistral returned the captured response data." },
+  { name: "Request sent to AI provider", model: trace.model, status: "success", description: `The captured input was sent to ${trace.model || "AI provider"}.` },
+  { name: "AI provider response received", timestamp: trace.ended_at, duration_ms: trace.latency_ms, status: trace.status, input_tokens: trace.input_tokens, output_tokens: trace.output_tokens, total_tokens: trace.total_tokens, description: trace.status === "failed" ? "The request failed before a usable response was returned." : "AI provider returned the captured response data." },
   { name: "Response captured for audit", timestamp: trace.ended_at, status: trace.status, description: "Response, evidence, usage, and timing are available in this trace." },
 ];
 
@@ -100,10 +100,10 @@ export default function Observability({ session, notify }) {
           <div className="obs-audit">
             <h4>Retrieved data sources</h4>
             {auditSources.length ? <div className="obs-source-list">{auditSources.map((source, index) => <div className="obs-evidence" key={`${source}-${index}`}><Database size={16} /><span><b>{source}</b><small>Source supplied to this AI action</small></span></div>)}</div> : <div className="obs-audit-empty">No retrieved data source was recorded for this action.</div>}
-            <h4 className="obs-audit-heading">Input sent to Mistral</h4>
-            <pre className="obs-payload">{selected.input_payload || "Input capture is unavailable for this legacy trace."}</pre>
-            <h4 className="obs-audit-heading">Output returned by Mistral</h4>
-            <pre className="obs-payload">{selected.output_payload || (selected.status === "failed" ? "Mistral did not return a captured output." : "Output capture is unavailable for this legacy trace.")}</pre>
+            <h4 className="obs-audit-heading">Input sent to AI provider</h4>
+            <pre className="obs-payload">{selected.input_payload || "Input capture is unavailable for this archived trace."}</pre>
+            <h4 className="obs-audit-heading">Output returned by AI provider</h4>
+            <pre className="obs-payload">{selected.output_payload || (selected.status === "failed" ? "AI provider did not return a captured output." : "Output capture is unavailable for this archived trace.")}</pre>
           </div>
           <div className="obs-flow">
             <h4>Step-by-step flow</h4>

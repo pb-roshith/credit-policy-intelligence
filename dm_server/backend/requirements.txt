@@ -1,0 +1,1 @@
+-r ../../cpi_server/backend/requirements.txt

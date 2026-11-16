@@ -108,6 +108,15 @@ def create_deal(payload: DealCreate, tasks: BackgroundTasks, user=Depends(shared
 from app.routers.auth import (RegisterRequest as IdentityRegistration, UserIdRequest,
                               ResetPasswordRequest as IdentityReset)
 from typing import Literal
+from app.routers.auth import ConfigureSecurityQuestionsRequest
+
+
+@router.post('/identity/security-questions')
+def configure_identity_questions(payload: ConfigureSecurityQuestionsRequest, user=Depends(shared_user), db: Session = Depends(get_db)):
+    from app.auth import authenticate_user
+    from app.routers.auth import configure_security_questions
+    verified = authenticate_user(db, user.user_id, payload.current_password, case_insensitive=True)
+    return configure_security_questions(payload, verified, db)
 
 
 @router.post('/identity/register', dependencies=[Depends(require_shared_key)], status_code=201)

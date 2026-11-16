@@ -23,3 +23,20 @@ test('shared deal IDs and existing URL query strings are preserved', () => {
 test('a batch cannot accidentally target the wrong manager', () => {
   assert.throws(() => prepareAccountRequest('/api/data-manufacturing/exceptions', { body: JSON.stringify({ credit_request_numbers: ['CR-1@manager_a', 'CR-1@manager_b'] }) }), /one account/);
 });
+
+test('simulator query parameters select the manager account and remove the display suffix',()=>{
+ const result=prepareAccountRequest('/api/decision-scenarios/request-context?credit_request_number=CR-10241%40manager_a');
+ assert.equal(result.account,'manager_a');
+ assert.equal(result.path,'/api/decision-scenarios/request-context?credit_request_number=CR-10241');
+ const detail=prepareAccountRequest('/api/decision-scenarios/12?credit_request_number=CR-10241%40manager_b');
+ assert.equal(detail.account,'manager_b');
+ assert.equal(new URL(detail.path,'http://local').searchParams.get('credit_request_number'),'CR-10241');
+});
+
+test('conflicting query/body manager scopes are rejected and opaque deal IDs stay unchanged',()=>{
+ assert.throws(()=>prepareAccountRequest('/api/decision-scenarios?credit_request_number=CR-1%40manager_a',{
+  body:JSON.stringify({credit_request_number:'CR-1@manager_b'})}),/one account/);
+ const shared=prepareAccountRequest('/api/decision-scenarios/request-context?credit_request_number=deal_AbC%40tenant');
+ assert.equal(shared.account,undefined);
+ assert.equal(new URL(shared.path,'http://local').searchParams.get('credit_request_number'),'deal_AbC@tenant');
+});

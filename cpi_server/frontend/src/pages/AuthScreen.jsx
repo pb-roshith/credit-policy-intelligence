@@ -45,7 +45,7 @@ import { API, apiRequest } from "../api/client";
 import { META, POLICY_TYPE_ORDER, policyDisplayName } from "../config";
 import { AuthField, Badge, Bars, Card, DataTable, DEFAULT_PASSWORD_POLICY, Heading, Insight, LineChart, Metric, NO_CLIPBOARD, PasswordPolicy, SecretInput, money, passwordRules } from "../components/ui";
 
-export default function AuthScreen({ onAuthenticated, initialMessage = "" }) {
+export default function AuthScreen({ onAuthenticated, initialMessage = "", applicationName="Credit Policy Intelligence", tagline="Decisions backed by policy, insight, and control." }) {
   const [view, setView] = useState("login");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(() => initialMessage
@@ -177,8 +177,8 @@ export default function AuthScreen({ onAuthenticated, initialMessage = "" }) {
     <div className="auth-page">
       <section className="auth-intro">
         <div className="auth-logo">tcs</div>
-        <p>Credit Policy Intelligence</p>
-        <h1>Decisions backed by policy, insight, and control.</h1>
+        <p>{applicationName}</p>
+        <h1>{tagline}</h1>
         <span>Secure access for Relationship Managers and Credit Analysts.</span>
       </section>
       <section className="auth-panel">
@@ -187,7 +187,7 @@ export default function AuthScreen({ onAuthenticated, initialMessage = "" }) {
             <span className="auth-icon">{view === "register" ? <UserPlus /> : view === "forgot" ? <KeyRound /> : <LockKeyhole />}</span>
             <div>
               <h2>{view === "register" ? "Create an account" : view === "forgot" ? "Reset your password" : "Welcome back"}</h2>
-              <p>{view === "register" ? "One account for CPI and Credit Dossier, with administrator approval." : view === "forgot" ? "Answer your security questions to reset your password for both applications." : "Use the same user ID and password for CPI and Credit Dossier."}</p>
+              <p>{view === "register" ? "One account for CPI, Credit Dossier and Data Manufacturing, with administrator approval." : view === "forgot" ? "Answer your security questions to reset your shared account password." : "Use the same user ID and password for CPI, Credit Dossier and Data Manufacturing."}</p>
             </div>
           </div>
           {message && <div className={`auth-message ${message.type}`}>{message.text}</div>}

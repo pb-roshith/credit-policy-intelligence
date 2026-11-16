@@ -112,7 +112,7 @@ def referenced_fields(definition):
         if condition.get('field'):fields.add(condition['field'])
         for key in ('all','any'):
             for child in condition.get(key) or []:condition_fields(child)
-    condition_fields(definition.get('applicability_conditions'));condition_fields(logic.get('condition'))
+    condition_fields(definition.get('applicability_conditions'));condition_fields(definition.get('applicability_exclusions'));condition_fields(logic.get('condition'))
     if definition.get('applicable_stage'):fields.add('status')
     if re.search(r'\b(USD|INR|EUR|GBP|JPY|CAD|AUD|CHF|CNY|AED|SGD|HKD)\b',definition.get('threshold_unit') or ''):fields.add('currency')
     return sorted(fields)

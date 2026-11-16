@@ -1,0 +1,850 @@
+{
+  "illustrative_only": true,
+  "input": [
+    "For salaried borrowers with home loans exceeding 50 lakhs, loan-to-value (LTV) shall not exceed 75 percent.",
+    "Exceptions to the above LTV requirement require CR approval."
+  ],
+  "report": {
+    "policy_id": 999999,
+    "policy_name": "Illustrative user LTV example",
+    "pipeline": "policy-semantic-llm-v1",
+    "status": "Completed",
+    "partial_result": false,
+    "clauses_processed": 2,
+    "clauses_discovered": 2,
+    "rules_proposed": 2,
+    "rules_approved": 2,
+    "quantitative_rules": 1,
+    "qualitative_rules": 1,
+    "manual_review_rules": 0,
+    "unresolved_spans": 0,
+    "validation_failures": 0,
+    "failed_batches": 0,
+    "failures": [],
+    "semantic_record_id": "SEMANTIC-POLICY-999999",
+    "graph_context_batches": 2
+  },
+  "rules": [
+    {
+      "id": "urn:cpi:rule:v999999:clause999999:r1",
+      "extracted": {
+        "clause_id": 999999,
+        "rule_sequence": 1,
+        "name": "Home loan LTV ceiling for high value salaried borrowers",
+        "rule_kind": "QUANTITATIVE",
+        "source_quote": "For salaried borrowers with home loans exceeding 50 lakhs, loan-to-value (LTV) shall not exceed 75 percent.",
+        "supporting_sources": [],
+        "products": [
+          {
+            "name": "Home loan",
+            "evidence": "home loans"
+          }
+        ],
+        "customer_segments": [
+          {
+            "name": "Salaried",
+            "evidence": "salaried borrowers"
+          }
+        ],
+        "geographies": [],
+        "metrics": [
+          {
+            "key": "ltv",
+            "name": "LTV",
+            "unit": "%",
+            "evidence": "loan-to-value (LTV)"
+          }
+        ],
+        "thresholds": [
+          {
+            "metric_key": "ltv",
+            "operator": "LTE",
+            "value": 75.0,
+            "unit": "%",
+            "evidence": "shall not exceed 75 percent"
+          }
+        ],
+        "conditions": {
+          "logic": "AND",
+          "conditions": [
+            {
+              "field": "loan_amount",
+              "operator": "GT",
+              "value": 50.0,
+              "unit": "lakh",
+              "evidence": "exceeding 50 lakhs"
+            }
+          ],
+          "groups": []
+        },
+        "approvals": [],
+        "evidence_requirements": [],
+        "taxonomy_ids": [
+          "PTX-CATEGORY-limits",
+          "PTX-TOPIC-ltv"
+        ],
+        "base_rule_ref": null,
+        "reference_quote": null,
+        "unresolved_reason": null
+      },
+      "status": "APPROVED",
+      "validation_error": null,
+      "approved_by": "system:semantic-auto-approval",
+      "approval_mode": "AUTOMATIC",
+      "human_override": false,
+      "review_history": []
+    },
+    {
+      "id": "urn:cpi:rule:v999999:clause1000000:r1",
+      "extracted": {
+        "clause_id": 1000000,
+        "rule_sequence": 1,
+        "name": "Exception approval requirement for LTV requirement",
+        "rule_kind": "EXCEPTION_RULE",
+        "source_quote": "Exceptions to the above LTV requirement require CR approval.",
+        "supporting_sources": [
+          {
+            "clause_id": 999999,
+            "quote": "For salaried borrowers with home loans exceeding 50 lakhs, loan-to-value (LTV) shall not exceed 75 percent."
+          }
+        ],
+        "products": [
+          {
+            "name": "Home loan",
+            "evidence": "LTV requirement"
+          }
+        ],
+        "customer_segments": [
+          {
+            "name": "Salaried",
+            "evidence": "LTV requirement"
+          }
+        ],
+        "geographies": [],
+        "metrics": [],
+        "thresholds": [],
+        "conditions": null,
+        "approvals": [
+          {
+            "name": "CR",
+            "kind": "ROLE",
+            "evidence": "CR approval"
+          }
+        ],
+        "evidence_requirements": [],
+        "taxonomy_ids": [
+          "PTX-CATEGORY-exceptions",
+          "PTX-CATEGORY-approval",
+          "PTX-TOPIC-ltv"
+        ],
+        "base_rule_ref": "urn:cpi:rule:v999999:clause999999:r1",
+        "reference_quote": "Exceptions to the above LTV requirement require CR approval.",
+        "unresolved_reason": null
+      },
+      "status": "APPROVED",
+      "validation_error": null,
+      "approved_by": "system:semantic-auto-approval",
+      "approval_mode": "AUTOMATIC",
+      "human_override": false,
+      "review_history": []
+    }
+  ],
+  "context_history": [
+    {
+      "batch": "e0434daad490a1dd88707960b087dca9a8d79659b488498208c89847f53661a8",
+      "graph_rule_ids": [],
+      "graph_context_digest": "e6ee52f8ec4ac932264432e8477824a06f85c1c4785b3a058ffc24d7449130a6",
+      "graph_neighborhood_nodes": 0,
+      "ontology_version": "1.1.0",
+      "taxonomy_digest": "5ef32b53d16839b6e675fa9937cd56c3c11c46647146d32a2b6d65befe781a92"
+    },
+    {
+      "batch": "069e4678c1f6c41eecab7258f02c3ef25f0c29f70a2b1d1152da6c26bfcfeea9",
+      "graph_rule_ids": [
+        "urn:cpi:rule:v999999:clause999999:r1"
+      ],
+      "graph_context_digest": "24858946ce335c41402e7222b981a8cadea0af1d44b38cb8317ec5a5775f2cd8",
+      "graph_neighborhood_nodes": 12,
+      "ontology_version": "1.1.0",
+      "taxonomy_digest": "5ef32b53d16839b6e675fa9937cd56c3c11c46647146d32a2b6d65befe781a92"
+    }
+  ],
+  "graph": {
+    "ontology_version": "1.1.0",
+    "mode": "EXAMPLE",
+    "nodes": [
+      {
+        "id": "urn:cpi:source:999999:999999",
+        "type": "SourcePassage",
+        "label": "Source clause 999999",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [],
+        "properties": {
+          "document_reference": "999999",
+          "version": "EXAMPLE",
+          "source_checksum": "f5483289ff273116f828877fab2a943acdeb7d490c0cadab3cce342eceb9212f",
+          "text": "For salaried borrowers with home loans exceeding 50 lakhs, loan-to-value (LTV) shall not exceed 75 percent.",
+          "origin": "ILLUSTRATIVE_EXAMPLE",
+          "page": 1
+        }
+      },
+      {
+        "id": "urn:cpi:source:999999:1000000",
+        "type": "SourcePassage",
+        "label": "Source clause 1000000",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [],
+        "properties": {
+          "document_reference": "999999",
+          "version": "EXAMPLE",
+          "source_checksum": "f5483289ff273116f828877fab2a943acdeb7d490c0cadab3cce342eceb9212f",
+          "text": "Exceptions to the above LTV requirement require CR approval.",
+          "origin": "ILLUSTRATIVE_EXAMPLE",
+          "page": 2
+        }
+      },
+      {
+        "id": "urn:cpi:policy:999999",
+        "type": "CreditPolicy",
+        "label": "Illustrative user LTV example",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "policy_reference": "999999",
+          "risk_domain": "Credit risk"
+        }
+      },
+      {
+        "id": "urn:cpi:version:999999",
+        "type": "PolicyVersion",
+        "label": "Illustrative user LTV example vEXAMPLE",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "version": "EXAMPLE",
+          "source_checksum": "f5483289ff273116f828877fab2a943acdeb7d490c0cadab3cce342eceb9212f"
+        }
+      },
+      {
+        "id": "urn:cpi:rule:v999999:clause999999:r1",
+        "type": "PolicyRule",
+        "label": "Home loan LTV ceiling for high value salaried borrowers",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "rule_reference": "urn:cpi:rule:v999999:clause999999:r1",
+          "rule_kind": "QUANTITATIVE"
+        }
+      },
+      {
+        "id": "urn:cpi:section:d866d381a128e2e3ca58614e",
+        "type": "PolicySection",
+        "label": "Illustrative eligibility example",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "section_reference": "Illustrative eligibility example"
+        }
+      },
+      {
+        "id": "urn:cpi:product:a8dc4c8596a35ee433d0",
+        "type": "Product",
+        "label": "Home loan",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "product_code": "Home loan"
+        }
+      },
+      {
+        "id": "urn:cpi:customersegment:c14fbdd38b9882bf1b40",
+        "type": "CustomerSegment",
+        "label": "Salaried",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "segment_code": "Salaried"
+        }
+      },
+      {
+        "id": "urn:cpi:riskmetric:8a97dfb03e0af1b3eb73",
+        "type": "RiskMetric",
+        "label": "LTV",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "metric_key": "ltv",
+          "allowed_units": [
+            "%"
+          ]
+        }
+      },
+      {
+        "id": "urn:cpi:rule:v999999:clause999999:r1:threshold:0",
+        "type": "Threshold",
+        "label": "LTE 75.0 %",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "operator": "LTE",
+          "value": 75.0,
+          "unit": "%"
+        }
+      },
+      {
+        "id": "urn:cpi:rule:v999999:clause999999:r1:logic:c76f57e2c61c452b",
+        "type": "ConditionGroup",
+        "label": "AND conditions",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "logic": "AND"
+        }
+      },
+      {
+        "id": "urn:cpi:rule:v999999:clause999999:r1:logic:c76f57e2c61c452b:c:0",
+        "type": "Condition",
+        "label": "loan_amount GT 50.0 lakh",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "field": "loan_amount",
+          "operator": "GT",
+          "value": 50.0,
+          "unit": "lakh"
+        }
+      },
+      {
+        "id": "urn:cpi:taxonomyconcept:a6d02c17419575e08539",
+        "type": "TaxonomyConcept",
+        "label": "PTX-CATEGORY-limits",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "taxonomy_id": "PTX-CATEGORY-limits",
+          "taxonomy_version": "policy-classification-v1"
+        }
+      },
+      {
+        "id": "urn:cpi:taxonomyconcept:801643ca297156c0d11d",
+        "type": "TaxonomyConcept",
+        "label": "PTX-TOPIC-ltv",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "taxonomy_id": "PTX-TOPIC-ltv",
+          "taxonomy_version": "policy-classification-v1"
+        }
+      },
+      {
+        "id": "urn:cpi:rule:v999999:clause1000000:r1",
+        "type": "PolicyRule",
+        "label": "Exception approval requirement for LTV requirement",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "rule_reference": "urn:cpi:rule:v999999:clause1000000:r1",
+          "rule_kind": "EXCEPTION_RULE"
+        }
+      },
+      {
+        "id": "urn:cpi:section:e35964ea317342f1bfda4f8c",
+        "type": "PolicySection",
+        "label": "Exceptions",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "section_reference": "Exceptions"
+        }
+      },
+      {
+        "id": "urn:cpi:approvalauthority:cb2e1557bd35ae1fed12",
+        "type": "ApprovalAuthority",
+        "label": "CR",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "authority_code": "CR",
+          "authority_kind": "ROLE"
+        }
+      },
+      {
+        "id": "urn:cpi:rule:v999999:clause1000000:r1:approval:0",
+        "type": "ApprovalRequirement",
+        "label": "Approval by CR",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "decision_type": "APPROVAL"
+        }
+      },
+      {
+        "id": "urn:cpi:taxonomyconcept:16405862e2a9ebf95422",
+        "type": "TaxonomyConcept",
+        "label": "PTX-CATEGORY-exceptions",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "taxonomy_id": "PTX-CATEGORY-exceptions",
+          "taxonomy_version": "policy-classification-v1"
+        }
+      },
+      {
+        "id": "urn:cpi:taxonomyconcept:d349c3313c28229f52c5",
+        "type": "TaxonomyConcept",
+        "label": "PTX-CATEGORY-approval",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "taxonomy_id": "PTX-CATEGORY-approval",
+          "taxonomy_version": "policy-classification-v1"
+        }
+      },
+      {
+        "id": "urn:cpi:rule:v999999:clause1000000:r1:exception",
+        "type": "Exception",
+        "label": "Exception approval requirement for LTV requirement",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "exception_reference": "urn:cpi:rule:v999999:clause1000000:r1:exception"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "urn:cpi:assertion:fe55e552a162f6255e67054d",
+        "subject": "urn:cpi:version:999999",
+        "predicate": "VERSION_OF",
+        "object": "urn:cpi:policy:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:eba45ab176af276efdc83a6b",
+        "subject": "urn:cpi:source:999999:999999",
+        "predicate": "SOURCE_IN_VERSION",
+        "object": "urn:cpi:version:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:0e7f4a591ea4b9f5483f33d1",
+        "subject": "urn:cpi:source:999999:1000000",
+        "predicate": "SOURCE_IN_VERSION",
+        "object": "urn:cpi:version:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:9c2a6ccf5758887244c2dafe",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "PART_OF_VERSION",
+        "object": "urn:cpi:version:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:f0f64826f5514f98a7becad2",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "DERIVED_FROM",
+        "object": "urn:cpi:source:999999:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:95a7391457779d86bd68babc",
+        "subject": "urn:cpi:section:d866d381a128e2e3ca58614e",
+        "predicate": "PART_OF_VERSION",
+        "object": "urn:cpi:version:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:e8b81d4453ad9f011109bc30",
+        "subject": "urn:cpi:version:999999",
+        "predicate": "CONTAINS_SECTION",
+        "object": "urn:cpi:section:d866d381a128e2e3ca58614e",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:13b04732a91b5d2b1d9624ad",
+        "subject": "urn:cpi:section:d866d381a128e2e3ca58614e",
+        "predicate": "CONTAINS_RULE",
+        "object": "urn:cpi:rule:v999999:clause999999:r1",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:0bb65e2d4f49b7989a4fc7d1",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "APPLIES_TO_PRODUCT",
+        "object": "urn:cpi:product:a8dc4c8596a35ee433d0",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:480d627cdde31b3649b1fad0",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "APPLIES_TO_SEGMENT",
+        "object": "urn:cpi:customersegment:c14fbdd38b9882bf1b40",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:40965dab40da5e88d32c72bf",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "USES_METRIC",
+        "object": "urn:cpi:riskmetric:8a97dfb03e0af1b3eb73",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:176127b5373d910c606decc8",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "HAS_THRESHOLD",
+        "object": "urn:cpi:rule:v999999:clause999999:r1:threshold:0",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:a772b7b77e3874a6bac83bb1",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1:threshold:0",
+        "predicate": "MEASURED_BY",
+        "object": "urn:cpi:riskmetric:8a97dfb03e0af1b3eb73",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:2fc7502648dc7302a19fd49d",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1:logic:c76f57e2c61c452b",
+        "predicate": "HAS_MEMBER",
+        "object": "urn:cpi:rule:v999999:clause999999:r1:logic:c76f57e2c61c452b:c:0",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:5a4cf3102addd0ab06fcaeef",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "HAS_CONDITION",
+        "object": "urn:cpi:rule:v999999:clause999999:r1:logic:c76f57e2c61c452b",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:306e51edb55e2d2b1e7123cd",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "CLASSIFIED_AS",
+        "object": "urn:cpi:taxonomyconcept:a6d02c17419575e08539",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:afc0eda44ef68144147b5ab5",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "CLASSIFIED_AS",
+        "object": "urn:cpi:taxonomyconcept:801643ca297156c0d11d",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:6c55459f1f7cc907ad46d054",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1",
+        "predicate": "PART_OF_VERSION",
+        "object": "urn:cpi:version:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:2f465ba0bfbb4a8e0cd606c1",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1",
+        "predicate": "DERIVED_FROM",
+        "object": "urn:cpi:source:999999:1000000",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:a46ef9569327a08b827f5c9f",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1",
+        "predicate": "DERIVED_FROM",
+        "object": "urn:cpi:source:999999:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:a1c1eba977c5596a65b1569c",
+        "subject": "urn:cpi:section:e35964ea317342f1bfda4f8c",
+        "predicate": "PART_OF_VERSION",
+        "object": "urn:cpi:version:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:85bd5d9842215561b8fbaac0",
+        "subject": "urn:cpi:version:999999",
+        "predicate": "CONTAINS_SECTION",
+        "object": "urn:cpi:section:e35964ea317342f1bfda4f8c",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:399f10c6548b4a66120a5d10",
+        "subject": "urn:cpi:section:e35964ea317342f1bfda4f8c",
+        "predicate": "CONTAINS_RULE",
+        "object": "urn:cpi:rule:v999999:clause1000000:r1",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:b82f6b63fe4b37384d6c0490",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1",
+        "predicate": "APPLIES_TO_PRODUCT",
+        "object": "urn:cpi:product:a8dc4c8596a35ee433d0",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:a7b6ec3f60c38043b6279e95",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1",
+        "predicate": "APPLIES_TO_SEGMENT",
+        "object": "urn:cpi:customersegment:c14fbdd38b9882bf1b40",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:27fca2e1e972bfaea8313362",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1",
+        "predicate": "REQUIRES_APPROVAL",
+        "object": "urn:cpi:rule:v999999:clause1000000:r1:approval:0",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:4870b6db5039bbe46502cb59",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1:approval:0",
+        "predicate": "REQUIRES_APPROVAL_FROM",
+        "object": "urn:cpi:approvalauthority:cb2e1557bd35ae1fed12",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:28fe9ac7128fb64d8596678c",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1",
+        "predicate": "CLASSIFIED_AS",
+        "object": "urn:cpi:taxonomyconcept:16405862e2a9ebf95422",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:01ebd8d0a2fdf6f49d0c3602",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1",
+        "predicate": "CLASSIFIED_AS",
+        "object": "urn:cpi:taxonomyconcept:d349c3313c28229f52c5",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:67a8d62e1914746465f8f0c5",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1",
+        "predicate": "CLASSIFIED_AS",
+        "object": "urn:cpi:taxonomyconcept:801643ca297156c0d11d",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:d973e0846dfcfcd0d3c31b3a",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "HAS_EXCEPTION",
+        "object": "urn:cpi:rule:v999999:clause1000000:r1:exception",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:5776c7177050c7c9ad2e4722",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1:exception",
+        "predicate": "EXCEPTION_TO",
+        "object": "urn:cpi:rule:v999999:clause999999:r1",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:859ef4d8da4e6abadcbc41c1",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1:exception",
+        "predicate": "IMPLEMENTED_BY_RULE",
+        "object": "urn:cpi:rule:v999999:clause1000000:r1",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:c36dcf18cd937d8d283f838a",
+        "subject": "urn:cpi:rule:v999999:clause1000000:r1:exception",
+        "predicate": "REQUIRES_APPROVAL",
+        "object": "urn:cpi:rule:v999999:clause1000000:r1:approval:0",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:1000000",
+          "urn:cpi:source:999999:999999"
+        ]
+      }
+    ]
+  },
+  "validation": {
+    "conforms": true,
+    "ontology_version": "1.1.0",
+    "errors": [],
+    "counts": {
+      "nodes": 21,
+      "relationships": 34
+    }
+  }
+}

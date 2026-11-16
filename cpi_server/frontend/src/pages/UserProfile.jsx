@@ -53,17 +53,32 @@ export default function UserProfile({ session, onLogout }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
   const [passwordPolicy, setPasswordPolicy] = useState(DEFAULT_PASSWORD_POLICY);
+  const [needsRecoverySetup, setNeedsRecoverySetup] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const displayRole = session.user.role
     .replaceAll("_", " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
   useEffect(() => {
+    setNeedsRecoverySetup(false);
+    setMessage(null);
+    setQuestions([]);
+    setAnswers([]);
     apiRequest(`/api/auth/recovery/${encodeURIComponent(session.user.user_id)}`)
       .then((data) => {
         setQuestions(data.questions);
         setAnswers(data.questions.map(() => ""));
       })
-      .catch((error) => setMessage({ type: "error", text: error.message }));
+      .catch((error) => {
+        if (error.status === 409) {
+          setNeedsRecoverySetup(true);
+          apiRequest('/api/auth/security-questions').then((data) => {
+            setQuestions(data.questions.slice(0, 3));
+            setAnswers(["", "", ""]);
+          }).catch((failure) => setMessage({ type: "error", text: failure.message }));
+        }
+        else setMessage({ type: "error", text: error.message });
+      });
     apiRequest("/api/auth/password-policy")
       .then(setPasswordPolicy)
       .catch(() => setPasswordPolicy(DEFAULT_PASSWORD_POLICY));
@@ -82,6 +97,14 @@ export default function UserProfile({ session, onLogout }) {
     }
     setBusy(true);
     try {
+      if (needsRecoverySetup) {
+        await apiRequest('/api/auth/profile/security-questions', {
+          method: 'POST',
+          body: JSON.stringify({current_password: currentPassword, security_answers: questions.map((question, index) => ({question, answer: answers[index]}))}),
+        });
+        setNeedsRecoverySetup(false);
+        setCurrentPassword("");
+      }
       const data = await apiRequest("/api/auth/reset-password", {
         method: "POST",
         body: JSON.stringify({
@@ -113,9 +136,10 @@ export default function UserProfile({ session, onLogout }) {
             <div><dt>Account status</dt><dd><Badge tone="approved">Approved</Badge></dd></div>
           </dl>
         </Card>
-        <Card title="Set a new password" sub="Answer your three saved security questions to verify your identity.">
+        <Card title="Set a new password" sub={needsRecoverySetup ? "Verify your current password and save three security answers to set a new password." : "Answer your three saved security questions to verify your identity."}>
           <form className="profile-password-form" onSubmit={changePassword}>
             {message && <div className={`auth-message ${message.type}`}>{message.text}</div>}
+            {needsRecoverySetup && <AuthField label="Current password"><SecretInput required autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Enter your current password" /></AuthField>}
             <div className="profile-security-list">
               {questions.map((question, index) => (
                 <AuthField key={question} label={`${index + 1}. ${question}`}>

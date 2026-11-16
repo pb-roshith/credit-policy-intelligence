@@ -1,0 +1,25 @@
+{
+  "policies": 35,
+  "source_passages": 1609,
+  "extracted_rules": 1078,
+  "published_rules": 863,
+  "proposed_rules": 215,
+  "approved_policy_scopes": 19,
+  "policy_scopes_needing_review": 16,
+  "unresolved_passages": 159,
+  "failed_batches": 0,
+  "batches_using_existing_graph": 79,
+  "resolved_exception_nodes": 1,
+  "nodes": 3622,
+  "relationships": 7246,
+  "ontology_version": "1.2.0",
+  "validation": {
+    "conforms": true,
+    "ontology_version": "1.2.0",
+    "errors": [],
+    "counts": {
+      "nodes": 3622,
+      "relationships": 7246
+    }
+  }
+}

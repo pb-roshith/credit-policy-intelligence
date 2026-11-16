@@ -29,17 +29,16 @@ def generate_policy_controls(payload: GeneratePolicyControlsRequest, user: dict 
         if not policies:
             raise HTTPException(
                 status_code=422,
-                detail="Generate or import policy documents before manufacturing controls",
+                detail="Generate or import policy documents before generating controls",
             )
 
-        connection.execute(
-            "DELETE FROM policy_controls WHERE control_sequence > %s",
-            (payload.controls_per_policy,),
-        )
+        existing={row['policy_id']:row['last_sequence'] for row in connection.execute(
+            'SELECT policy_id,MAX(control_sequence) AS last_sequence FROM policy_controls GROUP BY policy_id'
+        ).fetchall()}
         for policy in policies:
-            for sequence, (suffix, owner, control_type, automation, frequency) in enumerate(
-                templates[:payload.controls_per_policy], start=1
-            ):
+            first_sequence=existing.get(policy['policy_id'],0)+1
+            for sequence in range(first_sequence,first_sequence+payload.controls_per_policy):
+                suffix,owner,control_type,automation,frequency=templates[(sequence-1)%len(templates)]
                 effectiveness = 72 + ((policy["policy_id"] * 7 + sequence * 5) % 27)
                 status = (
                     "Effective" if effectiveness >= 85
@@ -53,7 +52,7 @@ def generate_policy_controls(payload: GeneratePolicyControlsRequest, user: dict 
                     "",
                     policy["title"],
                 )
-                control_name = f"{policy_name} - {suffix}"[:240]
+                control_name = (f"{policy_name} - {suffix}" + (f" ({sequence})" if sequence>len(templates) else ""))[:240]
                 control_description = (
                     f"{control_name} verifies the requirements of {policy_name} "
                     f"(Policy ID {policy['library_policy_id']}) for clause "
@@ -63,7 +62,7 @@ def generate_policy_controls(payload: GeneratePolicyControlsRequest, user: dict 
                 assessment = (
                     f"{control_id} is mapped to Policy ID {policy['library_policy_id']}, "
                     f"{policy['policy_code']} ({policy_name}). "
-                    f"The manufactured effectiveness score is {effectiveness}% with {failures} "
+                    f"The effectiveness score is {effectiveness}% with {failures} "
                     f"failure{'s' if failures != 1 else ''} in the assumed 90-day testing period. "
                     f"Current control status: {status}."
                 )
@@ -76,23 +75,6 @@ def generate_policy_controls(payload: GeneratePolicyControlsRequest, user: dict 
                         generated_at
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                               CURRENT_TIMESTAMP)
-                    ON CONFLICT (policy_id, control_sequence) DO UPDATE SET
-                        control_id = EXCLUDED.control_id,
-                        policy_code = EXCLUDED.policy_code,
-                        policy_name = EXCLUDED.policy_name,
-                        control_name = EXCLUDED.control_name,
-                        control_owner = EXCLUDED.control_owner,
-                        clause_number = EXCLUDED.clause_number,
-                        control_type = EXCLUDED.control_type,
-                        automation = EXCLUDED.automation,
-                        frequency = EXCLUDED.frequency,
-                        effectiveness = EXCLUDED.effectiveness,
-                        status = EXCLUDED.status,
-                        last_tested = EXCLUDED.last_tested,
-                        failures_90d = EXCLUDED.failures_90d,
-                        control_description = EXCLUDED.control_description,
-                        assessment = EXCLUDED.assessment,
-                        generated_at = CURRENT_TIMESTAMP
                 """, (
                     control_id, policy["policy_id"], policy["policy_code"], policy_name,
                     sequence, control_name, owner, policy["clause_number"], control_type,
@@ -106,11 +88,12 @@ def generate_policy_controls(payload: GeneratePolicyControlsRequest, user: dict 
 
     return {
         "message": (
-            f"Generated {payload.controls_per_policy} controls for each of "
+            f"Added {payload.controls_per_policy} controls to each of "
             f"{len(policies)} policy documents"
         ),
         "policy_count": len(policies),
         "controls_per_policy": payload.controls_per_policy,
         "control_count": control_count,
+        "added_count": payload.controls_per_policy*len(policies),
         "generated_by": user["user_id"],
     }

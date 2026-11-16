@@ -1,0 +1,457 @@
+{
+  "illustrative_only": true,
+  "input": "For salaried borrowers with home loans exceeding 50 lakhs, loan-to-value (LTV) shall not exceed 75 percent.",
+  "report": {
+    "policy_id": 999999,
+    "policy_name": "Illustrative user LTV example",
+    "pipeline": "policy-semantic-llm-v1",
+    "status": "Completed",
+    "partial_result": false,
+    "clauses_processed": 1,
+    "clauses_discovered": 1,
+    "rules_proposed": 1,
+    "rules_approved": 1,
+    "quantitative_rules": 1,
+    "qualitative_rules": 0,
+    "manual_review_rules": 0,
+    "unresolved_spans": 0,
+    "validation_failures": 0,
+    "failed_batches": 0,
+    "failures": [],
+    "semantic_record_id": "SEMANTIC-POLICY-999999",
+    "graph_context_batches": 1
+  },
+  "rules": [
+    {
+      "id": "urn:cpi:rule:v999999:clause999999:r1",
+      "extracted": {
+        "clause_id": 999999,
+        "rule_sequence": 1,
+        "name": "LTV limit for salaried home loans exceeding 50 lakhs",
+        "rule_kind": "QUANTITATIVE",
+        "source_quote": "For salaried borrowers with home loans exceeding 50 lakhs, loan-to-value (LTV) shall not exceed 75 percent.",
+        "supporting_sources": [],
+        "products": [
+          {
+            "name": "Home loan",
+            "evidence": "home loans"
+          }
+        ],
+        "customer_segments": [
+          {
+            "name": "Salaried",
+            "evidence": "salaried borrowers"
+          }
+        ],
+        "geographies": [],
+        "metrics": [
+          {
+            "key": "ltv",
+            "name": "LTV",
+            "unit": "%",
+            "evidence": "loan-to-value (LTV)"
+          }
+        ],
+        "thresholds": [
+          {
+            "metric_key": "ltv",
+            "operator": "LTE",
+            "value": 75.0,
+            "unit": "%",
+            "evidence": "shall not exceed 75 percent"
+          }
+        ],
+        "conditions": {
+          "logic": "AND",
+          "conditions": [
+            {
+              "field": "loan_amount",
+              "operator": "GT",
+              "value": 50.0,
+              "unit": "lakh",
+              "evidence": "exceeding 50 lakhs"
+            }
+          ],
+          "groups": []
+        },
+        "approvals": [],
+        "evidence_requirements": [],
+        "taxonomy_ids": [
+          "PTX-CATEGORY-limits",
+          "PTX-TOPIC-ltv"
+        ],
+        "base_rule_ref": null,
+        "reference_quote": null,
+        "unresolved_reason": null
+      },
+      "status": "APPROVED",
+      "validation_error": null,
+      "approved_by": "system:semantic-auto-approval",
+      "approval_mode": "AUTOMATIC",
+      "human_override": false,
+      "review_history": []
+    }
+  ],
+  "graph": {
+    "ontology_version": "1.1.0",
+    "mode": "EXAMPLE",
+    "nodes": [
+      {
+        "id": "urn:cpi:source:999999:999999",
+        "type": "SourcePassage",
+        "label": "Source clause 999999",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [],
+        "properties": {
+          "document_reference": "999999",
+          "version": "EXAMPLE",
+          "source_checksum": "2077b60ca5ed78f762df04a0263da7f71ce777fbb34f896f8f45e1e5f7698b09",
+          "text": "For salaried borrowers with home loans exceeding 50 lakhs, loan-to-value (LTV) shall not exceed 75 percent.",
+          "origin": "ILLUSTRATIVE_EXAMPLE",
+          "page": 1
+        }
+      },
+      {
+        "id": "urn:cpi:policy:999999",
+        "type": "CreditPolicy",
+        "label": "Illustrative user LTV example",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "policy_reference": "999999",
+          "risk_domain": "Credit risk"
+        }
+      },
+      {
+        "id": "urn:cpi:version:999999",
+        "type": "PolicyVersion",
+        "label": "Illustrative user LTV example vEXAMPLE",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "version": "EXAMPLE",
+          "source_checksum": "2077b60ca5ed78f762df04a0263da7f71ce777fbb34f896f8f45e1e5f7698b09"
+        }
+      },
+      {
+        "id": "urn:cpi:rule:v999999:clause999999:r1",
+        "type": "PolicyRule",
+        "label": "LTV limit for salaried home loans exceeding 50 lakhs",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "rule_reference": "urn:cpi:rule:v999999:clause999999:r1",
+          "rule_kind": "QUANTITATIVE"
+        }
+      },
+      {
+        "id": "urn:cpi:section:d866d381a128e2e3ca58614e",
+        "type": "PolicySection",
+        "label": "Illustrative eligibility example",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "section_reference": "Illustrative eligibility example"
+        }
+      },
+      {
+        "id": "urn:cpi:product:a8dc4c8596a35ee433d0",
+        "type": "Product",
+        "label": "Home loan",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "product_code": "Home loan"
+        }
+      },
+      {
+        "id": "urn:cpi:customersegment:c14fbdd38b9882bf1b40",
+        "type": "CustomerSegment",
+        "label": "Salaried",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "segment_code": "Salaried"
+        }
+      },
+      {
+        "id": "urn:cpi:riskmetric:8a97dfb03e0af1b3eb73",
+        "type": "RiskMetric",
+        "label": "LTV",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "metric_key": "ltv",
+          "allowed_units": [
+            "%"
+          ]
+        }
+      },
+      {
+        "id": "urn:cpi:rule:v999999:clause999999:r1:threshold:0",
+        "type": "Threshold",
+        "label": "LTE 75.0 %",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "operator": "LTE",
+          "value": 75.0,
+          "unit": "%"
+        }
+      },
+      {
+        "id": "urn:cpi:rule:v999999:clause999999:r1:logic:c76f57e2c61c452b",
+        "type": "ConditionGroup",
+        "label": "AND conditions",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "logic": "AND"
+        }
+      },
+      {
+        "id": "urn:cpi:rule:v999999:clause999999:r1:logic:c76f57e2c61c452b:c:0",
+        "type": "Condition",
+        "label": "loan_amount GT 50.0 lakh",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "field": "loan_amount",
+          "operator": "GT",
+          "value": 50.0,
+          "unit": "lakh"
+        }
+      },
+      {
+        "id": "urn:cpi:taxonomyconcept:a6d02c17419575e08539",
+        "type": "TaxonomyConcept",
+        "label": "PTX-CATEGORY-limits",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "taxonomy_id": "PTX-CATEGORY-limits",
+          "taxonomy_version": "policy-classification-v1"
+        }
+      },
+      {
+        "id": "urn:cpi:taxonomyconcept:801643ca297156c0d11d",
+        "type": "TaxonomyConcept",
+        "label": "PTX-TOPIC-ltv",
+        "status": "APPROVED",
+        "synthetic": true,
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ],
+        "properties": {
+          "taxonomy_id": "PTX-TOPIC-ltv",
+          "taxonomy_version": "policy-classification-v1"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "urn:cpi:assertion:fe55e552a162f6255e67054d",
+        "subject": "urn:cpi:version:999999",
+        "predicate": "VERSION_OF",
+        "object": "urn:cpi:policy:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:eba45ab176af276efdc83a6b",
+        "subject": "urn:cpi:source:999999:999999",
+        "predicate": "SOURCE_IN_VERSION",
+        "object": "urn:cpi:version:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:9c2a6ccf5758887244c2dafe",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "PART_OF_VERSION",
+        "object": "urn:cpi:version:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:f0f64826f5514f98a7becad2",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "DERIVED_FROM",
+        "object": "urn:cpi:source:999999:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:95a7391457779d86bd68babc",
+        "subject": "urn:cpi:section:d866d381a128e2e3ca58614e",
+        "predicate": "PART_OF_VERSION",
+        "object": "urn:cpi:version:999999",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:e8b81d4453ad9f011109bc30",
+        "subject": "urn:cpi:version:999999",
+        "predicate": "CONTAINS_SECTION",
+        "object": "urn:cpi:section:d866d381a128e2e3ca58614e",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:13b04732a91b5d2b1d9624ad",
+        "subject": "urn:cpi:section:d866d381a128e2e3ca58614e",
+        "predicate": "CONTAINS_RULE",
+        "object": "urn:cpi:rule:v999999:clause999999:r1",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:0bb65e2d4f49b7989a4fc7d1",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "APPLIES_TO_PRODUCT",
+        "object": "urn:cpi:product:a8dc4c8596a35ee433d0",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:480d627cdde31b3649b1fad0",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "APPLIES_TO_SEGMENT",
+        "object": "urn:cpi:customersegment:c14fbdd38b9882bf1b40",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:40965dab40da5e88d32c72bf",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "USES_METRIC",
+        "object": "urn:cpi:riskmetric:8a97dfb03e0af1b3eb73",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:176127b5373d910c606decc8",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "HAS_THRESHOLD",
+        "object": "urn:cpi:rule:v999999:clause999999:r1:threshold:0",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:a772b7b77e3874a6bac83bb1",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1:threshold:0",
+        "predicate": "MEASURED_BY",
+        "object": "urn:cpi:riskmetric:8a97dfb03e0af1b3eb73",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:2fc7502648dc7302a19fd49d",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1:logic:c76f57e2c61c452b",
+        "predicate": "HAS_MEMBER",
+        "object": "urn:cpi:rule:v999999:clause999999:r1:logic:c76f57e2c61c452b:c:0",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:5a4cf3102addd0ab06fcaeef",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "HAS_CONDITION",
+        "object": "urn:cpi:rule:v999999:clause999999:r1:logic:c76f57e2c61c452b",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:306e51edb55e2d2b1e7123cd",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "CLASSIFIED_AS",
+        "object": "urn:cpi:taxonomyconcept:a6d02c17419575e08539",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      },
+      {
+        "id": "urn:cpi:assertion:afc0eda44ef68144147b5ab5",
+        "subject": "urn:cpi:rule:v999999:clause999999:r1",
+        "predicate": "CLASSIFIED_AS",
+        "object": "urn:cpi:taxonomyconcept:801643ca297156c0d11d",
+        "status": "APPROVED",
+        "source_refs": [
+          "urn:cpi:source:999999:999999"
+        ]
+      }
+    ]
+  },
+  "validation": {
+    "conforms": true,
+    "ontology_version": "1.1.0",
+    "errors": [],
+    "counts": {
+      "nodes": 13,
+      "relationships": 16
+    }
+  }
+}

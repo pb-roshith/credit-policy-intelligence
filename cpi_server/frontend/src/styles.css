@@ -3045,6 +3045,9 @@ tbody tr.selected {
   margin-bottom: 14px;
   align-items: start;
 }
+.simulator-request { margin-bottom: 14px; }
+.simulator-request > p,.simulator-request > details { margin: 12px 18px; }
+.scenario-loader > details,.scenario-loader > small,.scenario-loader > p { flex-basis: 100%; }
 .simulator-workspace {
   min-width: 0;
 }
@@ -4281,3 +4284,71 @@ tbody tr.selected {
 .rule-knowledge-evidence li{padding:5px 0;line-height:1.7}.rule-knowledge-evidence small{margin-left:8px;color:var(--muted)}
 .rule-knowledge-evidence pre{white-space:pre-wrap;overflow-wrap:anywhere}.rule-knowledge-review label{display:block}.rule-knowledge-review textarea{display:block;width:100%;min-height:76px;margin:8px 0 14px}
 @media(max-width:760px){.rule-knowledge-stages{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Compliance graph summary: contained spacing and progressive detail. */
+.app .graph-matching-card { margin: 20px 0; }
+.app .graph-matching-card > .card-head { padding: 22px 24px 18px; }
+.app .graph-matching-card .card-head h2 { font-size: 15px; line-height: 1.4; }
+.app .graph-matching-card .card-head p { margin: 6px 0 0; font-size: 13px; line-height: 1.6; }
+.graph-matching-content { padding: 0 24px 24px; min-width: 0; font-size: 13px; line-height: 1.6; }
+.graph-matching-stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.graph-matching-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 8px; background: #071b2a66; min-width: 0; }
+.graph-matching-stat > strong { font-size: 27px; line-height: 1.2; font-weight: 650; font-variant-numeric: tabular-nums; }
+.graph-matching-stat > span { color: var(--muted); font-size: 12px; }
+.graph-matching-stat > small { color: var(--muted); font-size: 11px; }
+.graph-matching-stat.checked > strong { color: var(--aqua); }
+.graph-matching-stat.matched > strong { color: var(--green); }
+.graph-matching-stat.unresolved > strong { color: var(--amber); }
+.graph-matching-status { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding: 16px 0; margin: 4px 0; }
+.graph-matching-status > div { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.graph-matching-status > div > span:first-child { color: var(--muted); font-size: 12px; }
+.graph-matching-status > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; flex: 1 1 300px; }
+.graph-matching-sections { display: grid; gap: 10px; }
+.graph-matching-disclosure { border: 1px solid var(--line); border-radius: 8px; min-width: 0; overflow: hidden; }
+.graph-matching-disclosure > summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; cursor: pointer; list-style: none; font-size: 13px; font-weight: 550; }
+.graph-matching-disclosure > summary::-webkit-details-marker, .graph-matching-rule > summary::-webkit-details-marker { display: none; }
+.graph-matching-disclosure > summary > span { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.graph-matching-disclosure > summary svg { flex-shrink: 0; color: var(--aqua); }
+.graph-matching-disclosure > summary:hover { background: #ffffff05; }
+.graph-matching-disclosure > summary:focus-visible, .graph-matching-rule > summary:focus-visible { outline: 2px solid var(--aqua); outline-offset: -3px; }
+.graph-matching-chevron { transition: transform .15s ease; }
+.graph-matching-disclosure[open] > summary { border-bottom: 1px solid var(--line); }
+.graph-matching-disclosure[open] > summary .graph-matching-chevron { transform: rotate(180deg); }
+.graph-matching-detail { padding: 16px; overflow-wrap: anywhere; }
+.graph-matching-detail p { margin: 0 0 12px; font-size: 13px; line-height: 1.65; }
+.graph-matching-detail p:last-child { margin-bottom: 0; }
+.graph-matching-detail .graph-matching-note { color: var(--muted); font-size: 12px; }
+.graph-matching-explanations, .graph-matching-decisions { display: grid; gap: 10px; }
+.graph-matching-explanations > div { border-top: 1px solid var(--line); padding-top: 12px; }
+.graph-matching-card .graph-matching-filters { display: grid; grid-template-columns: minmax(180px,1fr) minmax(180px,2fr); gap: 14px; padding: 0; margin-bottom: 14px; }
+.graph-matching-filters > label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
+.graph-matching-card .graph-matching-filters select, .graph-matching-filters input { box-sizing: border-box; min-width: 0; width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); font: inherit; }
+.graph-matching-rule { border: 1px solid var(--line); border-radius: 6px; }
+.graph-matching-rule > summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px; list-style: none; cursor: pointer; }
+.graph-matching-rule > summary > span:first-child { min-width: 0; }
+.graph-matching-rule > summary strong { display: block; font-size: 13px; font-weight: 550; }
+.graph-matching-rule > summary small { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
+.graph-matching-rule .badge { flex-shrink: 0; }
+.graph-matching-rule-detail { padding: 0 12px 12px; }
+.graph-matching-rule-detail .graph-matching-path { margin-top: 12px; color: var(--muted); }
+.graph-matching-path code { font-size: 11px; overflow-wrap: anywhere; }
+.graph-matching-more { margin-top: 14px; }
+@media (max-width: 1000px) { .graph-matching-stats { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 600px) {
+ .app .graph-matching-card > .card-head { padding: 18px 16px 14px; }
+ .graph-matching-content { padding: 0 16px 16px; }
+ .graph-matching-stats { gap: 8px; }
+ .graph-matching-stat { padding: 12px; }
+ .graph-matching-stat > strong { font-size: 23px; }
+ .graph-matching-card .graph-matching-filters { grid-template-columns: minmax(0,1fr); }
+ .graph-matching-rule > summary { align-items: flex-start; flex-direction: column; gap: 8px; }
+ .graph-matching-disclosure > summary { padding: 12px; }
+ .graph-matching-detail { padding: 12px; }
+}
+
+.graph-matching-card > .graph-matching-toggle { list-style: none; cursor: pointer; align-items: center; gap: 18px; }
+.graph-matching-toggle::-webkit-details-marker { display: none; }
+.graph-matching-toggle:focus-visible { outline: 2px solid var(--aqua); outline-offset: -4px; }
+.graph-matching-outer-chevron { flex-shrink: 0; color: var(--aqua); transition: transform .15s ease; }
+.graph-matching-collapsible[open] > summary .graph-matching-outer-chevron { transform: rotate(180deg); }
+.graph-matching-collapsible:not([open]) > .graph-matching-content { display: none; }

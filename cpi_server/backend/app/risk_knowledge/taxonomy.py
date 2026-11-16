@@ -1,4 +1,18 @@
 from .models import Concept
+from copy import deepcopy
+
+
+def apply_normalization(data, evidence):
+    """Replay approved normalization only when the exact original fact matches."""
+    result = deepcopy(data)
+    for item in evidence:
+        target = result
+        names = item['attribute'].split('.')
+        for name in names[:-1]:
+            target = target.get(name) if isinstance(target, dict) else None
+        if isinstance(target, dict) and target.get(names[-1]) == item['original_term']:
+            target[names[-1]] = item['normalized_term']
+    return result
 
 
 class TaxonomyService:

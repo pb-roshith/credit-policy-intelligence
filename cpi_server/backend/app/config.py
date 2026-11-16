@@ -97,3 +97,5 @@ APP_ENV = os.getenv("APP_ENV", "production").lower()
 RULE_DEMO_AUTO_APPROVE = APP_ENV == "development" and os.getenv("RULE_DEMO_AUTO_APPROVE", "false").lower() == "true"
 
 RULE_INVENTORY_WORKERS = max(1, min(4, int(os.getenv("RULE_INVENTORY_WORKERS", "2"))))
+POLICY_GRAPH_LLM_FALLBACK = os.getenv('POLICY_GRAPH_LLM_FALLBACK', 'true').lower() == 'true'
+POLICY_GRAPH_FALLBACK_MAX_SPANS = max(0,min(100,int(os.getenv('POLICY_GRAPH_FALLBACK_MAX_SPANS','20'))))

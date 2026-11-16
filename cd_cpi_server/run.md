@@ -114,3 +114,10 @@ also requires the system PostgreSQL `libpq` library to be available.
 
 These copies use frontend `8081`, backend `8003`, and MCP `8004`. The original
 Credit_Dossier and Credit Policy Intelligence application files are unchanged.
+# Loading the company list and documents on a fresh deployment
+
+The MCP automatically imports the company list and original documents from
+[`credit_dossier_backend/dossier_data`](credit_dossier_backend/dossier_data/README.md).
+Include that entire folder on the MCP service. It contains only company catalog
+metadata and original document files. Company access retains its existing owner
+username. See its README for Neon configuration and import behavior.

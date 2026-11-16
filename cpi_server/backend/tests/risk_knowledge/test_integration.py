@@ -2,7 +2,7 @@ import copy
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock,patch
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from app.routers import risk_knowledge as router_module
@@ -63,10 +63,12 @@ class IntegrationTests(unittest.TestCase):
         app.include_router(router_module.router)
         app.dependency_overrides[router_module.current_user]=lambda:{'user_id':'actual-analyst','role':'credit_analyst'}
         app.dependency_overrides[router_module.get_service]=lambda:service
-        with TestClient(app) as client:
-            response=client.post('/api/risk-knowledge/review/taxonomy/test',json={'status':'APPROVED','reviewer':'someone-else','notes':'Reviewed source evidence'})
+        with patch('app.risk_knowledge.semantic_pipeline.review_rule',return_value={'status':'APPROVED'}) as review, \
+             patch('app.routers.risk_knowledge.semantic_repository',return_value=service.repo), TestClient(app) as client:
+            response=client.post('/api/risk-knowledge/semantic-rules/review',json={'rule_id':'urn:rule:1','expected_digest':'current','status':'APPROVED','notes':'Reviewed source evidence'})
             self.assertEqual(response.status_code,200)
-        self.assertEqual(service.review.call_args.args[3],'actual-analyst')
+        self.assertEqual(review.call_args.kwargs['actor'],'actual-analyst')
+        service.review.assert_not_called()
 
     def catalog_fixture(self):
         policy={'policy_id':7,'title':'Existing CPI policy','file_name':'policy.txt','document_format':'txt','version':'2',

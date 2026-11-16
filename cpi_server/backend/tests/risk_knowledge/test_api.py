@@ -2,6 +2,7 @@ import copy
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch,MagicMock
 from fastapi.testclient import TestClient
 from app.risk_knowledge.llm import MockLLMProvider
 from app.risk_knowledge.service import IntelligenceService
@@ -30,20 +31,22 @@ class APITests(unittest.TestCase):
         cls.client.__exit__(None,None,None)
         cls.temp.cleanup()
 
-    def test_health_and_state(self):
-        self.assertEqual(self.client.get('/api/risk-knowledge/state').status_code,200)
-        response=self.client.get('/api/risk-knowledge/state')
-        self.assertEqual(response.status_code,200)
-        self.assertEqual(response.json()['counts']['approved_rules'],6)
-
-    def test_evaluation_round_trip(self):
-        request=SAMPLE_REQUEST
-        response=self.client.post('/api/risk-knowledge/evaluate',json=request)
+    def test_state_excludes_earlier_rule_store(self):
+        from types import SimpleNamespace
+        matcher=SimpleNamespace(records=[],documents=[],clauses={},fingerprint='current',graph={'nodes':[],'relationships':[],'ontology_version':'1.2.0'})
+        with patch('app.services.semantic_matching.load_matcher',return_value=matcher), \
+             patch('app.routers.risk_knowledge.shared_policy_connection') as db:
+            db.return_value.__enter__.return_value.execute.return_value.fetchall.return_value=[]
+            response=self.client.get('/api/risk-knowledge/state')
         self.assertEqual(response.status_code,200)
         data=response.json()
-        self.assertEqual(sum(r['status']=='APPLICABLE' for r in data['results']),5)
-        self.assertEqual(len(data['conflicts']),1)
-        self.assertEqual(self.client.get('/api/risk-knowledge/evaluations/'+data['evaluation_id']).json(),data)
+        self.assertEqual(data['counts']['published_rules'],0)
+        self.assertEqual(data['rules'],[])
+        self.assertEqual(data['pipeline'],'policy-semantic-llm-v1')
+        self.assertTrue(all(c['source']['origin']=='SOURCE_SCHEMA' for c in self.client.get('/api/risk-knowledge/taxonomy').json()))
+
+    def test_earlier_evaluation_route_is_retired(self):
+        self.assertEqual(self.client.post('/api/risk-knowledge/evaluate',json=SAMPLE_REQUEST).status_code,410)
 
     def test_upload_process_and_download(self):
         text=b'For exposure above INR 2 million, bespoke approval shall be required.'
@@ -51,8 +54,7 @@ class APITests(unittest.TestCase):
         self.assertEqual(upload.status_code,200)
         doc=upload.json()
         response=self.client.post('/api/risk-knowledge/documents/'+doc['document_id']+'/process')
-        self.assertEqual(response.status_code,200)
-        self.assertEqual(response.json()['created'],1)
+        self.assertEqual(response.status_code,410)
         self.assertEqual(self.client.get('/api/risk-knowledge/documents/'+doc['document_id']+'/download').content,text)
 
     def test_candidate_approval_gate(self):
@@ -60,18 +62,18 @@ class APITests(unittest.TestCase):
         self.service.process(d['document_id'])
         rule=next(r for r in self.service.repo.all('policy_rules') if r['policy']['document_id']==d['document_id'])
         response=self.client.post('/api/risk-knowledge/review/rule/'+rule['rule_id'],json={'status':'APPROVED','reviewer':'API reviewer','notes':'Incomplete extraction'})
-        self.assertEqual(response.status_code,422)
-        self.assertIn('Approval blocked',response.json()['detail'])
+        self.assertEqual(response.status_code,410)
 
     def test_invalid_request_date(self):
         request=copy.deepcopy(SAMPLE_REQUEST)
         request['as_of']='2026-99-99'
-        self.assertEqual(self.client.post('/api/risk-knowledge/evaluate',json=request).status_code,422)
+        self.assertEqual(self.client.post('/api/risk-knowledge/evaluate',json=request).status_code,410)
 
-    def test_graph_filters_and_evidence(self):
-        graph=self.client.get('/api/risk-knowledge/graph?layer=ontology&status=APPROVED').json()
-        self.assertTrue(graph['edges'])
-        self.assertTrue(all(e['status']=='APPROVED' and e['provenance']['passage'] for e in graph['edges']))
+    def test_graph_alias_uses_semantic_projection(self):
+        with patch('app.routers.risk_knowledge.semantic_graph',return_value={'nodes':[],'edges':[]}) as graph:
+            response=self.client.get('/api/risk-knowledge/graph?limit=180')
+        self.assertEqual(response.status_code,200)
+        graph.assert_called_once_with(focus='',limit=6)
 
     def test_unknown_objects_and_wrong_format(self):
         self.assertEqual(self.client.get('/api/risk-knowledge/documents/does-not-exist').status_code,404)
@@ -87,7 +89,9 @@ class APITests(unittest.TestCase):
     def test_schema_contract_and_export(self):
         schema=self.client.get('/openapi.json').json()
         self.assertIn('/api/risk-knowledge/evaluate',schema['paths'])
-        self.assertTrue(self.client.get('/api/risk-knowledge/export/rules').json())
+        with patch('app.routers.risk_knowledge.semantic_knowledge',return_value={'rules':[]}) as current:
+            self.assertEqual(self.client.get('/api/risk-knowledge/export/rules').json(),{'rules':[]})
+            current.assert_called_once()
         self.assertTrue(self.client.get('/api/risk-knowledge/request-fields').json())
 
 

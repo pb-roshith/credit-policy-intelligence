@@ -1,0 +1,1082 @@
+{
+  "ontology_id": "urn:cpi:ontology:credit-policy",
+  "version": "1.1.0",
+  "namespace": "urn:cpi:ontology:credit-policy:",
+  "status": "PROPOSED",
+  "purpose": "Business semantic schema for credit policy knowledge; independent of executable compiler bindings.",
+  "classes": {
+    "Customer": {
+      "label": "Customer",
+      "definition": "A person or organization with a banking relationship.",
+      "parent": null,
+      "properties": {
+        "customer_reference": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "customer_kind": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "PERSON",
+            "ORGANIZATION"
+          ]
+        }
+      },
+      "required_properties": []
+    },
+    "Borrower": {
+      "label": "Borrower",
+      "definition": "A customer seeking or receiving credit; a specialized Customer.",
+      "parent": "Customer",
+      "properties": {},
+      "required_properties": []
+    },
+    "LoanApplication": {
+      "label": "Loan application",
+      "definition": "A request for credit, distinct from an originated loan.",
+      "parent": null,
+      "properties": {
+        "application_reference": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "requested_amount": {
+          "type": "number",
+          "description": "",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "description": "",
+          "pattern": "^[A-Z]{3}$"
+        }
+      },
+      "required_properties": []
+    },
+    "Loan": {
+      "label": "Loan",
+      "definition": "An originated credit agreement or facility.",
+      "parent": null,
+      "properties": {
+        "loan_reference": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "currency": {
+          "type": "string",
+          "description": "",
+          "pattern": "^[A-Z]{3}$"
+        }
+      },
+      "required_properties": []
+    },
+    "CreditPolicy": {
+      "label": "Credit policy",
+      "definition": "A stable policy identity across separately identified versions.",
+      "parent": null,
+      "properties": {
+        "policy_reference": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "risk_domain": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "policy_reference"
+      ]
+    },
+    "PolicyVersion": {
+      "label": "Policy version",
+      "definition": "An immutable, source-bound version of a credit policy.",
+      "parent": null,
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "source_checksum": {
+          "type": "string",
+          "description": "",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required_properties": [
+        "version",
+        "source_checksum"
+      ]
+    },
+    "PolicySection": {
+      "label": "Policy section",
+      "definition": "A section of one policy version, optionally nested within another section.",
+      "parent": null,
+      "properties": {
+        "section_reference": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "section_reference"
+      ]
+    },
+    "PolicyRule": {
+      "label": "Policy rule",
+      "definition": "A source-derived normative requirement within exactly one policy version.",
+      "parent": null,
+      "properties": {
+        "rule_reference": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "rule_kind": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "QUANTITATIVE",
+            "QUALITATIVE",
+            "EXCEPTION_RULE"
+          ]
+        },
+        "requirement_text": {
+          "type": "string",
+          "description": "Exact operative source statement, including qualitative duties.",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "rule_reference",
+        "rule_kind"
+      ]
+    },
+    "Condition": {
+      "label": "Condition",
+      "definition": "A typed comparison used in scope, eligibility or exception logic.",
+      "parent": null,
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "operator": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "EQ",
+            "NE",
+            "GT",
+            "GTE",
+            "LT",
+            "LTE",
+            "IN",
+            "NOT_IN",
+            "EXISTS"
+          ]
+        },
+        "value": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "",
+              "minLength": 1
+            },
+            {
+              "type": "number",
+              "description": ""
+            },
+            {
+              "type": "boolean",
+              "description": ""
+            },
+            {
+              "type": "array",
+              "description": "",
+              "items": {
+                "type": "string",
+                "description": "",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "field",
+        "operator"
+      ]
+    },
+    "ConditionGroup": {
+      "label": "Condition group",
+      "definition": "An explicit AND, OR or NOT expression over conditions or nested groups.",
+      "parent": null,
+      "properties": {
+        "logic": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "AND",
+            "OR",
+            "NOT"
+          ]
+        }
+      },
+      "required_properties": [
+        "logic"
+      ]
+    },
+    "Threshold": {
+      "label": "Threshold",
+      "definition": "A numerical boundary with an operator and unit, measured against exactly one metric.",
+      "parent": null,
+      "properties": {
+        "operator": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "GT",
+            "GTE",
+            "LT",
+            "LTE",
+            "EQ",
+            "NE"
+          ]
+        },
+        "value": {
+          "type": "number",
+          "description": ""
+        },
+        "unit": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "operator",
+        "value",
+        "unit"
+      ]
+    },
+    "CustomerSegment": {
+      "label": "Customer segment",
+      "definition": "A controlled grouping of customers, such as SME; no numerical SME definition is assumed.",
+      "parent": null,
+      "properties": {
+        "segment_code": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "segment_code"
+      ]
+    },
+    "Product": {
+      "label": "Product",
+      "definition": "A controlled credit product or facility type.",
+      "parent": null,
+      "properties": {
+        "product_code": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "product_code"
+      ]
+    },
+    "Geography": {
+      "label": "Geography",
+      "definition": "A jurisdiction or geographic grouping used in explicit policy scope.",
+      "parent": null,
+      "properties": {
+        "geography_code": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "code_scheme": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "geography_code",
+        "code_scheme"
+      ]
+    },
+    "RiskMetric": {
+      "label": "Risk metric",
+      "definition": "A defined quantitative measure with declared permitted units and optional formula.",
+      "parent": null,
+      "properties": {
+        "metric_key": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "allowed_units": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "string",
+            "description": "",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "formula": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "metric_key",
+        "allowed_units"
+      ]
+    },
+    "Exception": {
+      "label": "Exception",
+      "definition": "A conditional deviation from one base rule. Approval and alternative rules are explicit links.",
+      "parent": null,
+      "properties": {
+        "exception_reference": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "exception_reference"
+      ]
+    },
+    "ApprovalRequirement": {
+      "label": "Approval requirement",
+      "definition": "A required decision by an identified authority; this is not an approval already granted.",
+      "parent": null,
+      "properties": {
+        "decision_type": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "APPROVAL",
+            "ESCALATION",
+            "CONCURRENCE"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "decision_type"
+      ]
+    },
+    "ApprovalAuthority": {
+      "label": "Approval authority",
+      "definition": "An accountable role or committee empowered to make a specified decision.",
+      "parent": null,
+      "properties": {
+        "authority_code": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "authority_kind": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "ROLE",
+            "COMMITTEE"
+          ]
+        }
+      },
+      "required_properties": [
+        "authority_code",
+        "authority_kind"
+      ]
+    },
+    "EvidenceRequirement": {
+      "label": "Evidence requirement",
+      "definition": "A required evidence type and optional freshness condition.",
+      "parent": null,
+      "properties": {
+        "evidence_type": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "maximum_age_days": {
+          "type": "integer",
+          "description": "",
+          "minimum": 0
+        }
+      },
+      "required_properties": [
+        "evidence_type"
+      ]
+    },
+    "ControlEvidence": {
+      "label": "Control evidence",
+      "definition": "An actual evidence artifact with its recorded verification state.",
+      "parent": null,
+      "properties": {
+        "evidence_reference": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "evidence_type": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "verification_state": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "UNVERIFIED",
+            "VERIFIED",
+            "STALE"
+          ]
+        },
+        "collected_on": {
+          "type": "string",
+          "description": "",
+          "format": "date"
+        }
+      },
+      "required_properties": [
+        "evidence_reference",
+        "evidence_type",
+        "verification_state"
+      ]
+    },
+    "EffectivePeriod": {
+      "label": "Effective period",
+      "definition": "An inclusive start date and optional inclusive end date; absent period means unknown validity.",
+      "parent": null,
+      "properties": {
+        "start_date": {
+          "type": "string",
+          "description": "",
+          "format": "date"
+        },
+        "end_date": {
+          "type": "string",
+          "description": "",
+          "format": "date"
+        }
+      },
+      "required_properties": [
+        "start_date"
+      ]
+    },
+    "SourcePassage": {
+      "label": "Source passage",
+      "definition": "Exact evidence text, source identity, version and checksum; never a generated policy summary.",
+      "parent": null,
+      "properties": {
+        "document_reference": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "source_checksum": {
+          "type": "string",
+          "description": "",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "text": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "page": {
+          "type": "integer",
+          "description": "",
+          "minimum": 1
+        },
+        "clause_reference": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "origin": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "POLICY_SOURCE",
+            "ILLUSTRATIVE_EXAMPLE"
+          ]
+        }
+      },
+      "required_properties": [
+        "document_reference",
+        "version",
+        "source_checksum",
+        "text",
+        "origin"
+      ]
+    },
+    "TaxonomyConcept": {
+      "label": "Taxonomy concept",
+      "definition": "A reference to a controlled classification concept; classification is distinct from executable applicability.",
+      "parent": null,
+      "properties": {
+        "taxonomy_id": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "taxonomy_version": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "taxonomy_id",
+        "taxonomy_version"
+      ]
+    },
+    "DataAttribute": {
+      "label": "Data attribute",
+      "definition": "An exact source-system or workbook attribute; bindings require separate governance.",
+      "parent": null,
+      "properties": {
+        "entity_name": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "attribute_name": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        },
+        "registry_reference": {
+          "type": "string",
+          "description": "",
+          "minLength": 1
+        }
+      },
+      "required_properties": [
+        "entity_name",
+        "attribute_name",
+        "registry_reference"
+      ]
+    }
+  },
+  "relationships": {
+    "APPLIES_FOR": {
+      "label": "applies for",
+      "definition": "A borrower submits a credit application.",
+      "domain": [
+        "Borrower"
+      ],
+      "range": [
+        "LoanApplication"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "REQUESTS_PRODUCT": {
+      "label": "requests product",
+      "definition": "The product requested by an application.",
+      "domain": [
+        "LoanApplication"
+      ],
+      "range": [
+        "Product"
+      ],
+      "min_per_subject": 1,
+      "max_per_subject": 1
+    },
+    "RESULTS_IN": {
+      "label": "results in",
+      "definition": "An application results in an originated loan; absence does not imply rejection.",
+      "domain": [
+        "LoanApplication"
+      ],
+      "range": [
+        "Loan"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": 1
+    },
+    "BORROWS": {
+      "label": "borrows",
+      "definition": "A borrower is a party to an originated loan.",
+      "domain": [
+        "Borrower"
+      ],
+      "range": [
+        "Loan"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "OF_PRODUCT": {
+      "label": "of product",
+      "definition": "The product type of an originated loan.",
+      "domain": [
+        "Loan"
+      ],
+      "range": [
+        "Product"
+      ],
+      "min_per_subject": 1,
+      "max_per_subject": 1
+    },
+    "GOVERNED_BY": {
+      "label": "governed by",
+      "definition": "The exact policy version governing a loan; not inferred merely from product mentions.",
+      "domain": [
+        "Loan"
+      ],
+      "range": [
+        "PolicyVersion"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "VERSION_OF": {
+      "label": "version of",
+      "definition": "A policy version belongs to one stable policy identity.",
+      "domain": [
+        "PolicyVersion"
+      ],
+      "range": [
+        "CreditPolicy"
+      ],
+      "min_per_subject": 1,
+      "max_per_subject": 1
+    },
+    "CONTAINS_SECTION": {
+      "label": "contains section",
+      "definition": "A version contains a section.",
+      "domain": [
+        "PolicyVersion"
+      ],
+      "range": [
+        "PolicySection"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "PART_OF_VERSION": {
+      "label": "part of version",
+      "definition": "A section or rule belongs to exactly one policy version.",
+      "domain": [
+        "PolicySection",
+        "PolicyRule"
+      ],
+      "range": [
+        "PolicyVersion"
+      ],
+      "min_per_subject": 1,
+      "max_per_subject": 1
+    },
+    "PARENT_SECTION": {
+      "label": "parent section",
+      "definition": "Optional containing section within the same version.",
+      "domain": [
+        "PolicySection"
+      ],
+      "range": [
+        "PolicySection"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": 1
+    },
+    "CONTAINS_RULE": {
+      "label": "contains rule",
+      "definition": "A policy version or section contains a rule.",
+      "domain": [
+        "PolicyVersion",
+        "PolicySection"
+      ],
+      "range": [
+        "PolicyRule"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "APPLIES_TO_PRODUCT": {
+      "label": "applies to product",
+      "definition": "Explicit applicability to a product, distinct from classification.",
+      "domain": [
+        "PolicyRule"
+      ],
+      "range": [
+        "Product"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "APPLIES_TO_SEGMENT": {
+      "label": "applies to segment",
+      "definition": "Explicit applicability to a customer segment.",
+      "domain": [
+        "PolicyRule"
+      ],
+      "range": [
+        "CustomerSegment"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "APPLIES_IN": {
+      "label": "applies in",
+      "definition": "Explicit geographic scope of a rule.",
+      "domain": [
+        "PolicyRule"
+      ],
+      "range": [
+        "Geography"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "MEMBER_OF_SEGMENT": {
+      "label": "member of segment",
+      "definition": "Source-backed customer membership in a segment.",
+      "domain": [
+        "Customer"
+      ],
+      "range": [
+        "CustomerSegment"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "USES_METRIC": {
+      "label": "uses metric",
+      "definition": "A rule uses a defined risk measure.",
+      "domain": [
+        "PolicyRule"
+      ],
+      "range": [
+        "RiskMetric"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "HAS_THRESHOLD": {
+      "label": "has threshold",
+      "definition": "A rule has a numerical boundary.",
+      "domain": [
+        "PolicyRule"
+      ],
+      "range": [
+        "Threshold"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "MEASURED_BY": {
+      "label": "measured by",
+      "definition": "The metric against which a threshold is interpreted.",
+      "domain": [
+        "Threshold"
+      ],
+      "range": [
+        "RiskMetric"
+      ],
+      "min_per_subject": 1,
+      "max_per_subject": 1
+    },
+    "HAS_CONDITION": {
+      "label": "has condition",
+      "definition": "The explicit logical condition for a rule, exception or approval requirement.",
+      "domain": [
+        "PolicyRule",
+        "Exception",
+        "ApprovalRequirement"
+      ],
+      "range": [
+        "ConditionGroup"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": 1
+    },
+    "HAS_MEMBER": {
+      "label": "has member",
+      "definition": "A logical expression contains comparison terms or nested expressions.",
+      "domain": [
+        "ConditionGroup"
+      ],
+      "range": [
+        "Condition",
+        "ConditionGroup"
+      ],
+      "min_per_subject": 1,
+      "max_per_subject": null
+    },
+    "HAS_EXCEPTION": {
+      "label": "has exception",
+      "definition": "A rule permits an explicitly stated exception.",
+      "domain": [
+        "PolicyRule"
+      ],
+      "range": [
+        "Exception"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "EXCEPTION_TO": {
+      "label": "exception to",
+      "definition": "The one base rule from which an exception permits deviation.",
+      "domain": [
+        "Exception"
+      ],
+      "range": [
+        "PolicyRule"
+      ],
+      "min_per_subject": 1,
+      "max_per_subject": 1
+    },
+    "IMPLEMENTED_BY_RULE": {
+      "label": "implemented by rule",
+      "definition": "An optional alternative rule specifies the permitted deviation.",
+      "domain": [
+        "Exception"
+      ],
+      "range": [
+        "PolicyRule"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": 1
+    },
+    "REQUIRES_APPROVAL": {
+      "label": "requires approval",
+      "definition": "A rule or exception requires a decision, not evidence that it has been granted.",
+      "domain": [
+        "PolicyRule",
+        "Exception"
+      ],
+      "range": [
+        "ApprovalRequirement"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "REQUIRES_APPROVAL_FROM": {
+      "label": "requires approval from",
+      "definition": "The role or committee required for an approval decision.",
+      "domain": [
+        "ApprovalRequirement"
+      ],
+      "range": [
+        "ApprovalAuthority"
+      ],
+      "min_per_subject": 1,
+      "max_per_subject": 1
+    },
+    "REQUIRES_EVIDENCE": {
+      "label": "requires evidence",
+      "definition": "A rule or approval requires an evidence type.",
+      "domain": [
+        "PolicyRule",
+        "ApprovalRequirement"
+      ],
+      "range": [
+        "EvidenceRequirement"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "SATISFIES_REQUIREMENT": {
+      "label": "satisfies requirement",
+      "definition": "A recorded claim that an evidence artifact satisfies a requirement; verification remains explicit.",
+      "domain": [
+        "ControlEvidence"
+      ],
+      "range": [
+        "EvidenceRequirement"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "EVIDENCE_FOR": {
+      "label": "evidence for",
+      "definition": "An evidence artifact supports an application, rule or exception.",
+      "domain": [
+        "ControlEvidence"
+      ],
+      "range": [
+        "LoanApplication",
+        "PolicyRule",
+        "Exception"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "HAS_EFFECTIVE_PERIOD": {
+      "label": "has effective period",
+      "definition": "An explicitly stated validity period; no period implies no known validity.",
+      "domain": [
+        "PolicyVersion",
+        "PolicyRule",
+        "Exception"
+      ],
+      "range": [
+        "EffectivePeriod"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": 1
+    },
+    "DERIVED_FROM": {
+      "label": "derived from",
+      "definition": "A rule is grounded in one or more exact source passages from its own policy version.",
+      "domain": [
+        "PolicyRule"
+      ],
+      "range": [
+        "SourcePassage"
+      ],
+      "min_per_subject": 1,
+      "max_per_subject": null
+    },
+    "SOURCE_IN_VERSION": {
+      "label": "source in version",
+      "definition": "The policy version containing an exact source passage.",
+      "domain": [
+        "SourcePassage"
+      ],
+      "range": [
+        "PolicyVersion"
+      ],
+      "min_per_subject": 1,
+      "max_per_subject": 1
+    },
+    "CLASSIFIED_AS": {
+      "label": "classified as",
+      "definition": "A semantic entity is classified using an external controlled taxonomy.",
+      "domain": [
+        "PolicyRule",
+        "Product",
+        "CustomerSegment",
+        "RiskMetric",
+        "Geography"
+      ],
+      "range": [
+        "TaxonomyConcept"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    },
+    "BINDS_TO_ATTRIBUTE": {
+      "label": "binds to attribute",
+      "definition": "An explicit proposed or reviewed metric-to-data binding; never inferred from similar labels.",
+      "domain": [
+        "RiskMetric"
+      ],
+      "range": [
+        "DataAttribute"
+      ],
+      "min_per_subject": 0,
+      "max_per_subject": null
+    }
+  },
+  "semantic_constraints": [
+    {
+      "code": "UNIQUE_IDS",
+      "definition": "Node and relationship IDs must be unique across the instance."
+    },
+    {
+      "code": "TYPED_ENDPOINTS",
+      "definition": "Every relationship endpoint exists and satisfies the declared domain/range, including subclass inheritance."
+    },
+    {
+      "code": "SOURCE_REFERENCES",
+      "definition": "Every assertion and every non-passage entity has exact SourcePassage references."
+    },
+    {
+      "code": "SOURCE_VERSION",
+      "definition": "A rule and its derived source passages belong to the same policy version; source checksum/version agree."
+    },
+    {
+      "code": "CONTAINMENT",
+      "definition": "Section/rule containment and parent-section links agree with PART_OF_VERSION."
+    },
+    {
+      "code": "THRESHOLD_METRIC",
+      "definition": "Each threshold has one metric; its unit is permitted by that metric and the owning rule USES_METRIC."
+    },
+    {
+      "code": "QUANTITATIVE_RULE",
+      "definition": "A QUANTITATIVE rule has at least one threshold and metric."
+    },
+    {
+      "code": "EXCEPTION_LINKS",
+      "definition": "HAS_EXCEPTION and EXCEPTION_TO agree; an implemented alternative has rule_kind EXCEPTION_RULE and shares the base version."
+    },
+    {
+      "code": "CONDITIONS",
+      "definition": "IN/NOT_IN use nonempty lists; EXISTS omits value; other comparisons require scalar values; ordered comparisons require numbers."
+    },
+    {
+      "code": "CONDITION_LOGIC",
+      "definition": "NOT has exactly one member; AND/OR have at least one; condition groups and section parents are acyclic."
+    },
+    {
+      "code": "EFFECTIVE_DATES",
+      "definition": "An end date, when provided, cannot precede the start date."
+    },
+    {
+      "code": "EXAMPLE_ISOLATION",
+      "definition": "EXAMPLE instances are synthetic and use illustrative passages; SOURCE_BACKED instances cannot cite illustrative passages."
+    },
+    {
+      "code": "SYNTHETIC_PROVENANCE",
+      "definition": "An entity supported by synthetic source passages must itself retain the synthetic flag."
+    }
+  ],
+  "taxonomic_integration": "CLASSIFIED_AS references taxonomy IDs and version; it never establishes applicability.",
+  "operational_integration": "No automatic migration or equivalence with legacy ontology_relationships or operational compiler nodes.",
+  "approval_semantics": "Schema conformance checks structure and consistency; it does not verify source interpretation or grant business approval.",
+  "standards": {
+    "json_schema": "https://json-schema.org/draft/2020-12/schema",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "shacl": "http://www.w3.org/ns/shacl#"
+  }
+}

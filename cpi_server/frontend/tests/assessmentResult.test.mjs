@@ -12,6 +12,11 @@ test('preserves authoritative assessment outcomes', () => {
   assert.equal(assessmentResult({ severity: 'PASS' }), 'Pass');
 });
 
+test('semantic graph assessments preserve manual and unresolved results without legacy reinterpretation',()=>{
+ const review={assessment_scope:'current-semantic-graph',findings:[{result:'Manual Review Required'},{result:'Unable to Assess'},{result:'Breach'}]};
+ assert.deepEqual(assessmentFindings(review).map(f=>f.displayResult),['Manual Review Required','Unable to Assess','Breach']);
+});
+
 test('classifies manufactured actuals against hard limits', () => {
   assert.equal(assessmentResult(demo(true)), 'Pass');
   assert.equal(assessmentResult(demo(false)), 'Breach');

@@ -18,7 +18,7 @@ class FreshAssessmentTests(unittest.TestCase):
         from app.routers.compliance import run_compliance_review
         from app.schemas import ComplianceReviewRequest
         with patch('app.routers.compliance.latest_stored_compliance_review') as saved, \
-             patch('app.services.rule_assessment.run_rule_assessment',return_value={'findings':[]}) as run:
+             patch('app.services.semantic_assessment.run_rule_assessment',return_value={'findings':[]}) as run:
             result=run_compliance_review(ComplianceReviewRequest(credit_request_number='CR-1',recalculate=False),{'user_id':'test'})
         saved.assert_not_called()
         run.assert_called_once()

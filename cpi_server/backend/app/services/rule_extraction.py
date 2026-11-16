@@ -117,6 +117,9 @@ def resolve_batch_failures(connection,batch_key,job_id,version_id,batch):
 
 
 def process_policy(policy_id,user,job_id=None,progress=None,knowledge=None):
+    if knowledge is None:
+        from ..risk_knowledge.semantic_pipeline import process_policy as semantic_process
+        return semantic_process(policy_id,user,job_id,progress)
     policy,version,document,clauses=knowledge.ingested if knowledge is not None else ingest_policy(policy_id)
     with shared_policy_connection() as c:
         c.execute('SELECT pg_advisory_xact_lock(hashtext(%s))',(f'extract:{version["id"]}',))
@@ -261,15 +264,15 @@ def run_inventory_job(job_id,user):
 def _process_inventory_job(job_id,user,job):
     from concurrent.futures import ThreadPoolExecutor,as_completed
     from threading import Lock
-    from .inventory_operations import run_quality_reviews
     from ..risk_knowledge.pipeline import process_policy as process_risk_policy, PIPELINE_VERSION
     lock=Lock();report={}
     # Retry the unfinished documents; retain successful results from this job.
     progress={p['policy_id']:p for p in job.get('progress',[]) if p['policy_id'] in job['policy_ids']
+              and p.get('pipeline')==PIPELINE_VERSION
               and p['status'] in ('Completed','Already processed') and not p.get('partial_result')
               and not p.get('failed_batches') and not p.get('error')}
     counts=('clauses_processed','rules_proposed','quantitative_rules','qualitative_rules','manual_review_rules','missing_thresholds','validation_failures','duplicate_candidates',
-            'clauses_classified','taxonomy_proposals','ontology_proposals','rules_mapped','unresolved_mappings','rules_approved')
+            'clauses_classified','taxonomy_proposals','ontology_proposals','rules_mapped','unresolved_mappings','rules_approved','unresolved_spans','llm_fallback_spans','llm_proposals')
     def persist_progress():
         nonlocal report
         ordered=[progress[pid] for pid in job['policy_ids'] if pid in progress]
@@ -288,18 +291,22 @@ def _process_inventory_job(job_id,user,job):
         heartbeat(0)
         try:return process_risk_policy(policy_id,user,job_id,heartbeat)
         except Exception as error:return {**progress.get(policy_id,{}),'policy_id':policy_id,'status':'Failed','error':str(error) if isinstance(error,ValueError) else type(error).__name__,'validation_failures':1}
-    with ThreadPoolExecutor(max_workers=RULE_INVENTORY_WORKERS,thread_name_prefix='rule-inventory') as executor:
+    # A completed policy enriches the context of the next policy in this job.
+    workers=1 if PIPELINE_VERSION=='policy-semantic-llm-v1' else RULE_INVENTORY_WORKERS
+    with ThreadPoolExecutor(max_workers=workers,thread_name_prefix='rule-inventory') as executor:
         futures={executor.submit(copy_context().run,process,pid):pid for pid in job['policy_ids'] if pid not in progress}
         for future in as_completed(futures):
             with lock:
                 progress[futures[future]]=future.result()
                 persist_progress()
     persist_progress()
-    quality=run_quality_reviews(job_id,user)
+    # Source/ontology/compiler checks are authoritative. Do not run an LLM
+    # quality-review pass over deterministic extraction results by default.
+    quality={'quality_candidates':0,'quality_reviewed':0,'quality_failed':0,'quality_pending':0}
     report.update(quality)
     with shared_policy_connection() as c:
-        counts=c.execute("SELECT COUNT(*) AS rules_in_inventory,COUNT(*) FILTER (WHERE status='Draft') AS draft_rules,COUNT(*) FILTER (WHERE status='Active') AS active_rules FROM policy_rule_versions WHERE credit_data.is_quantitative_rule(definition) AND policy_id=ANY(%s)",(job['policy_ids'],)).fetchone()
+        counts=c.execute("SELECT COUNT(*) AS rules_in_inventory,COUNT(*) FILTER (WHERE status='Draft') AS draft_rules,COUNT(*) FILTER (WHERE status='Active') AS active_rules FROM policy_rule_versions WHERE credit_data.is_supported_policy_rule(definition) AND policy_id=ANY(%s)",(job['policy_ids'],)).fetchone()
         report.update(counts)
-        status='Failed' if not report['rules_proposed'] else 'Completed with errors' if (
+        status='Failed' if not report['rules_proposed'] and report['policies_failed'] else 'Completed with errors' if (
             report['policies_failed'] or report.get('quality_failed') or report.get('quality_pending')) else 'Completed'
         c.execute('UPDATE rule_inventory_jobs SET status=%s,report=%s::jsonb,error=NULL,finished_at=CURRENT_TIMESTAMP WHERE id=%s',(status,json.dumps(report),job_id))

@@ -24,6 +24,13 @@ GROUPS = {
     'credit_request.requested_amount': ['requested_amount'],
     'credit_request.currency': ['currency'],
     'facility.facility_type': ['facility', 'facility_type'],
+    'facility.loan_program':['loan_program'],
+    'collateral.property_type':['property_type'],
+    'collateral.vehicle_condition':['vehicle_condition'],
+    'collateral.is_secured':['is_secured'],
+    'facility.loan_purpose':['loan_purpose'],
+    'approval.ltv_exception_applies':['ltv_exception_applies'],
+    'regulatory.stricter_local_ltv_applies':['stricter_local_ltv_applies'],
     'facility.requested_amount': ['loan_amount'],
     'facility.tenor_months': ['tenor_months', 'facility_tenor_months', 'term_loan_tenor', 'revolving_credit_tenor', 'trade_finance_tenor', 'recommended_tenor_years'],
     'exposure.current_exposure': ['exposure'],
@@ -72,6 +79,7 @@ def provenance_sources(provenance):
 
 
 def field_spec(name):
+    if name in ('collateral.is_secured','approval.ltv_exception_applies','regulatory.stricter_local_ltv_applies'):return 'boolean',None
     if name in ('risk.breach_trigger','risk.warning_trigger'): return 'boolean', None
     if name.startswith('documentation.'): return 'object', None
     if name == 'facility.tenor_months': return 'integer', 'months'
@@ -97,6 +105,7 @@ def derive_registry(rules):
     for rule in rules:
         d = rule['definition']; logic = d.get('calculation_logic') or {}
         applicability = condition_fields(d.get('applicability_conditions'))
+        applicability |= condition_fields(d.get('applicability_exclusions'))
         if d.get('applicable_stage'): applicability.add('status')
         calculation = {logic[k] for k in ('field', 'numerator', 'denominator', 'as_of_field') if logic.get(k)} | condition_fields(logic.get('condition'))
         fields = set(referenced_fields(d))
@@ -260,14 +269,14 @@ def read_fact(record, name, entity_id=None, period=None):
     except (ValueError, TypeError, ArithmeticError): return None
 
 
-def resolve_actual(rule, record, *, entity_id=None, period=None, as_of=None):
+def resolve_actual(rule, record, *, entity_id=None, period=None, as_of=None, taxonomy_normalization=()):
     d = rule.get('definition', rule); request_id = record['request_id']; as_of = as_of or date.today()
     _, mappings = derive_registry([{'id': rule.get('id', 0), 'policy_id': rule.get('policy_id', 0), 'definition': d}])
     mapping = mappings[0]; data, resolved, missing, provenance, conflicts = {}, [], [], [], []
     facility_dependent = any(name.startswith('facility.') or any(dep.startswith('facility.') for dep in DERIVATIONS.get(name,[])) for name in mapping['required_fields'])
     facilities = record.get('entities',{}).get('facility',[])
     if entity_id is None and facility_dependent and len(facilities)>1:
-        instances = [{**resolve_actual(rule,record,entity_id=e['entity_id'],period=period,as_of=as_of),'entity_id':e['entity_id']} for e in facilities]
+        instances = [{**resolve_actual(rule,record,entity_id=e['entity_id'],period=period,as_of=as_of,taxonomy_normalization=taxonomy_normalization),'entity_id':e['entity_id']} for e in facilities]
         relevant = [r for r in instances if r['evaluation']['result']!='Not Applicable']
         rank = {'Breach':6,'Warning':5,'Manual Review Required':4,'Unable to Assess':3,'Pass':2,'Not Applicable':1}
         worst = max(relevant or instances,key=lambda r:rank[r['evaluation']['result']])
@@ -327,6 +336,9 @@ def resolve_actual(rule, record, *, entity_id=None, period=None, as_of=None):
             evidence.append({'key':requirement['key'],'value':item['value'], 'source':item['provenance']['source_type'],
                              'reference':item['value'].get('document_id'),'provenance':item['provenance']})
     data['evidence'] = evidence
+    if taxonomy_normalization:
+        from ..risk_knowledge.taxonomy import apply_normalization
+        data = apply_normalization(data, taxonomy_normalization)
     status = 'CONFLICTING' if conflicts else 'PARTIAL' if missing and resolved else 'MISSING' if missing else 'COMPLETE'
     evaluation = execute_rule(d, data, as_of)
     logic = d.get('calculation_logic') or {}

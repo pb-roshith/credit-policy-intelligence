@@ -18,16 +18,16 @@ COVENANT_SCORE = {"Full": 7, "Partial": 0, "None": -10}
 
 
 def _rounded(value):
-    return round(value, 3)
+    return round(value, 6)
 
 
 def calculate_metrics(inputs: dict, include_sensitivity: bool = True) -> dict:
-    """Deterministic illustrative credit-risk model; all monetary values are USD millions."""
+    """Illustrative risk model, in millions of the selected request's currency."""
     amount = float(inputs["facility_amount"])
     coverage = float(inputs["collateral_coverage"])
     rating = inputs["risk_rating"]
-    pricing = int(inputs["pricing_bps"])
-    tenor = int(inputs["tenor_years"])
+    pricing = float(inputs["pricing_bps"])
+    tenor = float(inputs["tenor_years"])
     covenants = inputs["covenants"]
 
     pd = PD_BY_RATING[rating]
@@ -63,10 +63,11 @@ def calculate_metrics(inputs: dict, include_sensitivity: bool = True) -> dict:
             "loss_given_default": round(lgd, 4),
             "capital_ratio": 0.105,
             "portfolio_limit": 1000,
+            "currency":inputs.get('currency','USD'),
         },
     }
     if include_sensitivity:
-        amounts = sorted(set(max(25, min(150, round(amount * factor))) for factor in (0.6, 0.8, 1, 1.2, 1.4)))
+        amounts = sorted(set(max(0.000001,round(amount*factor,6)) for factor in (0.6,0.8,1,1.2,1.4)))
         result["sensitivity"] = [
             {"facility_amount": candidate, **{
                 key: value for key, value in calculate_metrics(
@@ -83,8 +84,8 @@ def recommended_case(inputs: dict) -> tuple[dict, dict]:
         **inputs,
         "facility_amount": min(float(inputs["facility_amount"]), 65),
         "collateral_coverage": max(float(inputs["collateral_coverage"]), 100),
-        "pricing_bps": max(int(inputs["pricing_bps"]), REQUIRED_SPREAD[inputs["risk_rating"]]),
-        "tenor_years": min(int(inputs["tenor_years"]), 5),
+        "pricing_bps": max(float(inputs["pricing_bps"]), REQUIRED_SPREAD[inputs["risk_rating"]]),
+        "tenor_years": min(float(inputs["tenor_years"]), 5),
         "covenants": "Full",
     }
     return improved, calculate_metrics(improved, include_sensitivity=False)
@@ -122,7 +123,7 @@ class ScenarioRecommendationAgent:
                     updated_at = CURRENT_TIMESTAMP''', (agent.id,))
             return agent.id
 
-    def run(self, inputs: dict, results: dict, improved_inputs: dict, improved_results: dict, user_id: str) -> tuple[str, list[str]]:
+    def run(self, inputs: dict, results: dict, improved_inputs: dict, improved_results: dict, user_id: str, *, request_context=None) -> tuple[str, list[str]]:
         try:
             agent_id = self._agent_id()
             context = {
@@ -130,7 +131,8 @@ class ScenarioRecommendationAgent:
                 "calculated_results": results,
                 "improved_case_inputs": improved_inputs,
                 "improved_case_results": improved_results,
-                "units": "Monetary values are USD millions; concentration is percent.",
+                "credit_request":request_context,
+                "units": f"Monetary values are {inputs.get('currency','USD')} millions; concentration is percent. The fixed illustrative portfolio limit is 1,000 million in the same currency; no FX conversion is performed.",
             }
             prompt = "Recommend scenario mitigants from this JSON:\n" + json.dumps(context)
             with observe_ai(

@@ -1,4 +1,5 @@
 import React from 'react';
+import {assessmentText} from '../../../api/displayText';
 import {ArrowUpRight, Check, X, FileText, ExternalLink, CircleHelp} from 'lucide-react';
 import {post,exportUrl} from '../services/api';
 export const ReviewerContext=React.createContext('Current CPI session');
@@ -9,7 +10,7 @@ export function Panel({title,sub,action,children,className=''}) {return <section
 export function Empty({children}) {return <div className="empty"><CircleHelp size={26}/><p>{children}</p></div>}
 export function Source({source,onDocument}) {
  if(!source)return null;
- return <div className="source-block"><div className="eyebrow"><FileText size={13}/> Source evidence</div><strong>{source.document_name}</strong><div className="source-meta">{[source.section,source.sheet,source.cell,source.page?'Page '+source.page:null,source.clause?'Clause '+source.clause:null].filter(Boolean).join(' · ')}</div><blockquote>{source.passage}</blockquote><div className="source-meta">Version {source.version||'UNKNOWN'} · Effective {source.effective_date||'UNKNOWN'} · {source.origin}</div>{onDocument&&<button className="text-button" onClick={()=>onDocument(source.document_id)}>View source document <ArrowUpRight size={14}/></button>}</div>
+ return <div className="source-block"><div className="eyebrow"><FileText size={13}/> Source evidence</div><strong>{source.document_name}</strong><div className="source-meta">{[source.section,source.sheet,source.cell,source.page?'Page '+source.page:null,source.clause?'Clause '+source.clause:null].filter(Boolean).join(' · ')}</div><blockquote>{source.passage}</blockquote><div className="source-meta">Version {source.version||'UNKNOWN'} · Effective {source.effective_date||'UNKNOWN'} · {assessmentText(source.origin)}</div>{onDocument&&<button className="text-button" onClick={()=>onDocument(source.document_id)}>View source document <ArrowUpRight size={14}/></button>}</div>
 }
 export function Quality({validation}) {return <div className="quality">{Object.entries(validation||{}).map(([k,v])=><div key={k} className={v?'pass':'fail'}>{v?<Check size={14}/>:<X size={14}/>}<span>{pretty(k)}</span></div>)}</div>}
 export function Modal({title,onClose,children,wide=false}) {return <div className="modal-shade" onClick={onClose}><section role="dialog" aria-modal="true" aria-label={title} className={'modal '+(wide?'wide':'')} onClick={e=>e.stopPropagation()}><header><h2>{title}</h2><button aria-label="Close dialog" className="icon-button" onClick={onClose}><X size={20}/></button></header><div className="modal-content">{children}</div></section></div>}

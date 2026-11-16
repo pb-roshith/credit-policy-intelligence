@@ -24,6 +24,14 @@ class ApplicabilityReport(BaseModel):
 
 def evaluate_conditions(definition, request_data):
     applicable, missing, reasons = condition_result(definition.get('applicability_conditions'), request_data)
+    if definition.get('applicability_exclusions'):
+        excluded, absent, why = condition_result(definition['applicability_exclusions'], request_data)
+        reasons.extend('Exclusion: '+reason for reason in why)
+        if excluded is True:
+            applicable = False
+        elif excluded is None and applicable is not False:
+            applicable = None
+            missing.extend(absent)
     if definition.get('applicability_unresolved') and applicable is not False:
         applicable = None
         missing.append('Approved applicability mapping')
@@ -76,6 +84,7 @@ class CreditRequestPolicyApplicabilityAgent:
                 for key in ('all', 'any'):
                     for child in condition.get(key) or []: collect(child)
             collect(definition.get('applicability_conditions'))
+            collect(definition.get('applicability_exclusions'))
             if definition.get('applicable_stage') or definition.get('applicable_stages'): fields.add('status')
             attributes = {key: None if field_value(data, key) is MISSING else field_value(data, key) for key in sorted(fields)}
             results.append(ApplicabilityDecision(candidate_id=str(candidate['id']),

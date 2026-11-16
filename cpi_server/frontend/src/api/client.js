@@ -1,9 +1,10 @@
 import { prepareAccountRequest } from "./requestAccount.js";
-export const API = import.meta.env.VITE_API_URL || "http://localhost:8002";
+const APPLICATION=import.meta.env.VITE_APPLICATION_ID==='dm'?'dm':'cpi';
+export const API = import.meta.env.VITE_API_URL || (APPLICATION==='dm'?"http://localhost:8005":"http://localhost:8002");
 const REQUEST_TIMEOUT_MS = 120000;
 const csrfToken = () => document.cookie
   .split("; ")
-  .find((entry) => entry.startsWith("cpi_csrf="))
+  .find((entry) => entry.startsWith(APPLICATION+"_csrf="))
   ?.split("=").slice(1).join("=") || "";
 
 export async function apiRequest(path, options = {}) {

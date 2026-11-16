@@ -1,0 +1,11 @@
+{
+  "knowledge_fingerprint": "5d44c3ee3f4f277c6f238e690030d55346afeda0f421326058d9818f7e215ad9",
+  "sha256": {
+    "outputs/extracted-knowledge/connected-policy-knowledge.zip": "1253235366a60228d43fd839be89caac0fc73532ab7c8c0e3aa9cba0be2b37ee",
+    "outputs/ontology/credit-policy-ontology-v1.2.0.zip": "8b93650e855e99c9a1e4a25ed089e398911d6ad982758855356b16b42fae216d",
+    "outputs/policy-taxonomy/policy-taxonomy.json": "dcc55fa0484ca63e908690a7cd1458271ada44f00013d7f1d70fda5bcd4ff7ab",
+    "outputs/policy-taxonomy/policy-taxonomy.xlsx": "e2237b3285a849181f9fde05f76d5a888f829552233911c46061b3570696ddb0",
+    "outputs/finalization/consistency-report.json": "b353539480497d10568f248903117cdc3660a3cc4d1e260bb4f73d12514efb18",
+    "outputs/finalization/http-smoke.json": "3872e158dbf4f5e6d92308f2c2643506630dfaf41057f673e07cef7aa7ccd79d"
+  }
+}

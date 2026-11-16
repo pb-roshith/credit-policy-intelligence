@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FileText, ShieldCheck, AlertTriangle, CircleDollarSign, ShieldAlert, Download, RefreshCw, Send } from "lucide-react";
+import { FileText, AlertTriangle, CircleDollarSign, ShieldAlert, Download, RefreshCw, Send } from "lucide-react";
 import { policyDisplayName } from "../config";
 import { apiRequest } from "../api/client";
 import { Card, Heading, Metric, Legend, money } from "../components/ui";
@@ -84,7 +84,7 @@ export default function Dashboard({ session }) {
       setLoading(true);
       try {
         const result = await apiRequest("/api/dashboard", { signal: controller.signal }, session.token);
-        if (active) { setData((previous) => previous?.insights_generated_at &&
+        if (active) { setData((previous) => previous?.knowledge_fingerprint===result.knowledge_fingerprint && previous?.insights_generated_at &&
           (!result.insights_generated_at || new Date(previous.insights_generated_at) > new Date(result.insights_generated_at))
           ? { ...result, insights: previous.insights, insights_generated_at: previous.insights_generated_at,
               insights_source_generated_at: previous.insights_source_generated_at } : result); setError(""); }
@@ -158,9 +158,8 @@ export default function Dashboard({ session }) {
     {!data ? <Empty>{loading ? "Loading dashboard from PostgreSQL…" : "Dashboard data is unavailable."}</Empty> : <>
       {data.source_warning && <p role="alert" className="dashboard-empty">{data.source_warning} <button className="text-btn" onClick={() => setRefresh(value => value + 1)}>Retry</button></p>}
       <p className="dashboard-empty">Current portfolio · Updated {new Date(data.generated_at).toLocaleString()} · Refreshes every minute{error ? " · Showing last successful update" : ""}</p>
-      <div className="metrics five">
+      <div className="metrics">
         <Metric icon={FileText} label="Active Credit Requests" value={metrics.active_requests.toLocaleString()} />
-        <Metric icon={ShieldCheck} label="Average Compliance Score" value={metrics.policy_compliance == null ? "—" : `${metrics.policy_compliance}%`} />
         <Metric icon={AlertTriangle} label="Active Exceptions" value={metrics.open_exceptions.toLocaleString()} />
         <Metric icon={CircleDollarSign} label="Exposure Under Exception" value={amount(metrics.exception_exposure)} />
         <Metric icon={ShieldAlert} label="High Severity Breaches" value={metrics.high_severity.toLocaleString()} />

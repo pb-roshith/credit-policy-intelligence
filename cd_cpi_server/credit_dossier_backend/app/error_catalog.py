@@ -38,6 +38,7 @@ ERROR_CATALOG: dict[str, ErrorDefinition] = {
         "Your account is locked. Reset your password using your security questions or contact an administrator.",
         "Three consecutive credential failures locked the account.",
     ),
+    "AUTH-010": _error("AUTH-010", 409, "Recovery questions are not configured for this account. Open your Credit Dossier profile to configure password recovery.", "Account has no complete set of recovery questions."),
     "USER-001": _error("USER-001", 409, "That user ID is already registered.", "User identifier conflict."),
     "USER-002": _error("USER-002", 404, "User ID was not found.", "User lookup failed."),
     "USER-003": _error("USER-003", 409, "This account is already approved.", "Account approval conflict."),
@@ -67,6 +68,7 @@ ERROR_CATALOG: dict[str, ErrorDefinition] = {
 
 
 _DETAIL_CODES = {
+    "Recovery questions are not configured for this account. Sign in and configure them from your profile.": "AUTH-010",
     "Invalid user ID or password.": "AUTH-001",
     "Your account is in the admin queue for approval.": "AUTH-002",
     "Please sign in to continue.": "AUTH-003",

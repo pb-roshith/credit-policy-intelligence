@@ -39,7 +39,7 @@ class AssessmentRequestTests(unittest.TestCase):
         self.assertEqual(params,("deal_AbC",))
 
 class ComplianceSubmissionTests(unittest.TestCase):
-    @patch("app.services.rule_assessment.run_rule_assessment")
+    @patch("app.services.semantic_assessment.run_rule_assessment")
     @patch("app.routers.compliance.latest_stored_compliance_review", return_value=None)
     def test_dropdown_dossier_id_submits_through_api(self, latest, assessment):
         from fastapi import FastAPI
@@ -56,7 +56,7 @@ class ComplianceSubmissionTests(unittest.TestCase):
         self.assertEqual(response.status_code,200)
         assessment.assert_called_once_with(request_id,"owner",user=user)
 
-    @patch("app.services.rule_assessment.run_rule_assessment")
+    @patch("app.services.semantic_assessment.run_rule_assessment")
     @patch("app.routers.compliance.latest_stored_compliance_review")
     def test_run_creates_new_review_and_leaves_historical_snapshot(self, latest, assessment):
         from app.routers.compliance import run_compliance_review

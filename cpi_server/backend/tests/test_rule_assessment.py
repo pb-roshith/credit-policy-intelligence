@@ -51,13 +51,14 @@ class ApplicableOnlyAssessmentTests(unittest.TestCase):
              patch('app.services.rule_assessment.shared_policy_connection',return_value=connection), \
              patch('app.services.rule_assessment.run_db_transaction',return_value={'review_id':1}), \
              patch('app.services.rule_explanation.explain_findings'), \
-             patch('app.services.policy_scope.policy_decisions',return_value=[]), \
+             patch('app.services.policy_scope.policy_first_applicability',return_value={'decisions':[{'candidate_type':'Rule','candidate_id':'2','applicability':'Unable to Determine'}],'policy_mappings':[]}), \
              patch('app.services.rule_engine.execute_rule') as execute:
             result=run_rule_assessment('CR-1','test')
         execute.assert_not_called()
         self.assertEqual(result['findings'],[])
         self.assertIsNone(result['overall_score'])
         self.assertEqual(result['assessment_scope'],'policy-first-applicable-only')
+        self.assertEqual(result['compliance_status'],'Incomplete assessment')
 
 if __name__ == "__main__":
     unittest.main()

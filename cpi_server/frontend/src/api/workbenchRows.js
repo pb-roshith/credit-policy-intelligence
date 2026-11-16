@@ -17,7 +17,7 @@ export function dossierRequest(deal, existing) {
   const exposure = number("Exposure", deal.exposure ?? (comparable ? existing?.exposure : null), Math.round(amount * 0.6));
   const rating = value("Rating", deal.rating || intake.rating || existing?.rating, "BBB");
   const coverage = number("Collateral coverage", deal.collateral_coverage ?? intake.collateral_coverage ?? existing?.collateral_coverage, deal.collateral === false ? 0 : 100);
-  const compliance = number("Compliance score", deal.compliance_score ?? existing?.compliance_score, rating.startsWith("BBB") ? 82 : rating.startsWith("BB") ? 68 : 88);
+  const compliance = existing?.assessment_scope === 'current-semantic-graph' ? existing.compliance_score : null;
   const pricingMatch = /([0-9]+(?:\.[0-9]+)?)\s*bps/i.exec(deal.pricing || "");
   const pricing = number("Recommended pricing", deal.recommended_pricing_bps ?? existing?.recommended_pricing_bps ?? pricingMatch?.[1], 275);
   const tenor = number("Recommended tenor", hasNumber(deal.tenure) && Number(deal.tenure) > 0 ? Number(deal.tenure) / 12 : existing?.recommended_tenor_years, 5);
@@ -33,7 +33,7 @@ export function dossierRequest(deal, existing) {
     geography: value("Geography", deal.geography, "Asia Pacific"),
     exposure, facility: value("Facility", deal.facility, "Term Loan"), rating,
     requested_amount: amount, currency, status: statusMap[deal.status] || deal.status || "Pending",
-    compliance_score: compliance, collateral_coverage: coverage,
+    compliance_score: compliance, assessment_scope: existing?.assessment_scope, compliance_status: existing?.compliance_status, collateral_coverage: coverage,
     recommended_pricing_bps: pricing, recommended_tenor_years: tenor,
     assistant: {
       summary: intake.summary || "", risks, assumptions,
@@ -43,10 +43,11 @@ export function dossierRequest(deal, existing) {
   };
 }
 
-export function workbenchRequests(deals, legacy) {
+export function workbenchRequests(deals, legacy, summaries=[]) {
+  const latest=new Map(summaries.map(r=>[r.request_id,r]));
   const byId = new Map(legacy.filter(row => row.shared_deal_id).map(row => [row.shared_deal_id, row]));
   const sourceIds = new Set(deals.map(deal => deal.id));
-  return [...deals.map(deal => dossierRequest(deal, byId.get(deal.id))),
+  return [...deals.map(deal => dossierRequest(deal, latest.get(deal.id)||byId.get(deal.id))),
     ...legacy.filter(row => !sourceIds.has(row.shared_deal_id))]
-    .sort((a, b) => Number(a.compliance_score) - Number(b.compliance_score));
+    .sort((a, b) => (a.compliance_score ?? Infinity) - (b.compliance_score ?? Infinity));
 }

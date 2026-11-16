@@ -18,9 +18,162 @@ from ..risk_knowledge.ingestion import MAX_BYTES
 from ..risk_knowledge.models import CreditRequest, Model, Review
 from ..risk_knowledge.repositories import PostgreSQLRepository
 from ..risk_knowledge.service import IntelligenceService
+from ..services.policy_scope_governance import PolicyScopeInput, scope_context, approve_scope
+from ..risk_knowledge.representation_governance import SourceInterpretationReview, current_representation,review_span
+from ..risk_knowledge.policy_representation import coverage_summary,frame_from_graph,graph_from_representation
 
 router = APIRouter(prefix='/api/risk-knowledge', tags=['Risk Knowledge'], dependencies=[Depends(current_user)])
 lock = RLock()
+
+
+@router.get('/policy-ontology')
+def policy_ontology():
+    return business_semantic_model()
+
+
+@router.get('/semantic-model')
+def business_semantic_model():
+    from ..risk_knowledge.semantic_model import semantic_contract
+    return semantic_contract()
+
+
+def semantic_repository():
+    return PostgreSQLRepository(shared_policy_connection, None)
+
+
+@router.get('/semantic-knowledge')
+def semantic_knowledge():
+    from ..services.current_knowledge import inventory
+    return inventory()
+
+
+@router.get('/semantic-graph')
+def semantic_graph(focus: str='', policy_id: int | None=None, offset: int=0, limit: int=6):
+    from ..risk_knowledge.semantic_pipeline import current_records
+    from ..risk_knowledge.semantic_view import graph_view
+    return invoke(lambda: graph_view(current_records(semantic_repository()), focus=focus, policy_id=policy_id, offset=offset, limit=limit))
+
+
+@router.get('/semantic-policies/{policy_id}/representation')
+def semantic_policy_representation(policy_id: int):
+    from ..risk_knowledge.policy_taxonomy import source_rows
+    from ..risk_knowledge.semantic_pipeline import current_records
+    from ..risk_knowledge.semantic_extraction import approved_rules
+    from ..risk_knowledge.semantic_view import policy_source_view, graph_view
+    documents, clauses = source_rows(shared_policy_connection)
+    document = next((d for d in documents if d['policy_id'] == policy_id), None)
+    if document is None:
+        raise HTTPException(404, 'Policy not found')
+    records = current_records(semantic_repository())
+    record = next((r for r in records if r['policy_id'] == policy_id), None)
+    result = policy_source_view(document, clauses, record, approved_rules(records))
+    result['graph'] = graph_view(records, policy_id=policy_id) if result['has_extraction'] else {
+        'nodes': [], 'edges': [], 'next_offset': None, 'total_nodes': 0, 'truncated': False}
+    return result
+
+
+@router.get('/semantic-knowledge/export')
+def export_semantic_knowledge():
+    from ..risk_knowledge.semantic_pipeline import current_records
+    from ..risk_knowledge.semantic_extraction import assemble_graph
+    return assemble_graph(current_records(semantic_repository()))
+
+
+class SemanticReview(Model):
+    rule_id: str
+    expected_digest: str
+    status: Literal['APPROVED','REJECTED','PROPOSED']
+    notes: str = Field(min_length=3,max_length=4000)
+    replacement: dict | None = None
+
+
+class SemanticScopeReview(Model):
+    expected_digest: str
+    scope: dict
+    status: Literal['APPROVED','PROPOSED','REJECTED']
+    notes: str=Field(min_length=3,max_length=2000)
+
+
+@router.post('/semantic-policies/{policy_id}/scope')
+def semantic_scope_review(policy_id:int,body:SemanticScopeReview,user=Depends(current_user)):
+    if user['role'] not in ('credit_analyst','admin'):raise HTTPException(403,'A credit analyst or administrator must review scope')
+    from ..risk_knowledge.semantic_scope import review_scope
+    return invoke(lambda:review_scope(semantic_repository(),policy_id,body.expected_digest,body.scope,body.status,user['user_id'],body.notes))
+
+
+@router.post('/semantic-rules/review')
+def semantic_rule_review(body: SemanticReview, user=Depends(current_user)):
+    if user['role'] not in ('credit_analyst','admin'):
+        raise HTTPException(403,'A credit analyst or administrator must override extracted knowledge')
+    from ..risk_knowledge.semantic_pipeline import review_rule
+    return invoke(lambda: review_rule(semantic_repository(),body.rule_id,status=body.status,
+        notes=body.notes,actor=user['user_id'],expected_digest=body.expected_digest,replacement=body.replacement))
+
+
+@router.get('/semantic-model/schema')
+def business_semantic_schema():
+    from ..risk_knowledge.semantic_model import instance_schema
+    return instance_schema()
+
+
+@router.get('/semantic-model/ontology.ttl')
+def business_semantic_owl():
+    from fastapi.responses import Response
+    from ..risk_knowledge.semantic_rdf import ontology_graph
+    return Response(ontology_graph().serialize(format='turtle'), media_type='text/turtle')
+
+
+@router.get('/semantic-model/shapes.ttl')
+def business_semantic_shapes():
+    from fastapi.responses import Response
+    from ..risk_knowledge.semantic_rdf import shapes_graph
+    return Response(shapes_graph().serialize(format='turtle'), media_type='text/turtle')
+
+
+@router.get('/semantic-model/example')
+def business_semantic_example():
+    from ..risk_knowledge.semantic_model import example_instance
+    return example_instance()
+
+
+@router.post('/semantic-model/validate')
+def validate_business_semantic_instance(body: dict):
+    from ..risk_knowledge.semantic_model import validate_instance
+    return validate_instance(body)
+
+
+@router.get('/policy-representations/{policy_id}')
+def policy_representation(policy_id: int,focus: str=''):
+    return semantic_policy_representation(policy_id)
+
+
+@router.post('/policy-representations/{policy_id}/review')
+def review_policy_interpretation(policy_id: int,body: SourceInterpretationReview,user=Depends(current_user)):
+    raise HTTPException(410, 'Use the current Policy Rule Library, Policy Evidence and graph-based Compliance Review.')
+
+
+@router.get('/policies/{policy_id}/scope')
+def policy_scope_context(policy_id: int):
+    return scope_context(policy_id)
+
+
+@router.put('/policies/{policy_id}/scope')
+def approve_policy_scope(policy_id: int, body: PolicyScopeInput, user=Depends(current_user)):
+    return approve_scope(policy_id, body, user)
+
+
+@router.get('/requests/{request_id}/graph')
+def request_graph(request_id: str, focus: str = '', user=Depends(current_user)):
+    from ..services.rule_assessment import assessment_request_context
+    from ..services.semantic_matching import load_matcher
+    from ..risk_knowledge.semantic_view import graph_view
+    _,data=assessment_request_context(request_id,user)
+    matcher=load_matcher();report=matcher.match(data)
+    graph=invoke(lambda:graph_view(matcher.records,focus=focus))
+    decisions={d['candidate_id']:d for d in report['decisions'] if d['candidate_type']=='Rule'}
+    graph['nodes']=[{**n,'applicability':decisions.get(n['id'],{}).get('applicability')} for n in graph['nodes']]
+    return {**graph,'report':report,'knowledge_fingerprint':matcher.fingerprint}
+
 
 
 def invoke(operation):
@@ -50,6 +203,15 @@ def catalog(service):
     if not hasattr(service, '_catalog'):
         service._catalog = read_catalog(shared_policy_connection)
     return service._catalog
+
+
+def project_source_representations(service):
+    from ..risk_knowledge.policy_representation import current_representations,project_representations
+    records=[r for r in service.repo.all('metadata') if r.get('kind')=='policy_representation']
+    if records:
+        with shared_policy_connection() as connection:
+            versions=connection.execute('SELECT id,checksum FROM policy_versions WHERE is_current').fetchall()
+        project_representations(service.graph,current_representations(records,versions),catalog(service)[2])
 
 
 class PolicyExtractionInput(Model):
@@ -99,22 +261,42 @@ def retry_extraction(job_id: str, background: BackgroundTasks, user=Depends(curr
 
 @router.get('/state')
 def state(service=Depends(get_service)):
-    result = invoke(service.state)
-    policies, clauses, rules = catalog(service)
-    documents = documents_from_catalog(policies, clauses)
-    combined={d['document_id']:d for d in result['documents']}
-    for document in documents:
-        combined.setdefault(document['document_id'],{k:v for k,v in document.items() if k!='raw_text'})
-    result['documents']=list(combined.values())
-    result['counts']['source_documents'] = len(result['documents'])
-    result['catalog'] = {'policies': len(policies), 'governed_rules': len(rules),
-                         'approved_rules': sum(r['status'] in ('Approved','Active') and not r['review_required'] for r in rules)}
-    return result
+    from ..services.current_knowledge import inventory
+    from ..services.semantic_matching import load_matcher
+    from ..risk_knowledge.semantic_model import semantic_contract
+    matcher=load_matcher();knowledge=inventory(matcher)
+    with shared_policy_connection() as db:
+        policies=db.execute('SELECT * FROM policy_documents ORDER BY display_order,policy_id').fetchall()
+    sources=documents_from_catalog(policies,[{**c,'version':next(d['version'] for d in matcher.documents if d['policy_id']==c['policy_id'])} for c in matcher.clauses.values()])
+    reference=[d for d in service.repo.all('documents') if d.get('document_type') in ('schema','reference') and not d.get('synthetic')]
+    concepts=[c for c in service.repo.all('taxonomy_concepts') if c.get('source',{}).get('origin')=='SOURCE_SCHEMA']
+    model=semantic_contract()
+    return {'documents':[{k:v for k,v in d.items() if k!='raw_text'} for d in [*sources,*reference]],
+        'rules':knowledge['rules'],'ontology':[{'relationship_id':key,'predicate':key,**value} for key,value in model['relationships'].items()],
+        'counts':{**knowledge['summary'],'source_documents':len(sources)+len(reference),
+            'source_entities':sum(c['kind']=='ENTITY' for c in concepts),'source_attributes':sum(c['kind']=='ATTRIBUTE' for c in concepts),
+            'ontology_relationships':len(model['relationships'])},
+        'catalog':{'policies':len(policies),'governed_rules':knowledge['summary']['extracted_rules'],'approved_rules':knowledge['summary']['published_rules']},
+        'pipeline':knowledge['pipeline'],'ontology_version':model['version'],'knowledge_fingerprint':matcher.fingerprint}
+
 
 
 @router.get('/taxonomy')
 def taxonomy(service=Depends(get_service)):
-    return service.repo.all('taxonomy_concepts')
+    return [c for c in service.repo.all('taxonomy_concepts') if c.get('source',{}).get('origin')=='SOURCE_SCHEMA']
+
+
+@router.get('/policy-taxonomy')
+def policy_classification_taxonomy(policy_id: int | None = None):
+    from ..risk_knowledge.policy_taxonomy import source_rows, build_taxonomy
+    documents, entries = source_rows(shared_policy_connection)
+    if policy_id is not None:
+        documents = [d for d in documents if d['policy_id'] == policy_id]
+        if not documents:
+            raise HTTPException(404, 'Policy not found')
+        entries = [c for c in entries if c['policy_id'] == policy_id]
+    schema = PostgreSQLRepository(shared_policy_connection, None).all('taxonomy_concepts')
+    return build_taxonomy(documents, entries, schema)
 
 
 @router.get('/request-fields')
@@ -175,19 +357,17 @@ def clauses(document_id: str, service=Depends(get_service)):
 
 @router.post('/documents/{document_id}/process')
 def process(document_id: str, user=Depends(reviewer), service=Depends(get_service)):
-    if document_id.startswith('CPI-POLICY-'):
-        raise HTTPException(422, 'Use Extract Rules in Policy Rule Library to run the Risk Knowledge pipeline')
-    return invoke(lambda: service.process(document_id))
+    raise HTTPException(410, 'Use the current Policy Rule Library, Policy Evidence and graph-based Compliance Review.')
 
 
 @router.post('/taxonomy/enrich')
 def enrich(user=Depends(reviewer), service=Depends(get_service)):
-    return invoke(service.enrich)
+    raise HTTPException(410, 'Use the current Policy Rule Library, Policy Evidence and graph-based Compliance Review.')
 
 
 @router.post('/review/{kind}/{identifier}')
 def review(kind: Literal['rule','taxonomy','ontology'], identifier: str, body: Review, user=Depends(reviewer), service=Depends(get_service)):
-    return invoke(lambda: service.review(kind, identifier, body.status, user['user_id'], body.notes))
+    raise HTTPException(410, 'Use the current Policy Rule Library, Policy Evidence and graph-based Compliance Review.')
 
 
 class RuleEdit(Model):
@@ -198,57 +378,18 @@ class RuleEdit(Model):
 
 @router.put('/rules/{rule_id}')
 def edit(rule_id: str, body: RuleEdit, user=Depends(reviewer), service=Depends(get_service)):
-    if len(body.notes.strip()) < 3:
-        raise HTTPException(422, 'Edit notes are required')
-    return invoke(lambda: service.edit_rule(rule_id, body.rule, user['user_id'], body.notes))
+    raise HTTPException(410, 'Use the current Policy Rule Library, Policy Evidence and graph-based Compliance Review.')
 
 
 @router.get('/graph')
 def graph(domain: str='', entity_type: str='', predicate: str='', source: str='', status: str='',
           focus: str='', layer: str='policy', limit: int=180, service=Depends(get_service)):
-    if layer != 'ontology':
-        project_catalog(service.graph, *catalog(service))
-    snapshot = service.graph.snapshot()
-    nodes, edges = snapshot['nodes'], snapshot['edges']
-    if focus:
-        keep = service.graph.neighborhood(focus, depth=2)
-        nodes = [n for n in nodes if n['id'] in keep]
-    elif layer == 'ontology':
-        endpoints = {r[k] for r in service.repo.all('ontology_relationships') for k in ('subject','object')}
-        nodes = [n for n in nodes if n['id'] in endpoints]
-    else:
-        nodes = [n for n in nodes if n['provenance'] and n['provenance']['origin'] not in ('SOURCE_SCHEMA','AI_PROPOSED')]
-    nodes = [n for n in nodes if (not domain or n['risk_domain']==domain) and (not entity_type or n['type']==entity_type)
-             and (not source or source.lower() in (n['source_name'] or '').lower()) and (not status or n['status']==status)]
-    if predicate:
-        related = {e[k] for e in edges if e['predicate']==predicate for k in ('source','target')}
-        nodes = [n for n in nodes if n['id'] in related]
-    total = len(nodes)
-    # Budget complete rule neighborhoods so a truncated graph still shows evidence edges.
-    if not focus and layer != 'ontology':
-        available = {n['id']:n for n in nodes}
-        selected = []
-        selected_ids = set()
-        budget = max(1,min(limit,500))
-        for root in [n for n in nodes if n['type'] in ('GovernedPolicyRule','PolicyRule')]:
-            neighbors = {root['id']} | {e['target'] for e in edges if e['source']==root['id']} | {e['source'] for e in edges if e['target']==root['id']}
-            neighbors |= {e['source'] for e in edges if e['target'] in neighbors and e['predicate']=='CONTAINS' and available.get(e['source'],{}).get('type')=='PolicyDocument'}
-            bundle = [available[k] for k in neighbors if k in available and k not in selected_ids]
-            if len(selected)+len(bundle)>budget:
-                continue
-            selected += bundle
-            selected_ids.update(n['id'] for n in bundle)
-        nodes = selected + [n for n in nodes if n['id'] not in selected_ids]
-    nodes = nodes[:max(1,min(limit,500))]
-    ids = {n['id'] for n in nodes}
-    edges = [e for e in edges if e['source'] in ids and e['target'] in ids and (not predicate or e['predicate']==predicate)
-             and (not status or e['status']==status)]
-    return {'nodes':nodes, 'edges':edges, 'total_nodes':total, 'truncated':len(nodes)<total}
+    return semantic_graph(focus=focus,limit=min(limit,6))
 
 
 @router.post('/evaluate')
 def evaluate(body: CreditRequest, service=Depends(get_service)):
-    return invoke(lambda: service.evaluate(body.model_dump()))
+    raise HTTPException(410, 'Use the current Policy Rule Library, Policy Evidence and graph-based Compliance Review.')
 
 
 @router.get('/evaluations/{evaluation_id}')
@@ -269,9 +410,8 @@ def conflict_explanation(finding_id: str, service=Depends(get_service)):
 
 @router.get('/export/{kind}')
 def export(kind: Literal['rules','taxonomy','ontology','graph','audit'], service=Depends(get_service)):
-    if kind == 'graph':
-        project_catalog(service.graph, *catalog(service))
-        return service.graph.snapshot()
-    if kind == 'audit':
-        return service.repo.audit()
-    return service.repo.all({'rules':'policy_rules','taxonomy':'taxonomy_concepts','ontology':'ontology_relationships'}[kind])
+    if kind == 'graph': return export_semantic_knowledge()
+    if kind == 'rules': return semantic_knowledge()
+    if kind == 'ontology': return business_semantic_model()
+    if kind == 'taxonomy': return policy_classification_taxonomy()
+    raise HTTPException(410, 'Earlier audit records remain archived. Current rule reviews retain their own audit history.')

@@ -84,3 +84,7 @@ schemas, tables, indexes, roles, and security policies when they are missing.
 The PostgreSQL user in `DATABASE_URL` must have `CREATEDB` and `CREATEROLE`
 permissions for initial setup. Existing data is not deleted on later starts.
 Change both passwords before deploying or sharing the application.
+
+## Data Manufacturing
+
+The Data Manufacturing page and generation API are now hosted by the separate [dm_server](../dm_server/run.md) application at http://localhost:5174 (API port 8005). CPI keeps all other pages, including controls and exception registers, and reads generated data from the shared store. `start_all.bat` starts all three applications.

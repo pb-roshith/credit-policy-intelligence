@@ -25,7 +25,9 @@ dist/
 
 # Logs
 *.log
-cpi_server/backend/generated_policies/
+# Ship the existing policy PDFs with Git-based deployments.
+cpi_server/backend/generated_policies/*
+!cpi_server/backend/generated_policies/*.pdf
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

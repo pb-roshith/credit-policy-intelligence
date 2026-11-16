@@ -107,12 +107,12 @@ class PortfolioInsightsAgent:
             raise HTTPException(status_code=502, detail="Mistral could not generate valid portfolio insights. Please try again.") from error
         def persist(connection):
             return connection.execute('''INSERT INTO dashboard_insights
-                (user_id, insights, agent_id, source_generated_at)
-                VALUES (%s, %s::jsonb, %s, %s)
+                (user_id, insights, agent_id, source_generated_at, knowledge_fingerprint)
+                VALUES (%s, %s::jsonb, %s, %s, %s)
                 ON CONFLICT (user_id) DO UPDATE SET insights = EXCLUDED.insights,
-                    agent_id = EXCLUDED.agent_id, source_generated_at = EXCLUDED.source_generated_at,
+                    agent_id = EXCLUDED.agent_id, source_generated_at = EXCLUDED.source_generated_at, knowledge_fingerprint = EXCLUDED.knowledge_fingerprint,
                     generated_at = CURRENT_TIMESTAMP
                 RETURNING insights, generated_at AS insights_generated_at,
                     source_generated_at AS insights_source_generated_at''',
-                (user_id, json.dumps(points), agent_id, snapshot['generated_at'])).fetchone()
+                (user_id, json.dumps(points), agent_id, snapshot['generated_at'],snapshot.get('knowledge_fingerprint'))).fetchone()
         return run_db_transaction(persist)

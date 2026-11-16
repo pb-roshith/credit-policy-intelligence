@@ -31,6 +31,11 @@ class ResetPasswordRequest(StrictRequestModel):
     security_answers: list[SecurityAnswer]
 
 
+class ConfigureRecoveryRequest(StrictRequestModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    security_answers: list[SecurityAnswer] = Field(min_length=3, max_length=3)
+
+
 class PasswordPolicyRequest(StrictRequestModel):
     minimum_length: int = Field(ge=1, le=128)
     maximum_length: int = Field(ge=1, le=128)
@@ -49,12 +54,14 @@ class DecisionRequest(StrictRequestModel):
 
 
 class ScenarioRunRequest(StrictRequestModel):
+    credit_request_number: str = Field(min_length=1,max_length=160)
+    currency: str | None = Field(default=None,pattern=r'^[A-Z]{3}$')
     scenario_name: str = Field(min_length=1, max_length=120)
-    facility_amount: float = Field(ge=25, le=150, allow_inf_nan=False, description="USD millions")
-    collateral_coverage: float = Field(ge=50, le=130, allow_inf_nan=False, description="Percent")
+    facility_amount: float = Field(gt=0, le=MAX_SAFE_MONETARY_AMOUNT/1_000_000, allow_inf_nan=False, description="Millions in the selected request's currency")
+    collateral_coverage: float = Field(ge=0, le=1000, allow_inf_nan=False, description="Percent")
     risk_rating: Literal["BBB", "BB+", "BB-", "B+"]
-    pricing_bps: int = Field(ge=100, le=600)
-    tenor_years: int = Field(ge=1, le=12)
+    pricing_bps: float = Field(ge=0, le=10000)
+    tenor_years: float = Field(gt=0, le=50)
     covenants: Literal["Full", "Partial", "None"]
 
     @field_validator("scenario_name")
@@ -65,6 +72,22 @@ class ScenarioRunRequest(StrictRequestModel):
             raise ValueError("Scenario name is required")
         return cleaned
 
+    @field_validator('credit_request_number')
+    @classmethod
+    def clean_request_number(cls,value:str)->str:
+        from .services.assessment_request import normalize_request_id
+        return normalize_request_id(value)
+
+class ScenarioLinkRequest(StrictRequestModel):
+    credit_request_number:str=Field(min_length=1,max_length=160)
+
+    @field_validator('credit_request_number')
+    @classmethod
+    def clean_request_number(cls,value:str)->str:
+        from .services.assessment_request import normalize_request_id
+        return normalize_request_id(value)
+
+
 class ExceptionAction(StrictRequestModel):
     action: Literal["approve", "escalate", "remediate", "close"]
     actor: str | None = None
@@ -72,6 +95,7 @@ class ExceptionAction(StrictRequestModel):
 
 
 class CreateExceptionRequest(StrictRequestModel):
+    semantic_rule_id: str | None = Field(default=None,max_length=300)
     credit_request_number: str = Field(min_length=3, max_length=160)
     exception_type: str = Field(min_length=2, max_length=80)
     clause_code: str = Field(min_length=1, max_length=40)
@@ -105,7 +129,13 @@ class GeneratePolicyControlsRequest(StrictRequestModel):
     controls_per_policy: int = Field(default=5, ge=1, le=5)
 
 
+class PolicyCopilotTurn(StrictRequestModel):
+    role: Literal['user','assistant']
+    content: str = Field(min_length=1,max_length=4000)
+
+
 class PolicyCopilotRequest(StrictRequestModel):
+    history: list[PolicyCopilotTurn] = Field(default_factory=list,max_length=20)
     question: str = Field(min_length=2, max_length=2000)
     conversation_id: str | None = Field(default=None, max_length=160)
 

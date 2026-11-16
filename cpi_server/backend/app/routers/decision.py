@@ -1,12 +1,13 @@
 import json
 
 import psycopg
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ..database import db_connection, run_db_transaction
-from ..schemas import DecisionRequest, ScenarioRunRequest
+from ..schemas import DecisionRequest, ScenarioRunRequest,ScenarioLinkRequest
 from ..security import current_user
 from ..services.scenario_simulator import ScenarioRecommendationAgent, calculate_metrics, recommended_case
+from ..services.scenario_requests import request_baseline,available_requests
 
 router = APIRouter()
 
@@ -15,11 +16,13 @@ def _scenario_response(row: dict, user_id: str) -> dict:
     return {
         "scenario_id": row["scenario_id"],
         "scenario_name": row["scenario_name"],
+        "credit_request_number": row.get('credit_request_number'),
+        "request_snapshot": row.get('request_snapshot') or {},
         "created_at": row["created_at"],
         "inputs": row["inputs"],
         "results": row["results"],
         "recommendations": row["recommendations"],
-        "agent": "Mistral Credit Decision Scenario Recommendation Agent",
+        "agent": "Credit Decision Scenario Recommendation Agent",
         "saved_by": user_id,
     }
 
@@ -34,34 +37,42 @@ def decision(request: DecisionRequest, _: dict = Depends(current_user)):
 
 @router.post("/api/decision-scenarios", status_code=status.HTTP_201_CREATED)
 def run_scenario(request: ScenarioRunRequest, user: dict = Depends(current_user)):
-    inputs = request.model_dump(exclude={"scenario_name"})
+    baseline=request_baseline(request.credit_request_number,user)
+    request_id=baseline['credit_request_number']
+    if request.currency and request.currency!=baseline['currency']:
+        raise HTTPException(409,'Request currency changed. Reset to the current request before running a scenario.')
+    inputs = {**request.model_dump(exclude={"scenario_name","credit_request_number","currency"}),'currency':baseline['currency']}
     with db_connection() as connection:
         duplicate = connection.execute(
-            "SELECT 1 FROM decision_scenarios WHERE lower(btrim(scenario_name)) = lower(btrim(%s))",
-            (request.scenario_name,),
+            "SELECT 1 FROM decision_scenarios WHERE credit_request_number=%s AND lower(btrim(scenario_name)) = lower(btrim(%s))",
+            (request_id,request.scenario_name),
         ).fetchone()
     if duplicate:
         raise HTTPException(
             status_code=409,
-            detail="That scenario name already exists. Please choose another scenario name.",
+            detail="That scenario name already exists for this credit request. Choose another name.",
         )
 
     results = calculate_metrics(inputs)
     improved_inputs, improved_results = recommended_case(inputs)
     agent_id, recommendations = ScenarioRecommendationAgent().run(
-        inputs, results, improved_inputs, improved_results, user["user_id"]
+        inputs, results, improved_inputs, improved_results, user["user_id"],request_context=baseline
     )
     stored_results = {
         **results,
+        'scenario_changes':{field:{'baseline':baseline['inputs'].get(field),'scenario':value}
+                            for field,value in inputs.items() if field!='currency' and value!=baseline['inputs'].get(field)},
         "recommended_case": {"inputs": improved_inputs, "results": improved_results},
     }
     try:
         def persist(connection):
             return connection.execute('''INSERT INTO decision_scenarios
-                (scenario_name, inputs, results, recommendations, agent_id)
-                VALUES (%s, %s::jsonb, %s::jsonb, %s::jsonb, %s)
+                (scenario_name, credit_request_number, request_snapshot, inputs, results, recommendations, agent_id)
+                VALUES (%s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb, %s)
                 RETURNING scenario_id, scenario_name, created_at''', (
                     request.scenario_name,
+                    request_id,
+                    json.dumps(baseline),
                     json.dumps(inputs),
                     json.dumps(stored_results),
                     json.dumps(recommendations),
@@ -71,31 +82,73 @@ def run_scenario(request: ScenarioRunRequest, user: dict = Depends(current_user)
     except psycopg.errors.UniqueViolation as error:
         raise HTTPException(
             status_code=409,
-            detail="That scenario name already exists. Please choose another scenario name.",
+            detail="That scenario name already exists for this credit request. Choose another name.",
         ) from error
     return {
         **saved,
+        'credit_request_number':request_id,'request_snapshot':baseline,
         "inputs": inputs,
         "results": stored_results,
         "recommendations": recommendations,
-        "agent": "Mistral Credit Decision Scenario Recommendation Agent",
+        "agent": "Credit Decision Scenario Recommendation Agent",
         "saved_by": user["user_id"],
     }
 
 
 @router.get("/api/decision-scenarios")
-def list_scenarios(_: dict = Depends(current_user)):
+def list_scenarios(credit_request_number:str=Query(min_length=1,max_length=160),user: dict = Depends(current_user)):
+    request_id=request_baseline(credit_request_number,user)['credit_request_number']
     with db_connection() as connection:
-        return connection.execute('''SELECT scenario_id, scenario_name, created_at
-            FROM decision_scenarios ORDER BY created_at DESC, scenario_id DESC LIMIT 500''').fetchall()
+        return connection.execute('''SELECT scenario_id, scenario_name, credit_request_number, created_at
+            FROM decision_scenarios WHERE credit_request_number=%s
+            ORDER BY created_at DESC, scenario_id DESC LIMIT 500''',(request_id,)).fetchall()
+
+
+@router.get('/api/decision-scenarios/request-context')
+def scenario_request_context(credit_request_number:str=Query(min_length=1,max_length=160),user:dict=Depends(current_user)):
+    return request_baseline(credit_request_number,user)
+
+
+@router.get('/api/decision-scenarios/requests')
+def available_scenario_requests(user:dict=Depends(current_user)):
+    return available_requests(user)
+
+
+@router.get('/api/decision-scenarios/unlinked')
+def unlinked_scenarios(credit_request_number:str|None=None,user:dict=Depends(current_user)):
+    if credit_request_number:request_baseline(credit_request_number,user)
+    with db_connection() as connection:
+        return connection.execute('''SELECT scenario_id,scenario_name,created_at
+            FROM decision_scenarios WHERE credit_request_number IS NULL
+            ORDER BY created_at DESC,scenario_id DESC LIMIT 500''').fetchall()
+
+
+@router.post('/api/decision-scenarios/{scenario_id}/link')
+def link_scenario(scenario_id:int,body:ScenarioLinkRequest,user:dict=Depends(current_user)):
+    baseline=request_baseline(body.credit_request_number,user)
+    def persist(connection):
+        row=connection.execute('''SELECT * FROM decision_scenarios
+            WHERE scenario_id=%s AND credit_request_number IS NULL FOR UPDATE''',(scenario_id,)).fetchone()
+        if not row:raise HTTPException(404,'Unlinked scenario not found')
+        original_currency=row['inputs'].get('currency','USD')
+        if original_currency!=baseline['currency']:
+            raise HTTPException(409,'The earlier scenario uses another currency. Create a new request-based scenario instead.')
+        snapshot={**baseline,'association_method':'USER_LINKED_LEGACY_SCENARIO','original_inputs_not_request_derived':True}
+        return connection.execute('''UPDATE decision_scenarios SET credit_request_number=%s,request_snapshot=%s::jsonb
+            WHERE scenario_id=%s RETURNING *''',(baseline['credit_request_number'],json.dumps(snapshot),scenario_id)).fetchone()
+    try:row=run_db_transaction(persist)
+    except psycopg.errors.UniqueViolation as error:
+        raise HTTPException(409,'A scenario with that name already exists for this credit request.') from error
+    return _scenario_response(row,user['user_id'])
 
 
 @router.get("/api/decision-scenarios/{scenario_id}")
-def get_scenario(scenario_id: int, user: dict = Depends(current_user)):
+def get_scenario(scenario_id: int, credit_request_number:str=Query(min_length=1,max_length=160),user: dict = Depends(current_user)):
+    request_id=request_baseline(credit_request_number,user)['credit_request_number']
     with db_connection() as connection:
         row = connection.execute('''SELECT scenario_id, scenario_name, inputs, results,
-                recommendations, created_at
-            FROM decision_scenarios WHERE scenario_id = %s''', (scenario_id,)).fetchone()
-    if not row:
+                recommendations, created_at, credit_request_number, request_snapshot
+            FROM decision_scenarios WHERE scenario_id = %s AND credit_request_number=%s''', (scenario_id,request_id)).fetchone()
+    if not row or row['credit_request_number']!=request_id:
         raise HTTPException(status_code=404, detail="Scenario not found")
     return _scenario_response(row, user["user_id"])

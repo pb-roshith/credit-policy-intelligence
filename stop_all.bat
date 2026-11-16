@@ -15,7 +15,7 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $applicationRoot = [IO.Path]::GetFullPath((Split-Path -LiteralPath $env:CPI_STOP_FILE)).TrimEnd('\') + '\'
-$serverPorts = @(8004, 8003, 8081, 8002, 5173)
+$serverPorts = @(8004, 8003, 8081, 8002, 5173, 8005, 5174)
 
 try {
     $processes = @{}
@@ -44,7 +44,7 @@ try {
         $targets[[int]$targetProcess.ProcessId] = $targetProcess
     }
     if ($targets.Count -eq 0 -and -not $skipped) {
-        Write-Host 'All five application servers are already stopped.'
+        Write-Host 'All seven application servers are already stopped.'
         exit 0
     }
     foreach ($targetProcess in $targets.Values) {
@@ -62,7 +62,7 @@ try {
     if ($WhatIfPreference) {
         Write-Host "Dry run: identified $($targets.Count) application server process trees. No servers were stopped."
     } else {
-        Write-Host 'Application server stop commands completed. You can close the five server tabs.'
+        Write-Host 'Application server stop commands completed. You can close the seven server tabs.'
     }
     if ($skipped) { exit 1 }
     exit 0

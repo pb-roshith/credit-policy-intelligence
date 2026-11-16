@@ -47,7 +47,6 @@ import AuthScreen from "./pages/AuthScreen";
 import AdminDashboard from "./pages/AdminDashboard";
 import Compliance from "./pages/Compliance";
 import Dashboard from "./pages/Dashboard";
-import DataManufacturing from "./pages/DataManufacturing";
 import Observability from "./pages/Observability";
 import Exceptions from "./pages/Exceptions";
 import Policy from "./pages/Policy";
@@ -65,7 +64,6 @@ const NAV = [
   ["simulator", "Decision Simulator", SlidersHorizontal],
   ["portfolio", "Portfolio Analytics", BarChart3],
   ["observability", "Observability", Activity],
-  ["manufacturing", "Data Manufacturing", Factory],
 ];
 
 export default function Shell() {
@@ -136,7 +134,6 @@ export default function Shell() {
   const Page = {
     dashboard: Dashboard,
     requests: Requests,
-    manufacturing: DataManufacturing,
     policy: Policy,
     compliance: Compliance,
     exceptions: Exceptions,

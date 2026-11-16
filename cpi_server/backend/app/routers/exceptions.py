@@ -6,6 +6,7 @@ from ..services.assessment_request import normalize_request_id, deal_assessment_
 from datetime import date
 import json
 from ..services.exception_rationale import generate_exception_rationale
+from ..services.compliance_agent import latest_stored_compliance_review
 
 router = APIRouter()
 
@@ -29,9 +30,13 @@ def _workflow_for_status(status: str) -> list[dict]:
 
 @router.get("/api/exceptions")
 def exception_registry(status: str | None = None, _: dict = Depends(current_user)):
+    from ..services.current_knowledge import bind_current_views
+    from ..services.semantic_matching import load_matcher
+    fingerprint=load_matcher().fingerprint
     factory = db_connection
     with factory() as connection:
-        query = 'SELECT user_id AS account_user_id, exception_id AS id, COALESCE(source_request_id, credit_request_number) AS credit_request_number, exception_type AS type, clause_code AS clause, severity, exposure, owner, due_date AS due, status, description, rationale, workflow, history FROM "user".credit_request_exceptions'
+        bind_current_views(connection,fingerprint)
+        query = 'SELECT user_id AS account_user_id, exception_id AS id, COALESCE(source_request_id, credit_request_number) AS credit_request_number, exception_type AS type, clause_code AS clause, severity, exposure, owner, due_date AS due, status, description, rationale, workflow, history FROM "user".current_policy_exceptions'
         params = ()
         if status: query += " WHERE status = %s"; params = (status,)
         result = [dict(row) for row in connection.execute(query + " ORDER BY exception_id LIMIT 1000", params).fetchall()]
@@ -70,10 +75,15 @@ def create_exception(payload: CreateExceptionRequest, user: dict = Depends(curre
             ORDER BY created_at DESC, review_id DESC LIMIT 1
         """, (request_number,)).fetchone()
 
+    review=latest_stored_compliance_review(request_number,user=user)
+    finding=next((f for f in (review or {}).get('findings',[]) if f.get('rule_id')==payload.semantic_rule_id),None)
+    if not finding:
+        raise HTTPException(422,'Create an exception from a matched rule in the current Compliance Review.')
+    stored_review={'review':review}
     exposure = int(proposal.get("exposure") or 0)
     severity = "Low" if exposure < 25_000_000 else "Medium" if exposure < 75_000_000 else "High"
     exception_context = {
-        "type": payload.exception_type.strip(), "clause": payload.clause_code.strip().upper(),
+        "type": payload.exception_type.strip(), "clause": str(finding.get('source_clause') or payload.clause_code).strip()[:40],
         "description": payload.description.strip(), "exposure": exposure, "severity": severity,
         "due_date": due_date, "status": payload.status,
     }
@@ -81,6 +91,7 @@ def create_exception(payload: CreateExceptionRequest, user: dict = Depends(curre
         dict(proposal), exception_context, stored_review["review"] if stored_review else None,
         user["user_id"],
     )
+    rationale['knowledge_context']={'knowledge_fingerprint':review['knowledge_fingerprint'],'semantic_rule_id':finding['rule_id'],'policy_id':finding['policy_id']}
     workflow = _workflow_for_status(payload.status)
     history = [{"date": str(date.today()), "event": "Exception created from Compliance Review", "actor": user["user_id"]}]
     def persist(connection):
@@ -98,7 +109,7 @@ def create_exception(payload: CreateExceptionRequest, user: dict = Depends(curre
             RETURNING user_id AS account_user_id, exception_id AS id, COALESCE(source_request_id, credit_request_number) AS credit_request_number, exception_type AS type,
                       clause_code AS clause, severity, exposure, owner, due_date AS due,
                       status, description, rationale, workflow, history
-        """, (exception_id, None if is_deal else request_number, request_number if is_deal else None, payload.exception_type.strip(), payload.clause_code.strip().upper(),
+        """, (exception_id, None if is_deal else request_number, request_number if is_deal else None, payload.exception_type.strip(), exception_context["clause"],
               severity, exposure, payload.owner.strip(), due_date, payload.status, payload.description.strip(),
               json.dumps(rationale), json.dumps(workflow), json.dumps(history))).fetchone()
         return row

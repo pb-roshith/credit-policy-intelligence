@@ -238,7 +238,7 @@ overall_score must be an integer from 0 to 100. Do not return a finding without 
         return result
 
 
-def latest_stored_compliance_review(request_number: str) -> dict | None:
+def latest_stored_compliance_review(request_number: str, user=None) -> dict | None:
     from .assessment_request import normalize_request_id
     request_number = normalize_request_id(request_number)
     with db_connection() as connection:
@@ -251,21 +251,22 @@ def latest_stored_compliance_review(request_number: str) -> dict | None:
     if not stored:
         return None
     review = dict(stored["review"])
-    # Removed rule versions invalidate the entire saved assessment. Filtering
-    # findings alone would leave its score, summary and policy mappings stale.
-    rule_ids = {int(rule['id']) for rule in review.get('rule_snapshots', [])}
-    rule_ids.update(int(finding['rule_version_id']) for finding in review.get('findings', [])
-                    if finding.get('rule_version_id') is not None)
-    if rule_ids:
-        with shared_policy_connection() as connection:
-            retained = connection.execute(
-                'SELECT id FROM policy_rule_versions WHERE id=ANY(%s)', (sorted(rule_ids),),
-            ).fetchall()
-        if rule_ids != {row['id'] for row in retained}:
+    if review.get('assessment_scope') == 'current-semantic-graph':
+        from .semantic_assessment import ENGINE_VERSION
+        if review.get('engine_version') != ENGINE_VERSION:
             return None
-    review["review_id"] = stored["review_id"]
-    review["stored_at"] = stored["created_at"]
-    review["cached"] = True
-    from .assessment_comparison import refresh_finding_comparisons
-    return refresh_finding_comparisons(review)
-
+        from .semantic_matching import load_matcher
+        # A changed source, extraction or scope invalidates the whole saved match,
+        # including policies, scores and rules which were previously excluded.
+        if review.get('knowledge_fingerprint') != load_matcher().fingerprint:
+            return None
+        if user is not None:
+            from .rule_assessment import assessment_request_context
+            from ..risk_knowledge.semantic_extraction import digest
+            _,proposal=assessment_request_context(request_number,user)
+            if review.get('applicability_report',{}).get('request_fingerprint')!=digest(proposal):
+                return None
+        return {**review, 'review_id':stored['review_id'], 'stored_at':stored['created_at'], 'cached':True}
+    # Earlier assessment methods remain in storage but are excluded from the
+    # current application, including their scores, findings and policy mappings.
+    return None

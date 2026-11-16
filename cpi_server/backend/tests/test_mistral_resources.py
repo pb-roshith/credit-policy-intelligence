@@ -116,38 +116,38 @@ class PolicyResourceRecoveryTests(unittest.TestCase):
         self.client.beta.libraries.documents.upload.assert_not_called()
 
 
-class PolicyCopilotRecoveryTests(unittest.TestCase):
-    def test_old_account_conversation_starts_again_with_current_agent(self):
-        with patch('app.routers.policies.MISTRAL_API_KEY', 'new-key'), \
-             patch('app.routers.policies.shared_policy_connection') as database, \
-             patch('app.routers.policies.Mistral') as mistral, \
-             patch('app.routers.policies._resources', return_value=('new-library', 'new-agent')) as resources, \
-             patch('app.routers.policies.observe_ai', return_value=nullcontext({})):
-            database.return_value.__enter__.return_value.execute.return_value.fetchall.return_value = []
-            client = mistral.return_value.__enter__.return_value
-            client.beta.conversations.append.side_effect = missing()
-            client.beta.conversations.start.return_value = SimpleNamespace(
-                conversation_id='new-conversation', outputs=[SimpleNamespace(
-                    type='message.output', content=json.dumps({'answer': 'Insufficient evidence.', 'citations': []}))])
-            result = policy_copilot_chat(
-                PolicyCopilotRequest(question='What are the policy limits?', conversation_id='old-conversation'),
-                {'user_id': 'user-1'})
-            resources.assert_called_once()
-            self.assertEqual(client.beta.conversations.start.call_args.kwargs['agent_id'], 'new-agent')
-            self.assertEqual(result['conversation_id'], 'new-conversation')
+class CurrentPolicyCopilotTests(unittest.TestCase):
+    def test_no_current_evidence_never_reuses_old_remote_conversation(self):
+        matcher=SimpleNamespace(records=[],fingerprint='current')
+        with patch('app.services.semantic_matching.load_matcher',return_value=matcher), \
+             patch('app.routers.policies.Mistral') as client:
+            result=policy_copilot_chat(PolicyCopilotRequest(question='Explain limits',conversation_id='old-conversation'),{'user_id':'u'})
+        client.assert_not_called()
+        self.assertEqual(result['citations'],[])
+        self.assertIsNone(result['conversation_id'])
 
-    def test_transient_append_failure_does_not_start_duplicate_conversation(self):
+    def run_answer(self,cited):
+        rule={'id':'urn:current','policy_id':1,'rule':{'clause_id':2,'source_quote':'Exact current requirement'}}
+        matcher=SimpleNamespace(records=[],fingerprint='current',clauses={2:{'section_heading':'Eligibility'}})
+        with patch('app.services.semantic_matching.load_matcher',return_value=matcher), \
+             patch('app.risk_knowledge.semantic_extraction.relevant_rules',return_value=[rule]), \
+             patch('app.risk_knowledge.semantic_extraction.retrieval_neighborhood',return_value={}), \
+             patch('app.routers.policies.MISTRAL_API_KEY','test'), \
+             patch('app.routers.policies.Mistral') as client, \
+             patch('app.routers.policies.observe_ai',return_value=nullcontext({})), \
+             patch('app.routers.policies.shared_policy_connection') as db, \
+             patch('app.routers.policies._json_object',return_value={'answer':'Supported answer','citations':[{'rule_id':cited}]}):
+            db.return_value.__enter__.return_value.execute.return_value.fetchall.return_value=[{'policy_id':1,'library_policy_id':'1.1','policy_code':'POL1','title':'Policy','file_name':'source.pdf'}]
+            result=policy_copilot_chat(PolicyCopilotRequest(question='Explain limits',conversation_id='old'),{'user_id':'u'})
+            client.return_value.__enter__.return_value.beta.conversations.start.assert_not_called()
+            return result
+
+    def test_citations_use_exact_current_source_instead_of_model_generated_evidence(self):
+        result=self.run_answer('urn:current')
+        self.assertEqual(result['citations'][0]['evidence'],'Exact current requirement')
+        self.assertEqual(result['knowledge_fingerprint'],'current')
+
+    def test_unknown_rule_citation_is_rejected(self):
         from fastapi import HTTPException
-        with patch('app.routers.policies.MISTRAL_API_KEY', 'key'), \
-             patch('app.routers.policies.shared_policy_connection') as database, \
-             patch('app.routers.policies.Mistral') as mistral, \
-             patch('app.routers.policies._resources', return_value=('library', 'agent')), \
-             patch('app.routers.policies.observe_ai', return_value=nullcontext({})):
-            database.return_value.__enter__.return_value.execute.return_value.fetchall.return_value = []
-            client = mistral.return_value.__enter__.return_value
-            client.beta.conversations.append.side_effect = SDKError('Busy', httpx.Response(429))
-            with self.assertRaises(HTTPException):
-                policy_copilot_chat(
-                    PolicyCopilotRequest(question='What are the policy limits?', conversation_id='existing'),
-                    {'user_id': 'user-1'})
-            client.beta.conversations.start.assert_not_called()
+        with self.assertRaises(HTTPException) as error:self.run_answer('urn:old')
+        self.assertEqual(error.exception.status_code,502)

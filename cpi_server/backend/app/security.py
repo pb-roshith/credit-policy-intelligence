@@ -78,12 +78,13 @@ def write_request_error(request: Request, status_code: int, error_code: str, det
     """Write a sanitized request failure to the audit tables without reading its body."""
     actor = "anonymous"
     role = None
-    token = request.cookies.get("cpi_session")
+    application=session_application(request)
+    token = request.cookies.get(application+"_session")
     if token:
         with db_connection() as connection:
             session = connection.execute(
-                "SELECT user_id, role FROM public.sessions WHERE token_hash = %s",
-                (_session_token_hash(token),),
+                "SELECT user_id, role FROM public.sessions WHERE token_hash = %s AND application_id=%s",
+                (_session_token_hash(token),application),
             ).fetchone()
         if session:
             actor = session["user_id"]
@@ -125,19 +126,26 @@ def public_user(row: dict) -> dict:
 def _session_token_hash(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
+def session_application(request:Request) -> str:
+    scope=getattr(request,'scope',{})
+    app=scope.get('app') if isinstance(scope,dict) else None
+    return 'dm' if getattr(getattr(app,'state',None),'application_id',None)=='dm' else 'cpi'
+
+
 def resolve_session(request: Request) -> tuple[str, dict]:
-    token = request.cookies.get("cpi_session")
+    application=session_application(request)
+    token = request.cookies.get(application+"_session")
     if not token:
         raise HTTPException(status_code=401, detail="Authentication required")
     token_hash = _session_token_hash(token)
     with db_connection() as connection:
         stored = connection.execute(
             "SELECT user_id, role, expires_at, csrf_token_hash FROM public.sessions "
-            "WHERE token_hash = %s AND expires_at > CURRENT_TIMESTAMP",
-            (token_hash,),
+            "WHERE token_hash = %s AND application_id = %s AND expires_at > CURRENT_TIMESTAMP",
+            (token_hash,application),
         ).fetchone()
         if not stored:
-            connection.execute("DELETE FROM public.sessions WHERE token_hash = %s", (token_hash,))
+            connection.execute("DELETE FROM public.sessions WHERE token_hash = %s AND application_id=%s", (token_hash,application))
             raise HTTPException(status_code=401, detail="Session is invalid or expired")
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
             csrf_token = request.headers.get("X-CSRF-Token", "")
@@ -176,7 +184,8 @@ def resolve_session(request: Request) -> tuple[str, dict]:
 
 
 @retry_on_db_conflict
-def create_session(user: dict) -> dict:
+def create_session(user: dict,application: str="cpi") -> dict:
+    if application not in {"cpi","dm"}:raise ValueError("Unknown application")
     token = secrets.token_urlsafe(32)
     csrf_token = secrets.token_urlsafe(32)
     duration = 15 if user["role"] == "admin" else 30
@@ -184,12 +193,12 @@ def create_session(user: dict) -> dict:
     with db_connection() as connection:
         connection.execute("DELETE FROM public.sessions WHERE expires_at <= CURRENT_TIMESTAMP")
         connection.execute(
-            "DELETE FROM public.sessions WHERE LOWER(user_id) = LOWER(%s)",
-            (user["user_id"],),
+            "DELETE FROM public.sessions WHERE LOWER(user_id) = LOWER(%s) AND application_id = %s",
+            (user["user_id"],application),
         )
         connection.execute(
-            "INSERT INTO public.sessions (token_hash, csrf_token_hash, user_id, role, expires_at) VALUES (%s, %s, %s, %s, %s)",
-            (_session_token_hash(token), _session_token_hash(csrf_token), user["user_id"], user["role"], expires_at),
+            "INSERT INTO public.sessions (token_hash, csrf_token_hash, user_id, role, expires_at, application_id) VALUES (%s, %s, %s, %s, %s, %s)",
+            (_session_token_hash(token), _session_token_hash(csrf_token), user["user_id"], user["role"], expires_at,application),
         )
     return {"token": token, "csrf_token": csrf_token, "user": user, "expires_at": expires_at.isoformat(), "session_minutes": duration}
 

@@ -87,6 +87,7 @@ class ProposedRule(InventoryModel):
     data_source: str | None = None
     evidence_requirements: list[EvidenceRequirement] = Field(max_length=30)
     applicability_conditions: Condition | None = None
+    applicability_exclusions: Condition | None = None
     applicable_stage: list[str] | None = None
     severity: Literal['WARNING','BREACH'] | None = None
     breach_consequence: str | None = None
@@ -107,6 +108,12 @@ class ProposedRule(InventoryModel):
     review_label: Literal['Human Review Required','Manual Review Required'] = 'Human Review Required'
     source_calculation_logic: str | None = None
     applicability_unresolved: bool = False
+    representation_id: str | None = None
+    representation_node_id: str | None = None
+    representation_digest: str | None = None
+    representation_version: str | None = None
+    requirement_digest: str | None = None
+    representation_rule_key: str | None = None
 
     @model_validator(mode='after')
     def bounds(self):

@@ -41,6 +41,7 @@ class ExceptionPermissionTests(unittest.TestCase):
         pending = pending_exception_rationale({'description': 'A policy deviation for review.'})
         with patch('app.routers.exceptions.db_connection') as factory, \
              patch('app.routers.exceptions.generate_exception_rationale', return_value=pending), \
+             patch('app.routers.exceptions.latest_stored_compliance_review',return_value={'knowledge_fingerprint':'current','findings':[{'rule_id':'urn:rule:1','policy_id':1}]}), \
              patch('app.routers.exceptions.run_db_transaction') as transaction:
             connection = factory.return_value.__enter__.return_value
             connection.execute.return_value.fetchone.side_effect = [
@@ -54,7 +55,7 @@ class ExceptionPermissionTests(unittest.TestCase):
             response = self.client.post('/api/exceptions', json={
                 'credit_request_number': 'CR-1', 'exception_type': 'Policy', 'clause_code': 'POL-1',
                 'owner': 'manager', 'due_date': '2099-01-01', 'status': 'Active',
-                'description': 'A policy deviation for review.',
+                'description': 'A policy deviation for review.', 'semantic_rule_id':'urn:rule:1',
             })
             self.assertEqual(response.status_code, 201)
             self.assertEqual(response.json()['rationale']['generation_status'], 'pending')

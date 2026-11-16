@@ -10,17 +10,29 @@ from ..security import create_session, current_admin, current_user, get_password
 router = APIRouter()
 
 
+from ..schemas import ConfigureRecoveryRequest
+
+
+@router.post('/api/auth/profile/security-questions')
+def configure_profile_recovery(payload: ConfigureRecoveryRequest, user: dict = Depends(current_user)):
+    from ..services.dossier_identity import identity_call
+    return identity_call(user.get('dossier_user_id') or user['user_id'], {
+        'current_password': payload.current_password,
+        'security_questions': [entry.model_dump() for entry in payload.security_answers],
+    }, 'security-questions')
+
+
 def source_ip(request: Request) -> str | None:
     return request.client.host if request.client else None
 
 
-def establish_session(response: Response, user: dict) -> dict:
-    session = create_session(user)
+def establish_session(response: Response, user: dict, application: str="cpi") -> dict:
+    session = create_session(user,application)
     max_age = session["session_minutes"] * 60
-    response.set_cookie("cpi_session", session.pop("token"), max_age=max_age,
+    response.set_cookie(application+"_session", session.pop("token"), max_age=max_age,
                         httponly=True, secure=SESSION_COOKIE_SECURE,
                         samesite="strict", path="/")
-    response.set_cookie("cpi_csrf", session.pop("csrf_token"), max_age=max_age,
+    response.set_cookie(application+"_csrf", session.pop("csrf_token"), max_age=max_age,
                         httponly=False, secure=SESSION_COOKIE_SECURE,
                         samesite="strict", path="/")
     return session
@@ -54,8 +66,10 @@ def logout(request: Request, response: Response):
         write_admin_log(session["user_id"], "ADMIN_LOGOUT", session["user_id"], "Administrator signed out", source_ip(request))
     elif session:
         write_user_log(session["user_id"], "USER_LOGOUT", session["user_id"], "User signed out", source_ip(request))
-    response.delete_cookie("cpi_session", path="/", samesite="strict")
-    response.delete_cookie("cpi_csrf", path="/", samesite="strict")
+    from ..security import session_application
+    application=session_application(request)
+    response.delete_cookie(application+"_session", path="/", samesite="strict")
+    response.delete_cookie(application+"_csrf", path="/", samesite="strict")
     return {"message": "Signed out"}
 
 
@@ -86,14 +100,16 @@ def login(payload: LoginRequest, request: Request, response: Response):
                             "error", "failure", "warning", "INVALID_CREDENTIALS")
             raise HTTPException(status_code=401, detail="Invalid user ID or password")
         user = {"user_id": ADMIN_USER_ID, "role": "admin", "status": "active", "locked": False}
-        session = establish_session(response, user)
+        from ..security import session_application
+        session = establish_session(response, user,session_application(request))
         write_admin_log(ADMIN_USER_ID, "ADMIN_LOGIN", ADMIN_USER_ID, "Administrator signed in", source_ip(request))
         return session
 
     from ..services.dossier_identity import authenticate_dossier_user
     dossier_user = authenticate_dossier_user(payload.user_id.strip(), payload.password)
     if dossier_user:
-        session = establish_session(response, dossier_user)
+        from ..security import session_application
+        session = establish_session(response, dossier_user,session_application(request))
         write_user_log(dossier_user["user_id"], "USER_LOGIN", dossier_user["user_id"], "Signed in using Credit Dossier identity", source_ip(request))
         return session
 

@@ -120,7 +120,7 @@ from ..services.rule_governance import store_rule, change_status
 from ..services.rule_extraction import run_inventory_job
 
 @router.get("/api/policy-rules")
-def inventory(policy_id: int | None = None, user=Depends(current_user)):
+def inventory(policy_id: int | None = None, origin: Literal['graph','history','all']='graph', user=Depends(current_user)):
     from ..services.policy_ingestion import reconcile_policy_sources
     reconcile_policy_sources()
     with shared_policy_connection() as c:
@@ -129,7 +129,10 @@ def inventory(policy_id: int | None = None, user=Depends(current_user)):
             cl.page_number AS source_page,doc.id AS source_document_id,p.source_type,q.status AS quality_status,q.report AS quality_report,q.error_code AS quality_error,q.definition_checksum AS quality_checksum,
             (r.policy_version_id IS NULL OR NOT COALESCE(pv.is_current,false)
              OR p.version<>r.policy_version OR md5(p.summary)<>r.policy_fingerprint) AS review_required,
-                   rk.payload AS risk_knowledge,
+                   rk.payload AS risk_knowledge,pv.checksum AS source_checksum,
+                   representation.payload->>'content_digest' AS current_representation_digest,
+                   representation.payload AS source_representation,
+                   dependency_review.payload AS dependency_review,
                    EXISTS(SELECT 1 FROM rule_relationships rel WHERE
                 (rel.rule_version_id=r.id OR rel.related_rule_version_id=r.id)
                 AND rel.relationship_type='Duplicate candidate') AS duplicate_candidate
@@ -139,17 +142,70 @@ def inventory(policy_id: int | None = None, user=Depends(current_user)):
             LEFT JOIN policy_clauses cl ON cl.id=r.clause_id
             LEFT JOIN inventory_documents doc ON doc.id=cl.document_id
             LEFT JOIN risk_knowledge_objects rk ON rk.kind='metadata' AND rk.owner_id='' AND rk.id='CPI-RULE-'||r.id::text
+            LEFT JOIN risk_knowledge_objects representation ON representation.kind='metadata' AND representation.owner_id='' AND representation.id=r.definition->>'representation_id'
+            LEFT JOIN risk_knowledge_objects dependency_review ON dependency_review.kind='metadata' AND dependency_review.owner_id='' AND dependency_review.id='RULE-DEPENDENCIES-'||r.rule_key
             LEFT JOIN LATERAL (SELECT * FROM rule_quality_reports qr WHERE qr.rule_version_id=r.id ORDER BY qr.created_at DESC LIMIT 1) q ON true
-            WHERE credit_data.is_quantitative_rule(r.definition)
+            WHERE credit_data.is_supported_policy_rule(r.definition)
                 AND (%s::bigint IS NULL OR r.policy_id=%s)
                 AND NOT EXISTS (SELECT 1 FROM policy_rule_versions newer
                     WHERE newer.rule_key=r.rule_key AND newer.version>r.version)
             ORDER BY r.policy_id,e.rule_code,r.version DESC""",(policy_id,policy_id)).fetchall()
 
     from ..services.inventory_operations import definition_checksum
+    from ..risk_knowledge.representation_governance import check_definition
+    from ..risk_knowledge.policy_representation import compile_graph,representation_id
+    compiled_cache={}
     for row in rows:
         row["quality_stale"]=bool(row.get("quality_checksum") and row["quality_checksum"]!=definition_checksum(row["definition"]))
-    return rows
+        definition=row['definition']
+        rep=row.pop('source_representation',None)
+        row['origin']='graph' if definition.get('representation_id') else 'history'
+        row['origin_label']='Graph-compiled rule' if row['origin']=='graph' else 'Historical extraction — not operational'
+        if definition.get('representation_id')!=representation_id(row.get('policy_version_id'),row.get('source_checksum')):
+            row['review_required']=True
+        if row['origin']=='graph' and rep:
+            try:
+                if rep['id'] not in compiled_cache:compiled_cache[rep['id']]=compile_graph(rep,rep['source_clauses'])
+                check_definition(row,rep,rep['source_clauses'],compiled=compiled_cache[rep['id']])
+            except (HTTPException,ValueError):row['review_required']=True
+        elif row['origin']=='graph':row['review_required']=True
+        if row['origin']=='graph' and row['review_required']:
+            row['origin']='history';row['origin_label']='Superseded graph representation — not operational'
+        from ..risk_knowledge.rule_readiness import dependency_state
+        review=row.pop('dependency_review',None)
+        blockers=[]
+        if row['origin']=='graph' and rep:
+            dependency=dependency_state(row,rep,review)
+            if not dependency['ready']:blockers.append(str(len(dependency['blockers']))+' relevant source sections need review')
+            if not definition.get('data_source'):blockers.append('Assign input data source')
+            if not definition.get('severity'):blockers.append('Assign operational severity')
+        row['approval_blockers']=blockers
+        row['operational_eligible']=row['origin']=='graph' and row['status'] in ('Approved','Active') and not blockers
+        row['operational_status']=('Historical — not operational' if row['origin']=='history' else
+            'Review required: '+ '; '.join(blockers) if blockers else
+            'Eligible for applicability checks' if row['operational_eligible'] else 'Awaiting rule approval')
+    return rows if origin=='all' else [row for row in rows if row['origin']==origin]
+
+
+@router.get('/api/policy-rules/{rule_id}/readiness')
+def rule_readiness(rule_id: int,user=Depends(current_user)):
+    from ..risk_knowledge.rule_readiness import get_readiness
+    from ..services.policy_ingestion import reconcile_policy_sources
+    reconcile_policy_sources()
+    with shared_policy_connection() as connection:
+        row,rep,result=get_readiness(rule_id,connection)
+    return result
+
+
+from ..risk_knowledge.rule_readiness import RuleApproval
+
+
+@router.post('/api/policy-rules/{rule_id}/approve-reviewed')
+def approve_reviewed_rule(rule_id: int,body: RuleApproval,user=Depends(current_user)):
+    from ..risk_knowledge.rule_readiness import approve_rule
+    from ..services.policy_ingestion import reconcile_policy_sources
+    reconcile_policy_sources()
+    return approve_rule(rule_id,body,user)
 
 @router.get("/api/policy-rules/{rule_id}/audit")
 def history(rule_id: int,user=Depends(current_user)):

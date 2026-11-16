@@ -46,10 +46,11 @@ import { META, POLICY_TYPE_ORDER, policyDisplayName } from "../config";
 import { AuthField, Badge, Bars, Card, DataTable, Heading, Insight, LineChart, Metric, NO_CLIPBOARD, PasswordPolicy, SecretInput, money } from "../components/ui";
 import RuleLibrary from "./RuleLibrary";
 import ControlsWorkspace from "./ControlsWorkspace";
+import RiskKnowledge from "../features/riskKnowledge/RiskKnowledge";
 
 export default function Policy({ session }) {
   const [explorerTab, setExplorerTab] = useState(() => (
-    ["controls", "rules"].includes(sessionStorage.getItem("policyExplorerTab")) ? sessionStorage.getItem("policyExplorerTab") : "library"
+    new URLSearchParams(location.search).get("view")==="controls" ? "controls" : ["controls", "rules", "knowledge"].includes(sessionStorage.getItem("policyExplorerTab")) ? sessionStorage.getItem("policyExplorerTab") : "library"
   ));
   const [policies, setPolicies] = useState([]);
   const [selectedPolicyId, setSelectedPolicyId] = useState(null);
@@ -62,7 +63,8 @@ export default function Policy({ session }) {
   const [expandControls, setExpandControls] = useState(false);
   const [controlQuery, setControlQuery] = useState("");
   const [policyLinksLoading, setPolicyLinksLoading] = useState(false);
-  const [policyLinksError, setPolicyLinksError] = useState("");
+  const [policyRelationshipsError,setPolicyRelationshipsError]=useState("");
+  const [policyControlsError,setPolicyControlsError]=useState("");
   const [expandedTypes, setExpandedTypes] = useState(() => new Set(POLICY_TYPE_ORDER));
 
   useEffect(() => {
@@ -87,23 +89,33 @@ export default function Policy({ session }) {
     if (!selectedPolicyId) return;
     let active = true;
     setPolicyLinksLoading(true);
-    setPolicyLinksError("");
+    setPolicyRelationshipsError("");setPolicyControlsError("");
     setRelatedPolicies([]);
     setSelectedPolicyControls([]);
-    setControlQuery("");
-    Promise.all([
+    setControlQuery("");setControlType("");
+    Promise.allSettled([
       apiRequest(`/api/policies/${selectedPolicyId}/relationships`, {}, session.token),
       apiRequest(`/api/policies/${selectedPolicyId}/controls`, {}, session.token),
     ])
       .then(([relationships, controls]) => {
         if (!active) return;
-        setRelatedPolicies(relationships);
-        setSelectedPolicyControls(controls);
+        if(relationships.status==='fulfilled')setRelatedPolicies(relationships.value);
+        else setPolicyRelationshipsError(relationships.reason.message);
+        if(controls.status==='fulfilled')setSelectedPolicyControls(controls.value);
+        else setPolicyControlsError(controls.reason.message);
       })
-      .catch((requestError) => { if (active) setPolicyLinksError(requestError.message); })
       .finally(() => { if (active) setPolicyLinksLoading(false); });
     return () => { active = false; };
   }, [selectedPolicyId, session.token]);
+
+  function openPolicyEvidence(policyId, clauseId) {
+    sessionStorage.setItem("policyEvidencePolicy", String(policyId));
+    if (clauseId != null) sessionStorage.setItem("policyEvidenceClause", String(clauseId));
+    else sessionStorage.removeItem("policyEvidenceClause");
+    sessionStorage.setItem("riskKnowledgeView", "Policy Evidence");
+    sessionStorage.setItem("policyExplorerTab", "knowledge");
+    setExplorerTab("knowledge");
+  }
 
   const selected = policies.find((policy) => policy.policy_id === selectedPolicyId) || policies[0];
   const filteredControls = selectedPolicyControls.filter((control) => Object.values(control).join(" ").toLowerCase().includes(controlQuery.trim().toLowerCase()) && (!controlType || control.control_type === controlType)).sort((a,b) => controlSort === "effectiveness" ? Number(b.effectiveness)-Number(a.effectiveness) : String(a[controlSort] || "").localeCompare(String(b[controlSort] || ""), undefined, {numeric:true}));
@@ -147,6 +159,7 @@ export default function Policy({ session }) {
           Controls
         </button>
         <button type="button" className={explorerTab === "rules" ? "active" : ""} role="tab" aria-selected={explorerTab === "rules"} onClick={() => { sessionStorage.setItem("policyExplorerTab", "rules"); setExplorerTab("rules"); }}>Policy Rule Library</button>
+        <button type="button" className={explorerTab === "knowledge" ? "active" : ""} role="tab" aria-selected={explorerTab === "knowledge"} onClick={() => { sessionStorage.setItem("policyExplorerTab", "knowledge"); setExplorerTab("knowledge"); }}>Risk Knowledge</button>
       </div>
       <div className={`policy-layout ${explorerTab !== "library" ? "controls-view" : ""}`}>
         {explorerTab === "library" ? (
@@ -207,9 +220,10 @@ export default function Policy({ session }) {
                 )}
                 {selected && (
                   <div className="document policy-document-summary">
-                    <small>MISTRAL-GENERATED POLICY SUMMARY</small>
+                    <small>POLICY DOCUMENT SUMMARY</small>
                     <h2>{selected.library_policy_id} {policyDisplayName(selected.title)}</h2>
                     <div className="policy-summary-text">{selected.summary}</div>
+                    <button type="button" onClick={() => openPolicyEvidence(selected.policy_id)}>View policy evidence</button>
                   </div>
                 )}
                 {selected && (
@@ -224,11 +238,11 @@ export default function Policy({ session }) {
                 )}
               </div>
             </Card>
-            <Card className="related-policies-card" title="Related Policies" action={<span className="policy-control-count">{relatedPolicies.length}</span>}>
+            <Card className="related-policies-card" title="Related Policies" action={<span className="policy-control-count">{policyLinksLoading||policyRelationshipsError?"-":relatedPolicies.length}</span>}>
               {policyLinksLoading && <div className="data-message">Loading related policies...</div>}
-              {policyLinksError && <div className="data-message error">{policyLinksError}</div>}
-              {!policyLinksLoading && !policyLinksError && relatedPolicies.length === 0 && (
-                <div className="data-message">No related policies are mapped.</div>
+              {policyRelationshipsError && <div className="data-message error">{policyRelationshipsError}</div>}
+              {!policyLinksLoading && !policyRelationshipsError && relatedPolicies.length === 0 && (
+                <div className="data-message">No shared parent policy or source-backed policy concepts were found.</div>
               )}
               <div className="related-policy-list">
                 {relatedPolicies.map((related) => (
@@ -241,22 +255,22 @@ export default function Policy({ session }) {
                       <strong>{related.related_library_policy_id}</strong>
                       <span>{policyDisplayName(related.related_policy_name) || "Policy details unavailable"}</span>
                     </span>
-                    <small>{related.relationship_strength}% match</small>
+                    <small>{related.rationale}</small>
                   </button>
                 ))}
               </div>
             </Card>
-            <Card className="mapped-controls-card" title="Mapped Controls" action={<span className="policy-control-count">{selectedPolicyControls.length}</span>}>
+            <Card className="mapped-controls-card" title="Mapped Controls" action={<span className="policy-control-count">{policyLinksLoading||policyControlsError?"-":selectedPolicyControls.length}</span>}>
               {policyLinksLoading && <div className="data-message">Loading mapped controls...</div>}
-              {policyLinksError && <div className="data-message error">{policyLinksError}</div>}
+              {policyControlsError && <div className="data-message error">{policyControlsError}</div>}
               <label className="mapped-controls-search"><Search size={16} /><input aria-label="Search mapped controls" placeholder="Search mapped controls..." value={controlQuery} onChange={(event) => setControlQuery(event.target.value)} /></label>
               <div className="mapped-controls-toolbar">
                 <label><span>Control type</span><select aria-label="Filter control type" value={controlType} onChange={e=>setControlType(e.target.value)}><option value="">All types</option>{[...new Set(selectedPolicyControls.map(c=>c.control_type).filter(Boolean))].map(t=><option key={t}>{t}</option>)}</select></label>
-                <label><span>Sort by</span><select aria-label="Sort mapped controls" value={controlSort} onChange={e=>setControlSort(e.target.value)}>{["control_name","control_id","control_owner","frequency","automation","effectiveness"].map(k=><option key={k} value={k}>{k.replaceAll("_"," ")}</option>)}</select></label>
+                <label><span>Sort by</span><select aria-label="Sort mapped controls" value={controlSort} onChange={e=>setControlSort(e.target.value)}>{["control_name","control_id","control_owner","control_type","status"].map(k=><option key={k} value={k}>{k.replaceAll("_"," ")}</option>)}</select></label>
                 <button type="button" className="btn secondary" onClick={()=>setExpandControls(v=>!v)}>{expandControls ? "Collapse all" : "Expand all"}</button>
                 <span className="mapped-controls-result-count">{filteredControls.length} of {selectedPolicyControls.length} controls</span>
               </div>
-              {!policyLinksLoading && !policyLinksError && filteredControls.length === 0 && (
+              {!policyLinksLoading && !policyControlsError && filteredControls.length === 0 && (
                 <div className="data-message">{selectedPolicyControls.length ? "No controls match your search." : "No controls are mapped to this policy."}</div>
               )}
               <div className="policy-control-content" role="region" aria-label="Mapped controls" tabIndex={0}>
@@ -266,9 +280,9 @@ export default function Policy({ session }) {
                     <p className="policy-control-description">{control.control_description}</p>
                     <dl className="policy-control-review">
                       <div><dt>Owner</dt><dd>{control.control_owner || "Not stated"}</dd></div><div><dt>Type</dt><dd>{control.control_type}</dd></div>
-                      <div><dt>Frequency:</dt><dd>{control.frequency}</dd></div>
-                      <div><dt>Automation:</dt><dd>{control.automation}</dd></div>
-                      <div><dt>Effectiveness:</dt><dd>{control.effectiveness}%</dd></div>
+                      <div><dt>Source clause</dt><dd>{control.clause_number}</dd></div>
+                      <div><dt>Source page</dt><dd>{control.source_page||"Not recorded"}</dd></div>
+                      <div><dt>Graph status</dt><dd>{control.synthetic?"Generated":control.published_in_graph?"Published":"Awaiting review"}</dd></div>
                     </dl>
                   </details>
                 ))}
@@ -280,7 +294,7 @@ export default function Policy({ session }) {
             />
           </>
         ) : (
-          explorerTab === "rules" ? <RuleLibrary session={session} policies={policies} /> : <ControlsWorkspace session={session} />
+          explorerTab === "knowledge" ? <RiskKnowledge session={session} onOpenRules={() => { sessionStorage.setItem("policyExplorerTab", "rules"); setExplorerTab("rules"); }} /> : explorerTab === "rules" ? <RuleLibrary session={session} policies={policies} onOpenEvidence={openPolicyEvidence} /> : <ControlsWorkspace session={session} policies={policies} onOpenEvidence={openPolicyEvidence} />
         )}
       </div>
     </>
@@ -289,7 +303,7 @@ export default function Policy({ session }) {
 
 function PolicyCopilot({ session, onSelectPolicy }) {
   const activeRequest = useRef(null);
-  const storagePrefix = `policyCopilotLibrary:${session.user.user_id}`;
+  const storagePrefix = `semanticPolicyCopilotV1:${session.user.user_id}`;
   const [messages, setMessages] = useState(() => {
     try {
       return JSON.parse(sessionStorage.getItem(`${storagePrefix}:messages`)) || [];
@@ -335,7 +349,7 @@ function PolicyCopilot({ session, onSelectPolicy }) {
           signal: controller.signal,
           body: JSON.stringify({
             question: prompt,
-            conversation_id: conversationId,
+            history: messages.filter(m=>["user","assistant"].includes(m.role)).slice(-8).map(m=>({role:m.role,content:m.content||m.text})).filter(m=>m.content),
           }),
         },
         session.token,
@@ -365,7 +379,7 @@ function PolicyCopilot({ session, onSelectPolicy }) {
         {messages.length === 0 && (
           <div className="chat-ai">
             <Sparkles size={18} />
-            <p>Ask about any policy, limit, approval, exception, or requirement. Answers are retrieved from the Mistral Policy Library and include citations.</p>
+            <p>Ask about any policy, limit, approval, exception, or requirement. Answers are retrieved from the current policy knowledge graph and include citations.</p>
           </div>
         )}
         {messages.map((message, index) => message.role === "user" ? (

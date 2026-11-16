@@ -1,0 +1,1873 @@
+@prefix cpi: <urn:cpi:ontology:credit-policy:> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+cpi:APPLIES_FOREdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:Borrower ] ) ;
+    sh:property [ sh:class cpi:LoanApplication ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:APPLIES_FOR ] ;
+    sh:targetSubjectsOf cpi:APPLIES_FOR .
+
+cpi:APPLIES_INEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyRule ] ) ;
+    sh:property [ sh:class cpi:Geography ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:APPLIES_IN ] ;
+    sh:targetSubjectsOf cpi:APPLIES_IN .
+
+cpi:APPLIES_TO_PRODUCTEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyRule ] ) ;
+    sh:property [ sh:class cpi:Product ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:APPLIES_TO_PRODUCT ] ;
+    sh:targetSubjectsOf cpi:APPLIES_TO_PRODUCT .
+
+cpi:APPLIES_TO_SEGMENTEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyRule ] ) ;
+    sh:property [ sh:class cpi:CustomerSegment ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:APPLIES_TO_SEGMENT ] ;
+    sh:targetSubjectsOf cpi:APPLIES_TO_SEGMENT .
+
+cpi:ApprovalAuthorityShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:authority_code ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "ROLE"^^xsd:string "COMMITTEE"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:authority_kind ] ;
+    sh:sparql [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:ApprovalAuthority .
+
+cpi:ApprovalRequirementShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minLength 1 ;
+            sh:path cpi:notes ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:class cpi:ApprovalAuthority ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:REQUIRES_APPROVAL_FROM ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:class cpi:EvidenceRequirement ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:REQUIRES_EVIDENCE ],
+        [ sh:class cpi:ConditionGroup ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_CONDITION ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "APPROVAL"^^xsd:string "ESCALATION"^^xsd:string "CONCURRENCE"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:decision_type ] ;
+    sh:sparql [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:ApprovalRequirement .
+
+cpi:AssertionCoverageShape a sh:NodeShape ;
+    sh:sparql [ sh:message "SOURCE_REFERENCES: direct edge requires assertion evidence" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+        $this ?p ?o . FILTER (?p IN (cpi:HAS_APPLICABILITY, cpi:HAS_EXCLUSION, cpi:APPLIES_FOR, cpi:REQUESTS_PRODUCT, cpi:RESULTS_IN, cpi:BORROWS, cpi:OF_PRODUCT, cpi:GOVERNED_BY, cpi:VERSION_OF, cpi:CONTAINS_SECTION, cpi:PART_OF_VERSION, cpi:PARENT_SECTION, cpi:CONTAINS_RULE, cpi:APPLIES_TO_PRODUCT, cpi:APPLIES_TO_SEGMENT, cpi:APPLIES_IN, cpi:MEMBER_OF_SEGMENT, cpi:USES_METRIC, cpi:HAS_THRESHOLD, cpi:MEASURED_BY, cpi:HAS_CONDITION, cpi:HAS_MEMBER, cpi:HAS_EXCEPTION, cpi:EXCEPTION_TO, cpi:IMPLEMENTED_BY_RULE, cpi:REQUIRES_APPROVAL, cpi:REQUIRES_APPROVAL_FROM, cpi:REQUIRES_EVIDENCE, cpi:SATISFIES_REQUIREMENT, cpi:EVIDENCE_FOR, cpi:HAS_EFFECTIVE_PERIOD, cpi:DERIVED_FROM, cpi:SOURCE_IN_VERSION, cpi:CLASSIFIED_AS, cpi:BINDS_TO_ATTRIBUTE))
+        FILTER NOT EXISTS { ?a a cpi:Assertion; rdf:subject $this; rdf:predicate ?p; rdf:object ?o; cpi:sourceRef ?source } }""" ] ;
+    sh:targetSubjectsOf cpi:APPLIES_FOR,
+        cpi:APPLIES_IN,
+        cpi:APPLIES_TO_PRODUCT,
+        cpi:APPLIES_TO_SEGMENT,
+        cpi:BINDS_TO_ATTRIBUTE,
+        cpi:BORROWS,
+        cpi:CLASSIFIED_AS,
+        cpi:CONTAINS_RULE,
+        cpi:CONTAINS_SECTION,
+        cpi:DERIVED_FROM,
+        cpi:EVIDENCE_FOR,
+        cpi:EXCEPTION_TO,
+        cpi:GOVERNED_BY,
+        cpi:HAS_APPLICABILITY,
+        cpi:HAS_CONDITION,
+        cpi:HAS_EFFECTIVE_PERIOD,
+        cpi:HAS_EXCEPTION,
+        cpi:HAS_EXCLUSION,
+        cpi:HAS_MEMBER,
+        cpi:HAS_THRESHOLD,
+        cpi:IMPLEMENTED_BY_RULE,
+        cpi:MEASURED_BY,
+        cpi:MEMBER_OF_SEGMENT,
+        cpi:OF_PRODUCT,
+        cpi:PARENT_SECTION,
+        cpi:PART_OF_VERSION,
+        cpi:REQUESTS_PRODUCT,
+        cpi:REQUIRES_APPROVAL,
+        cpi:REQUIRES_APPROVAL_FROM,
+        cpi:REQUIRES_EVIDENCE,
+        cpi:RESULTS_IN,
+        cpi:SATISFIES_REQUIREMENT,
+        cpi:SOURCE_IN_VERSION,
+        cpi:USES_METRIC,
+        cpi:VERSION_OF .
+
+cpi:AssertionShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path rdf:object ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path rdf:subject ],
+        [ sh:in ( cpi:HAS_APPLICABILITY cpi:HAS_EXCLUSION cpi:APPLIES_FOR cpi:REQUESTS_PRODUCT cpi:RESULTS_IN cpi:BORROWS cpi:OF_PRODUCT cpi:GOVERNED_BY cpi:VERSION_OF cpi:CONTAINS_SECTION cpi:PART_OF_VERSION cpi:PARENT_SECTION cpi:CONTAINS_RULE cpi:APPLIES_TO_PRODUCT cpi:APPLIES_TO_SEGMENT cpi:APPLIES_IN cpi:MEMBER_OF_SEGMENT cpi:USES_METRIC cpi:HAS_THRESHOLD cpi:MEASURED_BY cpi:HAS_CONDITION cpi:HAS_MEMBER cpi:HAS_EXCEPTION cpi:EXCEPTION_TO cpi:IMPLEMENTED_BY_RULE cpi:REQUIRES_APPROVAL cpi:REQUIRES_APPROVAL_FROM cpi:REQUIRES_EVIDENCE cpi:SATISFIES_REQUIREMENT cpi:EVIDENCE_FOR cpi:HAS_EFFECTIVE_PERIOD cpi:DERIVED_FROM cpi:SOURCE_IN_VERSION cpi:CLASSIFIED_AS cpi:BINDS_TO_ATTRIBUTE ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path rdf:predicate ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ] ;
+    sh:sparql [ sh:message "DUPLICATE_RELATIONSHIP" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+        $this rdf:subject ?s; rdf:predicate ?p; rdf:object ?o .
+        ?other a cpi:Assertion; rdf:subject ?s; rdf:predicate ?p; rdf:object ?o . FILTER (?other != $this) }""" ],
+        [ sh:message "ASSERTION_TRIPLE: reification must identify an asserted triple" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+        $this rdf:subject ?s; rdf:predicate ?p; rdf:object ?o . FILTER NOT EXISTS { ?s ?p ?o } }""" ] ;
+    sh:targetClass cpi:Assertion .
+
+cpi:BINDS_TO_ATTRIBUTEEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:RiskMetric ] ) ;
+    sh:property [ sh:class cpi:DataAttribute ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:BINDS_TO_ATTRIBUTE ] ;
+    sh:targetSubjectsOf cpi:BINDS_TO_ATTRIBUTE .
+
+cpi:BORROWSEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:Borrower ] ) ;
+    sh:property [ sh:class cpi:Loan ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:BORROWS ] ;
+    sh:targetSubjectsOf cpi:BORROWS .
+
+cpi:BorrowerShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:class cpi:LoanApplication ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:APPLIES_FOR ],
+        [ sh:class cpi:Loan ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:BORROWS ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minLength 1 ;
+            sh:path cpi:customer_reference ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PERSON"^^xsd:string "ORGANIZATION"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:path cpi:customer_kind ],
+        [ sh:class cpi:CustomerSegment ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:MEMBER_OF_SEGMENT ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ] ;
+    sh:sparql [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:Borrower .
+
+cpi:CLASSIFIED_ASEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyRule ] [ sh:class cpi:Product ] [ sh:class cpi:CustomerSegment ] [ sh:class cpi:RiskMetric ] [ sh:class cpi:Geography ] ) ;
+    sh:property [ sh:class cpi:TaxonomyConcept ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:CLASSIFIED_AS ] ;
+    sh:targetSubjectsOf cpi:CLASSIFIED_AS .
+
+cpi:CONTAINS_RULEEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyVersion ] [ sh:class cpi:PolicySection ] ) ;
+    sh:property [ sh:class cpi:PolicyRule ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:CONTAINS_RULE ] ;
+    sh:targetSubjectsOf cpi:CONTAINS_RULE .
+
+cpi:CONTAINS_SECTIONEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyVersion ] ) ;
+    sh:property [ sh:class cpi:PolicySection ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:CONTAINS_SECTION ] ;
+    sh:targetSubjectsOf cpi:CONTAINS_SECTION .
+
+cpi:ConditionGroupShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:or ( [ sh:class cpi:Condition ] [ sh:class cpi:ConditionGroup ] ) ;
+            sh:path cpi:HAS_MEMBER ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "AND"^^xsd:string "OR"^^xsd:string "NOT"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:logic ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ] ;
+    sh:sparql [ sh:message "CONDITION_LOGIC: NOT cardinality" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:logic "NOT"^^xsd:string; cpi:HAS_MEMBER ?a, ?b . FILTER (?a != ?b) }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "CONDITION_LOGIC: cycle" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:HAS_MEMBER+ $this }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ] ;
+    sh:targetClass cpi:ConditionGroup .
+
+cpi:ConditionShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:field ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minLength 1 ;
+            sh:path cpi:unit ],
+        [ sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:or ( [ sh:datatype xsd:string ] [ sh:datatype xsd:decimal ] [ sh:datatype xsd:boolean ] [ sh:node cpi:ConditionValueListShape ] ) ;
+            sh:path cpi:value ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "EQ"^^xsd:string "NE"^^xsd:string "GT"^^xsd:string "GTE"^^xsd:string "LT"^^xsd:string "LTE"^^xsd:string "IN"^^xsd:string "NOT_IN"^^xsd:string "EXISTS"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:operator ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ] ;
+    sh:sparql [ sh:message "CONDITIONS: missing value" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:operator ?op . FILTER (STR(?op) != "EXISTS") FILTER NOT EXISTS { $this cpi:value ?v } }""" ],
+        [ sh:message "CONDITIONS: numeric ordered comparison" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:operator ?op; cpi:value ?v .
+                FILTER (STR(?op) IN ("GT", "GTE", "LT", "LTE")) FILTER (datatype(?v) != xsd:decimal) }""" ],
+        [ sh:message "CONDITIONS: membership uses a list" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:operator ?op; cpi:value ?v .
+                FILTER (STR(?op) IN ("IN", "NOT_IN")) FILTER NOT EXISTS { ?v rdf:first ?item } }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "CONDITIONS: EXISTS omits value" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:operator "EXISTS"^^xsd:string; cpi:value ?v }""" ],
+        [ sh:message "CONDITIONS: scalar comparison" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:operator ?op; cpi:value ?v .
+                FILTER (STR(?op) NOT IN ("IN", "NOT_IN", "EXISTS")) FILTER (!isLiteral(?v)) }""" ] ;
+    sh:targetClass cpi:Condition .
+
+cpi:ControlEvidenceShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:class cpi:EvidenceRequirement ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:SATISFIES_REQUIREMENT ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:evidence_reference ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "UNVERIFIED"^^xsd:string "VERIFIED"^^xsd:string "STALE"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:verification_state ],
+        [ sh:datatype xsd:date ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:path cpi:collected_on ;
+            sh:pattern "^\\d{4}-\\d{2}-\\d{2}$" ],
+        [ sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:or ( [ sh:class cpi:LoanApplication ] [ sh:class cpi:PolicyRule ] [ sh:class cpi:Exception ] ) ;
+            sh:path cpi:EVIDENCE_FOR ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:evidence_type ] ;
+    sh:sparql [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ] ;
+    sh:targetClass cpi:ControlEvidence .
+
+cpi:CreditPolicyShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:policy_reference ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minLength 1 ;
+            sh:path cpi:risk_domain ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ] ;
+    sh:sparql [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:CreditPolicy .
+
+cpi:CustomerSegmentShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:segment_code ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:class cpi:TaxonomyConcept ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:CLASSIFIED_AS ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ] ;
+    sh:sparql [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ] ;
+    sh:targetClass cpi:CustomerSegment .
+
+cpi:CustomerShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:class cpi:LoanApplication ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:APPLIES_FOR ],
+        [ sh:class cpi:Loan ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:BORROWS ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minLength 1 ;
+            sh:path cpi:customer_reference ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PERSON"^^xsd:string "ORGANIZATION"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:path cpi:customer_kind ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:class cpi:CustomerSegment ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:MEMBER_OF_SEGMENT ] ;
+    sh:sparql [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ] ;
+    sh:targetClass cpi:Customer .
+
+cpi:DERIVED_FROMEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyRule ] ) ;
+    sh:property [ sh:class cpi:SourcePassage ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:DERIVED_FROM ] ;
+    sh:targetSubjectsOf cpi:DERIVED_FROM .
+
+cpi:DataAttributeShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:attribute_name ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:registry_reference ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:entity_name ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ] ;
+    sh:sparql [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:DataAttribute .
+
+cpi:EVIDENCE_FOREdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:ControlEvidence ] ) ;
+    sh:property [ sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:or ( [ sh:class cpi:LoanApplication ] [ sh:class cpi:PolicyRule ] [ sh:class cpi:Exception ] ) ;
+            sh:path cpi:EVIDENCE_FOR ] ;
+    sh:targetSubjectsOf cpi:EVIDENCE_FOR .
+
+cpi:EXCEPTION_TOEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:Exception ] ) ;
+    sh:property [ sh:class cpi:PolicyRule ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:EXCEPTION_TO ] ;
+    sh:targetSubjectsOf cpi:EXCEPTION_TO .
+
+cpi:EffectivePeriodShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:date ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:path cpi:end_date ;
+            sh:pattern "^\\d{4}-\\d{2}-\\d{2}$" ],
+        [ sh:datatype xsd:date ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:start_date ;
+            sh:pattern "^\\d{4}-\\d{2}-\\d{2}$" ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ] ;
+    sh:sparql [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "EFFECTIVE_DATES" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:start_date ?s; cpi:end_date ?e . FILTER (?e < ?s) }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ] ;
+    sh:targetClass cpi:EffectivePeriod .
+
+cpi:EvidenceRequirementShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minInclusive 0 ;
+            sh:path cpi:maximum_age_days ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:evidence_type ] ;
+    sh:sparql [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:EvidenceRequirement .
+
+cpi:ExceptionShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:class cpi:ConditionGroup ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_CONDITION ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minLength 1 ;
+            sh:path cpi:rationale ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:class cpi:EffectivePeriod ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_EFFECTIVE_PERIOD ],
+        [ sh:class cpi:PolicyRule ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:EXCEPTION_TO ],
+        [ sh:class cpi:ApprovalRequirement ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:REQUIRES_APPROVAL ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:exception_reference ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:class cpi:PolicyRule ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:IMPLEMENTED_BY_RULE ] ;
+    sh:sparql [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "EXCEPTION_LINKS" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:EXCEPTION_TO ?base . FILTER NOT EXISTS { ?base cpi:HAS_EXCEPTION $this } }""" ],
+        [ sh:message "EXCEPTION_LINKS: alternative kind" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:IMPLEMENTED_BY_RULE ?r .
+                FILTER NOT EXISTS { ?r cpi:rule_kind "EXCEPTION_RULE"^^xsd:string } }""" ],
+        [ sh:message "EXCEPTION_LINKS: alternative version" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:EXCEPTION_TO ?base; cpi:IMPLEMENTED_BY_RULE ?r .
+                ?base cpi:PART_OF_VERSION ?v1 . ?r cpi:PART_OF_VERSION ?v2 . FILTER (?v1 != ?v2) }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ] ;
+    sh:targetClass cpi:Exception .
+
+cpi:GOVERNED_BYEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:Loan ] ) ;
+    sh:property [ sh:class cpi:PolicyVersion ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:GOVERNED_BY ] ;
+    sh:targetSubjectsOf cpi:GOVERNED_BY .
+
+cpi:GeographyShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:class cpi:TaxonomyConcept ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:CLASSIFIED_AS ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:code_scheme ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:geography_code ] ;
+    sh:sparql [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ] ;
+    sh:targetClass cpi:Geography .
+
+cpi:HAS_APPLICABILITYEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyVersion ] ) ;
+    sh:property [ sh:class cpi:ConditionGroup ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_APPLICABILITY ] ;
+    sh:targetSubjectsOf cpi:HAS_APPLICABILITY .
+
+cpi:HAS_CONDITIONEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyRule ] [ sh:class cpi:Exception ] [ sh:class cpi:ApprovalRequirement ] ) ;
+    sh:property [ sh:class cpi:ConditionGroup ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_CONDITION ] ;
+    sh:targetSubjectsOf cpi:HAS_CONDITION .
+
+cpi:HAS_EFFECTIVE_PERIODEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyVersion ] [ sh:class cpi:PolicyRule ] [ sh:class cpi:Exception ] ) ;
+    sh:property [ sh:class cpi:EffectivePeriod ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_EFFECTIVE_PERIOD ] ;
+    sh:targetSubjectsOf cpi:HAS_EFFECTIVE_PERIOD .
+
+cpi:HAS_EXCEPTIONEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyRule ] ) ;
+    sh:property [ sh:class cpi:Exception ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_EXCEPTION ] ;
+    sh:targetSubjectsOf cpi:HAS_EXCEPTION .
+
+cpi:HAS_EXCLUSIONEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyVersion ] ) ;
+    sh:property [ sh:class cpi:ConditionGroup ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_EXCLUSION ] ;
+    sh:targetSubjectsOf cpi:HAS_EXCLUSION .
+
+cpi:HAS_MEMBEREdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:ConditionGroup ] ) ;
+    sh:property [ sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:or ( [ sh:class cpi:Condition ] [ sh:class cpi:ConditionGroup ] ) ;
+            sh:path cpi:HAS_MEMBER ] ;
+    sh:targetSubjectsOf cpi:HAS_MEMBER .
+
+cpi:HAS_THRESHOLDEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyRule ] ) ;
+    sh:property [ sh:class cpi:Threshold ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_THRESHOLD ] ;
+    sh:targetSubjectsOf cpi:HAS_THRESHOLD .
+
+cpi:IMPLEMENTED_BY_RULEEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:Exception ] ) ;
+    sh:property [ sh:class cpi:PolicyRule ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:IMPLEMENTED_BY_RULE ] ;
+    sh:targetSubjectsOf cpi:IMPLEMENTED_BY_RULE .
+
+cpi:LoanApplicationShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minInclusive 0 ;
+            sh:path cpi:requested_amount ],
+        [ sh:class cpi:Product ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:REQUESTS_PRODUCT ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minLength 1 ;
+            sh:path cpi:application_reference ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:class cpi:Loan ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:RESULTS_IN ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:path cpi:currency ;
+            sh:pattern "^[A-Z]{3}$" ] ;
+    sh:sparql [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ] ;
+    sh:targetClass cpi:LoanApplication .
+
+cpi:LoanShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:path cpi:currency ;
+            sh:pattern "^[A-Z]{3}$" ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:class cpi:Product ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:OF_PRODUCT ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:class cpi:PolicyVersion ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:GOVERNED_BY ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minLength 1 ;
+            sh:path cpi:loan_reference ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ] ;
+    sh:sparql [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:Loan .
+
+cpi:MEASURED_BYEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:Threshold ] ) ;
+    sh:property [ sh:class cpi:RiskMetric ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:MEASURED_BY ] ;
+    sh:targetSubjectsOf cpi:MEASURED_BY .
+
+cpi:MEMBER_OF_SEGMENTEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:Customer ] ) ;
+    sh:property [ sh:class cpi:CustomerSegment ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:MEMBER_OF_SEGMENT ] ;
+    sh:targetSubjectsOf cpi:MEMBER_OF_SEGMENT .
+
+cpi:OF_PRODUCTEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:Loan ] ) ;
+    sh:property [ sh:class cpi:Product ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:OF_PRODUCT ] ;
+    sh:targetSubjectsOf cpi:OF_PRODUCT .
+
+cpi:PARENT_SECTIONEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicySection ] ) ;
+    sh:property [ sh:class cpi:PolicySection ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:PARENT_SECTION ] ;
+    sh:targetSubjectsOf cpi:PARENT_SECTION .
+
+cpi:PART_OF_VERSIONEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicySection ] [ sh:class cpi:PolicyRule ] ) ;
+    sh:property [ sh:class cpi:PolicyVersion ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:PART_OF_VERSION ] ;
+    sh:targetSubjectsOf cpi:PART_OF_VERSION .
+
+cpi:PolicyRuleShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:class cpi:CustomerSegment ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:APPLIES_TO_SEGMENT ],
+        [ sh:class cpi:PolicyVersion ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:PART_OF_VERSION ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:class cpi:RiskMetric ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:USES_METRIC ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "QUANTITATIVE"^^xsd:string "QUALITATIVE"^^xsd:string "EXCEPTION_RULE"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:rule_kind ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:class cpi:Geography ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:APPLIES_IN ],
+        [ sh:class cpi:ApprovalRequirement ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:REQUIRES_APPROVAL ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:DERIVED_FROM ],
+        [ sh:class cpi:ConditionGroup ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_CONDITION ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:rule_reference ],
+        [ sh:class cpi:Exception ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_EXCEPTION ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:class cpi:EvidenceRequirement ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:REQUIRES_EVIDENCE ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minLength 1 ;
+            sh:path cpi:requirement_text ],
+        [ sh:class cpi:Threshold ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_THRESHOLD ],
+        [ sh:class cpi:Product ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:APPLIES_TO_PRODUCT ],
+        [ sh:class cpi:EffectivePeriod ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_EFFECTIVE_PERIOD ],
+        [ sh:class cpi:TaxonomyConcept ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:CLASSIFIED_AS ] ;
+    sh:sparql [ sh:message "QUANTITATIVE_RULE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:rule_kind "QUANTITATIVE"^^xsd:string .
+                FILTER (NOT EXISTS { $this cpi:HAS_THRESHOLD ?t } || NOT EXISTS { $this cpi:USES_METRIC ?m }) }""" ],
+        [ sh:message "THRESHOLD_METRIC" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:HAS_THRESHOLD ?t . ?t cpi:MEASURED_BY ?m .
+                FILTER NOT EXISTS { $this cpi:USES_METRIC ?m } }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "SOURCE_VERSION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:PART_OF_VERSION ?v; cpi:DERIVED_FROM ?p .
+                ?p cpi:SOURCE_IN_VERSION ?other . FILTER (?v != ?other) }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "EXCEPTION_LINKS" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:HAS_EXCEPTION ?e . FILTER NOT EXISTS { ?e cpi:EXCEPTION_TO $this } }""" ] ;
+    sh:targetClass cpi:PolicyRule .
+
+cpi:PolicySectionShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:class cpi:PolicySection ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:PARENT_SECTION ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:class cpi:PolicyRule ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:CONTAINS_RULE ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:class cpi:PolicyVersion ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:PART_OF_VERSION ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:section_reference ] ;
+    sh:sparql [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "CONTAINMENT: section cycle" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:PARENT_SECTION+ $this }""" ],
+        [ sh:message "CONTAINMENT: rule version" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:PART_OF_VERSION ?v; cpi:CONTAINS_RULE ?r .
+                ?r cpi:PART_OF_VERSION ?other . FILTER (?v != ?other) }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "CONTAINMENT: parent version" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:PARENT_SECTION ?p; cpi:PART_OF_VERSION ?v .
+                ?p cpi:PART_OF_VERSION ?other . FILTER (?v != ?other) }""" ] ;
+    sh:targetClass cpi:PolicySection .
+
+cpi:PolicyVersionShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:source_checksum ;
+            sh:pattern "^[a-f0-9]{64}$" ],
+        [ sh:class cpi:ConditionGroup ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_EXCLUSION ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:class cpi:PolicySection ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:CONTAINS_SECTION ],
+        [ sh:class cpi:PolicyRule ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:CONTAINS_RULE ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:class cpi:ConditionGroup ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_APPLICABILITY ],
+        [ sh:class cpi:CreditPolicy ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:VERSION_OF ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:version ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:class cpi:EffectivePeriod ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:HAS_EFFECTIVE_PERIOD ] ;
+    sh:sparql [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "CONTAINMENT: version children" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            { $this cpi:CONTAINS_RULE ?child } UNION { $this cpi:CONTAINS_SECTION ?child }
+            ?child cpi:PART_OF_VERSION ?other . FILTER ($this != ?other) }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:PolicyVersion .
+
+cpi:ProductShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:class cpi:TaxonomyConcept ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:CLASSIFIED_AS ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:product_code ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ] ;
+    sh:sparql [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:Product .
+
+cpi:REQUESTS_PRODUCTEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:LoanApplication ] ) ;
+    sh:property [ sh:class cpi:Product ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:REQUESTS_PRODUCT ] ;
+    sh:targetSubjectsOf cpi:REQUESTS_PRODUCT .
+
+cpi:REQUIRES_APPROVALEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyRule ] [ sh:class cpi:Exception ] ) ;
+    sh:property [ sh:class cpi:ApprovalRequirement ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:REQUIRES_APPROVAL ] ;
+    sh:targetSubjectsOf cpi:REQUIRES_APPROVAL .
+
+cpi:REQUIRES_APPROVAL_FROMEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:ApprovalRequirement ] ) ;
+    sh:property [ sh:class cpi:ApprovalAuthority ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:REQUIRES_APPROVAL_FROM ] ;
+    sh:targetSubjectsOf cpi:REQUIRES_APPROVAL_FROM .
+
+cpi:REQUIRES_EVIDENCEEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyRule ] [ sh:class cpi:ApprovalRequirement ] ) ;
+    sh:property [ sh:class cpi:EvidenceRequirement ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:REQUIRES_EVIDENCE ] ;
+    sh:targetSubjectsOf cpi:REQUIRES_EVIDENCE .
+
+cpi:RESULTS_INEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:LoanApplication ] ) ;
+    sh:property [ sh:class cpi:Loan ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:RESULTS_IN ] ;
+    sh:targetSubjectsOf cpi:RESULTS_IN .
+
+cpi:RiskMetricShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:metric_key ],
+        [ sh:class cpi:TaxonomyConcept ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:CLASSIFIED_AS ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:class cpi:DataAttribute ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:BINDS_TO_ATTRIBUTE ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:datatype xsd:string ;
+            sh:minCount 1 ;
+            sh:path cpi:allowed_units ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minLength 1 ;
+            sh:path cpi:formula ] ;
+    sh:sparql [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:RiskMetric .
+
+cpi:SATISFIES_REQUIREMENTEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:ControlEvidence ] ) ;
+    sh:property [ sh:class cpi:EvidenceRequirement ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:SATISFIES_REQUIREMENT ] ;
+    sh:targetSubjectsOf cpi:SATISFIES_REQUIREMENT .
+
+cpi:SOURCE_IN_VERSIONEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:SourcePassage ] ) ;
+    sh:property [ sh:class cpi:PolicyVersion ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:SOURCE_IN_VERSION ] ;
+    sh:targetSubjectsOf cpi:SOURCE_IN_VERSION .
+
+cpi:SemanticInstanceShape a sh:NodeShape ;
+    sh:class cpi:SemanticInstance ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:in ( "EXAMPLE" "SOURCE_BACKED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:mode ],
+        [ sh:datatype xsd:string ;
+            sh:hasValue "1.2.0" ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:ontologyVersion ] ;
+    sh:targetClass cpi:SemanticInstance ;
+    sh:targetNode <urn:cpi:semantic-instance:envelope> .
+
+cpi:SourcePassageShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:class cpi:PolicyVersion ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:SOURCE_IN_VERSION ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "POLICY_SOURCE"^^xsd:string "ILLUSTRATIVE_EXAMPLE"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:origin ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:version ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minInclusive 1 ;
+            sh:path cpi:page ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 0 ;
+            sh:minLength 1 ;
+            sh:path cpi:clause_reference ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:source_checksum ;
+            sh:pattern "^[a-f0-9]{64}$" ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:document_reference ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:text ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ] ;
+    sh:sparql [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { ?i a cpi:SemanticInstance; cpi:mode ?mode . $this cpi:origin ?origin .
+                FILTER ((STR(?mode) = "EXAMPLE" && STR(?origin) != "ILLUSTRATIVE_EXAMPLE") || (STR(?mode) = "SOURCE_BACKED" && STR(?origin) != "POLICY_SOURCE")) }""" ],
+        [ sh:message "SOURCE_VERSION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:SOURCE_IN_VERSION ?v; cpi:version ?sv; cpi:source_checksum ?sc .
+                ?v cpi:version ?vv; cpi:source_checksum ?vc . FILTER (?sv != ?vv || ?sc != ?vc) }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ] ;
+    sh:targetClass cpi:SourcePassage .
+
+cpi:TaxonomyConceptShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:taxonomy_version ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:taxonomy_id ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ] ;
+    sh:sparql [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:TaxonomyConcept .
+
+cpi:ThresholdShape a sh:NodeShape ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:datatype xsd:boolean ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:synthetic ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PROPOSED" "APPROVED" "REJECTED" "SUPERSEDED" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:status ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:or ( [ sh:datatype xsd:string ] [ sh:datatype xsd:decimal ] [ sh:datatype xsd:boolean ] [ sh:node cpi:ConditionValueListShape ] ) ;
+            sh:path cpi:value ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:minLength 1 ;
+            sh:path cpi:unit ],
+        [ sh:class cpi:SourcePassage ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:sourceRef ],
+        [ sh:class cpi:RiskMetric ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:MEASURED_BY ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "GT"^^xsd:string "GTE"^^xsd:string "LT"^^xsd:string "LTE"^^xsd:string "EQ"^^xsd:string "NE"^^xsd:string ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path cpi:operator ] ;
+    sh:sparql [ sh:message "THRESHOLD_METRIC: incompatible unit" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE { $this cpi:MEASURED_BY ?m; cpi:unit ?u .
+            FILTER NOT EXISTS { ?m cpi:allowed_units ?u } }""" ],
+        [ sh:message "SYNTHETIC_PROVENANCE" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            $this cpi:synthetic false; cpi:sourceRef ?p . ?p cpi:synthetic true . }""" ],
+        [ sh:message "EXAMPLE_ISOLATION" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+            ?instance a cpi:SemanticInstance; cpi:mode "EXAMPLE" . $this cpi:synthetic false . }""" ] ;
+    sh:targetClass cpi:Threshold .
+
+cpi:USES_METRICEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyRule ] ) ;
+    sh:property [ sh:class cpi:RiskMetric ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:USES_METRIC ] ;
+    sh:targetSubjectsOf cpi:USES_METRIC .
+
+cpi:VERSION_OFEdgeShape a sh:NodeShape ;
+    sh:or ( [ sh:class cpi:PolicyVersion ] ) ;
+    sh:property [ sh:class cpi:CreditPolicy ;
+            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:path cpi:VERSION_OF ] ;
+    sh:targetSubjectsOf cpi:VERSION_OF .
+
+cpi:ConditionValueListShape a sh:NodeShape ;
+    sh:nodeKind sh:BlankNode ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:minCount 1 ;
+            sh:path ( [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ] ;
+    sh:sparql [ sh:message "CONDITIONS: finite RDF value list" ;
+            sh:select """PREFIX cpi: <urn:cpi:ontology:credit-policy:>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT $this WHERE {
+        FILTER NOT EXISTS { $this rdf:rest* rdf:nil } }""" ] .
+

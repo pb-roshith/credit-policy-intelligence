@@ -156,7 +156,7 @@ export default function Portfolio({ session }) {
       <p className="dashboard-empty">Current account portfolio · Updated {new Date(data.generated_at).toLocaleString()} · Refreshes every minute{error ? " · Showing last successful update" : ""}</p>
       <div className="layout two-one">
         <Card title="Exception & Remediation Trends" sub="Monthly detected / remediated counts" action={<Legend />}><Trend data={data.trend} /></Card>
-        <Card title="Ask Portfolio Data" sub="Mistral Portfolio Analytics Agent" action={<Sparkles size={15} />}>
+        <Card title="Ask Portfolio Data" sub="AI provider Portfolio Analytics Agent" action={<Sparkles size={15} />}>
           <div className="portfolio-chat" aria-live="polite" aria-busy={asking}>
             {messages.map((message, index) => <div className={`portfolio-message ${message.role}`} key={index}>{message.content}</div>)}
             {asking && <div className="portfolio-message assistant">Analyzing the current portfolio…</div>}

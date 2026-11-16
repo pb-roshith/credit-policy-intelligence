@@ -12,4 +12,6 @@ RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
     ), false)
 $$;
 UPDATE credit_data.policy_rule_versions SET active=false,status='Retired'
-WHERE NOT credit_data.is_quantitative_rule(definition) AND (active OR status<>'Retired');
+WHERE NOT credit_data.is_quantitative_rule(definition)
+AND COALESCE(definition->>'representation_version','')<>'policy-representation-v1'
+AND (active OR status<>'Retired');
