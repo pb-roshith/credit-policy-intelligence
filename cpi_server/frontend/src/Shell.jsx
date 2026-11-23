@@ -68,21 +68,16 @@ const NAV = [
 
 export default function Shell() {
   const toastTimer = useRef(null);
-  const [session, setSession] = useState(() => {
-    try {
-      const saved = JSON.parse(sessionStorage.getItem("cpi-session"));
-      return saved?.user?.role ? saved : null;
-    } catch {
-      return null;
-    }
-  });
+  const [session, setSession] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
   const initial = location.hash.slice(1) || "dashboard";
   const visibleNav = NAV.filter(([id]) => id !== "portfolio" || session?.user?.role === "credit_analyst");
   const validPage = (id) => visibleNav.some((item) => item[0] === id) || id === "profile";
-  const returnToLogin = () => {
-    sessionStorage.removeItem("cpi-session");
-    const loginUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
-    window.location.replace(loginUrl);
+  const returnToLogin = (message = "") => {
+    setAuthMessage(message);
+    setSummary({});
+    setSession(null);
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
   };
   const [page, setPage] = useState(
       validPage(initial) ? initial : "dashboard",
@@ -90,12 +85,18 @@ export default function Shell() {
     [collapsed, setCollapsed] = useState(false),
     [mobile, setMobile] = useState(false),
     [toast, setToast] = useState(""),
-    [authMessage] = useState(() => {
-      const message = sessionStorage.getItem("cpi-auth-message");
-      sessionStorage.removeItem("cpi-auth-message");
-      return message;
-    }),
+    [authMessage, setAuthMessage] = useState(""),
     [summary, setSummary] = useState({});
+  useEffect(() => {
+    sessionStorage.removeItem("cpi-session");
+    sessionStorage.removeItem("cpi-auth-message");
+    const controller = new AbortController();
+    apiRequest("/api/auth/me", { signal: controller.signal })
+      .then((data) => { if (!controller.signal.aborted) setSession(data); })
+      .catch(() => { if (!controller.signal.aborted) setSession(null); })
+      .finally(() => { if (!controller.signal.aborted) setCheckingSession(false); });
+    return () => controller.abort();
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
     const handler = () => {
@@ -104,6 +105,7 @@ export default function Shell() {
     };
     addEventListener("hashchange", handler);
     if (session) {
+      handler();
       apiRequest("/api/summary", { signal: controller.signal }, session.token)
         .then(setSummary)
         .catch(() => { if (!controller.signal.aborted) returnToLogin(); });
@@ -143,7 +145,6 @@ export default function Shell() {
     profile: UserProfile,
   }[accessiblePage];
   const authenticated = (data) => {
-    sessionStorage.setItem("cpi-session", JSON.stringify(data));
     setSession(data);
   };
   const logout = async () => {
@@ -152,12 +153,13 @@ export default function Shell() {
       try {
         await apiRequest("/api/auth/logout", { method: "POST", keepalive: true });
       } catch {
-        // Local logout must still complete when the server cannot be reached.
+        returnToLogin("Signed out locally. The server could not confirm logout.");
+        return;
       }
     }
-    sessionStorage.setItem("cpi-auth-message", "You have been logged out successfully.");
-    returnToLogin();
+    returnToLogin("You have been logged out successfully.");
   };
+  if (checkingSession) return <p role="status">Checking session…</p>;
   if (!session) return <AuthScreen key="login" initialMessage={authMessage} onAuthenticated={authenticated} />;
   if (session.user.role === "admin") return <AdminDashboard session={session} onLogout={logout} />;
   const displayRole = session.user.role.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());

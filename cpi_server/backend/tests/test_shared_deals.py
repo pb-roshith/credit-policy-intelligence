@@ -51,6 +51,26 @@ class SharedDealTests(unittest.TestCase):
                 call_shared_deals({"user_id": "verified-owner"})
             self.assertEqual(error.exception.status_code, 503)
 
+    def test_invalid_shared_responses_are_rejected_before_use(self):
+        import io, json
+        cases = (
+            ("", [{**self.deal, "amount": "1000000"}]),
+            ("/identity/authenticate", {"found": True, "user_id": "owner"}),
+            ("/identity", {"user_id": "other-owner", "role": "credit_analyst", "credential_version": 1}),
+            ("/identity/reset-password", {"unexpected": "response"}),
+            ("/identity/password-policy", {
+                "min_length": 12, "max_length": 8, "min_uppercase": 1,
+                "min_lowercase": 1, "min_digits": 1, "min_special": 1,
+            }),
+        )
+        with patch("app.services.shared_deals.SHARED_DEAL_API_KEY", "service-test-key"), \
+             patch("urllib.request.build_opener") as opener:
+            for path, payload in cases:
+                with self.subTest(path=path), self.assertRaises(HTTPException) as error:
+                    opener.return_value.open.return_value = io.BytesIO(json.dumps(payload).encode())
+                    call_shared_deals({"user_id": "owner"}, path=path)
+                self.assertEqual(error.exception.status_code, 502)
+
     def test_cpi_deal_creation_is_forbidden(self):
         from app.routers.requests import create_shared_deal
         with self.assertRaises(HTTPException) as error:

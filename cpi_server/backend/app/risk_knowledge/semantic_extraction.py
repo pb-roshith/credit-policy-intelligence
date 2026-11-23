@@ -404,31 +404,37 @@ def restore_source_wrapping(rule, primary, supplied):
 
 
 def approved_rules(records):
-    active = {r['id']: (record, r) for record in records for r in record.get('rules', []) if r['status'] == 'APPROVED'}
-    while True:
-        removed = []
-        for rid, (record, row) in active.items():
-            ref = row['extracted'].get('base_rule_ref')
-            if ref and ref.startswith('clause:'):
-                m = re.fullmatch(r'clause:(\d+):rule:(\d+)', ref)
-                ref = rule_id(record['policy_version_id'], int(m[1]), int(m[2])) if m else None
-            if row['extracted']['rule_kind'] == 'EXCEPTION_RULE' and (not ref or ref not in active): removed.append(rid)
-        if not removed: break
-        for rid in removed: active.pop(rid)
+    from collections import defaultdict, deque
     import networkx as nx
-    references=nx.DiGraph()
-    for rid,(record,row) in active.items():
-        ref=row['extracted'].get('base_rule_ref')
+
+    active = {r['id']: (record, r) for record in records for r in record.get('rules', []) if r['status'] == 'APPROVED'}
+    base_refs = {}
+    dependent_exceptions = defaultdict(list)
+    pending_removal = deque()
+    for rid, (record, row) in active.items():
+        ref = row['extracted'].get('base_rule_ref')
         if ref and ref.startswith('clause:'):
-            m=re.fullmatch(r'clause:(\d+):rule:(\d+)',ref)
-            ref=rule_id(record['policy_version_id'],int(m[1]),int(m[2])) if m else None
-        if ref:references.add_edge(rid,ref)
+            match = re.fullmatch(r'clause:(\d+):rule:(\d+)', ref)
+            ref = rule_id(record['policy_version_id'], int(match[1]), int(match[2])) if match else None
+        base_refs[rid] = ref
+        if row['extracted']['rule_kind'] == 'EXCEPTION_RULE':
+            if ref and ref in active:
+                dependent_exceptions[ref].append(rid)
+            else:
+                pending_removal.append(rid)
+    while pending_removal:
+        rid = pending_removal.popleft()
+        active.pop(rid)
+        pending_removal.extend(dependent_exceptions[rid])
+
+    references = nx.DiGraph((rid, base_refs[rid]) for rid in active if base_refs[rid])
     cyclic=set()
     for group in nx.strongly_connected_components(references):
         if len(group)>1 or any(references.has_edge(i,i) for i in group):cyclic.update(group)
     if cyclic:
-        cyclic.update(n for root in list(cyclic) for n in nx.ancestors(references,root))
-        for rid in cyclic:active.pop(rid,None)
+        for layer in nx.bfs_layers(references.reverse(copy=False), cyclic):
+            for rid in layer:
+                active.pop(rid, None)
     return active
 
 

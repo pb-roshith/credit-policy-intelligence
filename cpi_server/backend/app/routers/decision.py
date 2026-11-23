@@ -3,6 +3,7 @@ import json
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from ..access_control import has_permission
 from ..database import db_connection, run_db_transaction
 from ..schemas import DecisionRequest, ScenarioRunRequest,ScenarioLinkRequest
 from ..security import current_user
@@ -28,6 +29,8 @@ def _scenario_response(row: dict, user_id: str) -> dict:
 
 @router.post("/api/decision")
 def decision(request: DecisionRequest, _: dict = Depends(current_user)):
+    if not has_permission(_, "decision.execute"):
+        raise HTTPException(403, "Decision execution is unavailable")
     ratio = request.requested_amount / request.annual_revenue
     checks = {"credit_score": request.credit_score >= 680, "facility_to_revenue": ratio <= .35, "collateral_coverage": request.collateral_coverage >= 100, "tenor": request.tenor_years <= 7}
     failed = [name for name, passed in checks.items() if not passed]
@@ -37,6 +40,8 @@ def decision(request: DecisionRequest, _: dict = Depends(current_user)):
 
 @router.post("/api/decision-scenarios", status_code=status.HTTP_201_CREATED)
 def run_scenario(request: ScenarioRunRequest, user: dict = Depends(current_user)):
+    if not has_permission(user, "decision.execute"):
+        raise HTTPException(403, "Decision execution is unavailable")
     baseline=request_baseline(request.credit_request_number,user)
     request_id=baseline['credit_request_number']
     if request.currency and request.currency!=baseline['currency']:

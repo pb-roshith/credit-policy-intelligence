@@ -69,8 +69,8 @@ def check_definition(row,rep,clauses,compiled=None):
         actual=ProposedRule.model_validate(actual).model_dump(mode='json')
         from .rule_identity import semantic_definition
         if semantic_definition(actual)!=semantic_definition(expected):raise ValueError('Stored rule differs from graph compilation')
-    except ValueError as error:
-        raise HTTPException(409,str(error)) from None
+    except ValueError:
+        raise HTTPException(409, "The rule does not match the approved policy graph. Refresh the policy evidence and try again.") from None
     return True
 
 
@@ -124,7 +124,8 @@ def review_span(policy_id,body,user):
                                'reviewed_at':reviewed_at,'notes':body.notes,'previous_digest':body.content_digest,'source_checksum':rep['source_checksum']})
         seal(rep)
         try:definitions=compile_graph(rep,rep['source_clauses'])
-        except ValueError as error:raise HTTPException(422,str(error)) from None
+        except ValueError:
+            raise HTTPException(422, "Check the reviewed policy interpretation and its source references.") from None
         connection.execute("UPDATE risk_knowledge_objects SET payload=%s WHERE kind='metadata' AND owner_id='' AND id=%s",(Jsonb(rep),rep['id']))
         from .rule_identity import publish_drafts
         published,changed=publish_drafts(rep,definitions,user,connection,effective_from=current.get('effective_date'))

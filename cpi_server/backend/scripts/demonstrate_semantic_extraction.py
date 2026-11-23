@@ -33,7 +33,7 @@ def main():
         if node['type']=='SourcePassage':node['properties']['origin']='ILLUSTRATIVE_EXAMPLE'
     result={'illustrative_only':True,'input':[c['source_excerpt'] for c in clauses],'report':report,'rules':records[0]['rules'],
         'context_history':records[0]['context_history'],'graph':graph,'validation':validate_instance(graph)}
-    out=Path(__file__).resolve().parents[2]/'outputs'/'extracted-knowledge'
+    out=Path(__file__).resolve().parents[1]/'outputs'/'extracted-knowledge'
     out.mkdir(parents=True,exist_ok=True)
     (out/('user-ltv-exception-cycle.json' if args.with_exception else 'user-ltv-example.json')).write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps({'report':report,'rules':[r['extracted'] for r in records[0]['rules']],'validation':result['validation']}),flush=True)

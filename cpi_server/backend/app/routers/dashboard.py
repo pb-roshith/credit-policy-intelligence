@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from ..database import db_connection, shared_policy_connection
 from ..schemas import PortfolioChatRequest
-from ..security import current_user
+from ..access_control import has_permission
+from ..security import audit_export, current_user
 from ..services.dashboard_agent import PortfolioInsightsAgent
 from ..services.dashboard_chat import DashboardChatAgent
 from ..services.portfolio_agent import PortfolioChatAgent
@@ -16,7 +17,7 @@ router = APIRouter()
 
 
 def portfolio_analyst(user: dict = Depends(current_user)):
-    if user.get("role") != "credit_analyst":
+    if not has_permission(user, "portfolio.access"):
         raise HTTPException(403, "Portfolio Analytics requires credit analyst access.")
     return user
 
@@ -141,6 +142,16 @@ def dashboard(_: dict = Depends(current_user)):
                 insights_generated_at=stored['generated_at'] if stored else None,
                 insights_source_generated_at=stored['source_generated_at'] if stored else None,
                 generated_at=generated_at,knowledge_fingerprint=knowledge.fingerprint)
+
+
+@router.post("/api/dashboard/export")
+def export_dashboard(request: Request, user: dict = Depends(current_user)):
+    snapshot = dashboard(user)
+    fields = ("metrics", "workflow_stages", "types", "policies", "request_statuses",
+              "requested_amounts", "trend", "payments", "data_scope", "generated_at")
+    report = {field: snapshot[field] for field in fields}
+    audit_export(request, user, "executive-dashboard")
+    return report
 
 
 @router.post("/api/dashboard/insights")

@@ -73,8 +73,12 @@ export default function AdminDashboard({ session, onLogout }) {
     loadUserLogs(1);
   }, []);
   const perform = async (userId, action) => {
+    const verb = action === "approve" ? "Approve" : "Unlock";
+    if (!window.confirm(`${verb} the account for ${userId}?`)) return;
     try {
-      const data = await apiRequest(`/api/admin/users/${encodeURIComponent(userId)}/${action}`, { method: "POST" }, session.token);
+      const data = await apiRequest(`/api/admin/users/${action}`, {
+        method: "POST", body: JSON.stringify({ user_id: userId }),
+      }, session.token);
       setMessage({ type: "success", text: data.message });
       loadUsers();
       loadLogs(1);
@@ -83,6 +87,7 @@ export default function AdminDashboard({ session, onLogout }) {
   };
   const savePolicy = async (event) => {
     event.preventDefault();
+    if (!window.confirm("Apply these password policy changes to shared user accounts?")) return;
     setSavingPolicy(true);
     setMessage(null);
     try {
@@ -135,7 +140,7 @@ export default function AdminDashboard({ session, onLogout }) {
         {message && <div className={`auth-message ${message.type}`}>{message.text}</div>}
         <div className="admin-metrics"><div className="card"><UserPlus /><span>Pending approval</span><strong>{pending.length}</strong></div><div className="card"><LockKeyhole /><span>Locked accounts</span><strong>{locked.length}</strong></div><div className="card"><UserCheck /><span>Active users</span><strong>{approved.length}</strong></div></div>
         <Card title="Password policy" sub="These requirements apply immediately to registration and every password reset.">
-          <form className="admin-policy-form" onSubmit={savePolicy}>
+          <form autoComplete="off" className="admin-policy-form" onSubmit={savePolicy}>
             <label><span>Minimum length</span><input type="number" min="1" max="128" required value={policy.minimum_length} onChange={(event) => updatePolicy("minimum_length", event.target.value)} /></label>
             <label><span>Maximum length</span><input type="number" min="1" max="128" required value={policy.maximum_length} onChange={(event) => updatePolicy("maximum_length", event.target.value)} /></label>
             <label><span>Uppercase characters</span><input type="number" min="0" max="128" required value={policy.minimum_uppercase} onChange={(event) => updatePolicy("minimum_uppercase", event.target.value)} /></label>

@@ -32,11 +32,9 @@ See [its integration guide](docs/risk-knowledge/README.md). It uses the existing
 PostgreSQL connection, policy catalog, authenticated sessions and audit store;
 there is no separate application or additional runtime database.
 
-Set `DATABASE_URL` in `.env` to the desired PostgreSQL database. On startup, the
-backend idempotently creates the database (when missing), schemas, tables,
-indexes, runtime role, row-level-security policies, and default password policy.
-The configured PostgreSQL role needs `CREATEDB` and `CREATEROLE` plus schema and
-table creation permissions for the first run. Existing tables and data are kept.
+Development startup provisions the database schema. Production uses a
+separate bootstrap step and runs under restricted database credentials.
+See the [installation guide](../../run.md#installation-and-runtime-permissions).
 Authentication sessions are stored in `public.sessions`; only SHA-256 hashes of
 bearer tokens are persisted, and expired rows are cleaned up during sign-in.
 

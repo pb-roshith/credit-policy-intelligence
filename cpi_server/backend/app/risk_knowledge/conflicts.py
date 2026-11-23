@@ -31,7 +31,7 @@ def disjoint(a, b):
                     if lo > hi or lo == hi and not (inclusive_lo and inclusive_hi):
                         return True
         except (ValueError, TypeError, ArithmeticError):
-            pass
+            continue  # Incomparable values cannot establish disjointness.
     return False
 
 

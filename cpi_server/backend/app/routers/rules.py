@@ -3,10 +3,11 @@ import math
 from datetime import date
 from uuid import uuid4
 from typing import Literal
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, model_validator
 from ..database import shared_policy_connection
-from ..security import current_user
+from ..access_control import has_permission
+from ..security import audit_export, current_user
 from ..config import MISTRAL_API_KEY
 
 router = APIRouter()
@@ -107,7 +108,7 @@ class Action(BaseModel):
 
 
 def reviewer(user):
-    if user["role"] not in ("credit_analyst", "admin"):
+    if not has_permission(user, "policy.review"):
         raise HTTPException(403, "A credit analyst or administrator must review rules")
 
 from fastapi import BackgroundTasks
@@ -117,7 +118,7 @@ from ..database import db_connection
 from ..config import BASE_DIR, RULE_DEMO_AUTO_APPROVE
 from ..services.inventory_schema import GovernedRuleInput
 from ..services.rule_governance import store_rule, change_status
-from ..services.rule_extraction import run_inventory_job
+from ..services.rule_extraction import run_background_inventory_job
 
 @router.get("/api/policy-rules")
 def inventory(policy_id: int | None = None, origin: Literal['graph','history','all']='graph', user=Depends(current_user)):
@@ -232,7 +233,7 @@ def clauses(policy_id: int,user=Depends(current_user)):
         return c.execute('SELECT cl.*,pv.version,doc.file_name,doc.ingestion_status,doc.extraction_status FROM policy_clauses cl JOIN policy_versions pv ON pv.id=cl.policy_version_id JOIN inventory_documents doc ON doc.id=cl.document_id WHERE pv.policy_id=%s AND pv.is_current ORDER BY cl.sequence',(policy_id,)).fetchall()
 
 @router.get("/api/inventory/documents/{document_id}/source")
-def source_document(document_id: int,user=Depends(current_user)):
+def source_document(document_id: int, request: Request, user=Depends(current_user)):
     with shared_policy_connection() as c:
         doc=c.execute('SELECT COALESCE(doc.source_path,p.local_pdf_path) AS local_pdf_path,doc.file_name,doc.checksum FROM inventory_documents doc JOIN policy_documents p ON p.policy_id=doc.source_document_id WHERE doc.id=%s',(document_id,)).fetchone()
     if not doc:raise HTTPException(404,'Source document not found')
@@ -241,22 +242,27 @@ def source_document(document_id: int,user=Depends(current_user)):
     import hashlib
     if hashlib.sha256(path.read_bytes()).hexdigest()!=doc['checksum']:
         raise HTTPException(409,'The source file changed; the original version is unavailable')
+    audit_export(request, user, f"inventory-document:{document_id}")
     return FileResponse(path,filename=doc['file_name'])
 
 @router.post("/api/policy-rules")
 def create(payload: GovernedRuleInput,user=Depends(current_user)):
+    if not has_permission(user, "policy.create"):
+        raise HTTPException(403, "Policy rule creation is unavailable")
     return store_rule(payload,user)
 
 @router.put("/api/policy-rules/{rule_id}")
 def revise(rule_id: int,payload: GovernedRuleInput,user=Depends(current_user)):
+    if not has_permission(user, "policy.update"):
+        raise HTTPException(403, "Policy rule editing is unavailable")
     row=store_rule(payload,user,previous=rule_id)
     if str(row.get('extraction_key') or '').startswith('risk-knowledge:'):
         from ..risk_knowledge.pipeline import refresh_rule_evidence
         from ..services.automatic_approval import approve_rules
         try:
             refresh_rule_evidence(row,user,shared_policy_connection)
-        except ValueError as error:
-            raise HTTPException(422,str(error)) from None
+        except ValueError:
+            raise HTTPException(422, "Check the rule definition and its policy evidence before saving.") from None
         approve_rules(shared_policy_connection,[row['id']])
         with shared_policy_connection() as c:
             return c.execute('SELECT * FROM policy_rule_versions WHERE id=%s',(row['id'],)).fetchone()
@@ -272,7 +278,7 @@ class InventoryJobInput(BaseModel):
 def enqueue_inventory(user,policy_ids=None):
     if not MISTRAL_API_KEY:raise HTTPException(503,'MISTRAL_API_KEY is not configured')
     from ..services.inventory_operations import discover_documents
-    documents=discover_documents(register=user['role']=='admin')
+    documents=discover_documents(register=has_permission(user, "admin.manage"))
     with shared_policy_connection() as c:
         c.execute("SELECT pg_advisory_xact_lock(hashtext('rule-inventory-job'))")
         c.execute("UPDATE rule_inventory_jobs SET status='Failed',error='Worker interrupted; retry resumes completed batches',finished_at=CURRENT_TIMESTAMP WHERE status IN ('Queued','Running') AND COALESCE(heartbeat_at,created_at)<CURRENT_TIMESTAMP-INTERVAL '30 minutes'")
@@ -292,7 +298,7 @@ def discovered_documents(user=Depends(current_user)):
 
 
 @router.get('/api/inventory/jobs/{job_id}/exceptions')
-def download_exceptions(job_id: str,user=Depends(current_user)):
+def download_exceptions(job_id: str, request: Request, user=Depends(current_user)):
     from fastapi.responses import Response
     from ..services.inventory_operations import exception_report
     from uuid import UUID
@@ -300,6 +306,7 @@ def download_exceptions(job_id: str,user=Depends(current_user)):
     except ValueError:raise HTTPException(422,'Invalid inventory job ID')
     try:report=exception_report(str(uuid4_value))
     except ValueError:raise HTTPException(404,'Inventory job not found')
+    audit_export(request, user, f"inventory-exceptions:{uuid4_value}")
     return Response(json.dumps(report,default=str,indent=2),media_type='application/json',headers={'Content-Disposition':f'attachment; filename="inventory-exceptions-{uuid4_value}.json"'})
 
 
@@ -334,19 +341,21 @@ def selected_demo_action(payload: SelectedDemoAction,user=Depends(current_user))
 
 @router.post("/api/inventory/generate")
 def generate(payload: InventoryJobInput,background: BackgroundTasks,user=Depends(current_user)):
-    if user['role'] not in {'admin','relationship_manager','credit_analyst'}:
+    if not has_permission(user, "policy.extraction.execute"):
         raise HTTPException(403,'Rule extraction is unavailable for this role')
-    if user['role']!='admin' and not payload.policy_ids:
+    if not has_permission(user, "admin.manage") and not payload.policy_ids:
         raise HTTPException(422,'Select at least one policy document')
     job=enqueue_inventory(user,payload.policy_ids)
-    background.add_task(run_inventory_job,str(job['id']),user)
+    background.add_task(run_background_inventory_job,str(job['id']),user)
     return job
 
 @router.post("/api/policies/{policy_id}/propose-rules")
 def propose(policy_id: int,background: BackgroundTasks,user=Depends(current_user)):
     reviewer(user)
+    if not has_permission(user, "policy.extraction.execute"):
+        raise HTTPException(403, "Rule extraction is unavailable for this role")
     job=enqueue_inventory(user,[policy_id])
-    background.add_task(run_inventory_job,str(job['id']),user)
+    background.add_task(run_background_inventory_job,str(job['id']),user)
     return job
 
 @router.get("/api/inventory/jobs")
@@ -370,11 +379,11 @@ def job_status(job_id: str,user=Depends(current_user)):
 
 @router.get("/api/inventory/config")
 def inventory_config(user=Depends(current_user)):
-    return {'demo_auto_approve_enabled':RULE_DEMO_AUTO_APPROVE and user['role']=='admin'}
+    return {'demo_auto_approve_enabled':RULE_DEMO_AUTO_APPROVE and has_permission(user, "admin.manage")}
 
 @router.post("/api/policy-rules/{rule_id}/demo-approve")
 def demo_approve(rule_id: int,user=Depends(current_user)):
-    if user['role']!='admin' or not RULE_DEMO_AUTO_APPROVE:raise HTTPException(403,'Demo approval is disabled')
+    if not has_permission(user, "admin.manage") or not RULE_DEMO_AUTO_APPROVE:raise HTTPException(403,'Demo approval is disabled')
     with shared_policy_connection() as c:
         rule=c.execute('SELECT r.status,p.source_type FROM policy_rule_versions r JOIN policy_documents p USING(policy_id) WHERE r.id=%s',(rule_id,)).fetchone()
     if not rule or rule['source_type']!='manufactured':raise HTTPException(403,'Only selected manufactured synthetic rules may use demo approval')

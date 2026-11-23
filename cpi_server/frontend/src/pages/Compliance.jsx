@@ -250,7 +250,7 @@ export default function Compliance({ notify, session }) {
 
       {canCreateException && showExceptionForm && (
         <Card className="request-form-card" title="Create Policy Exception" action={<button type="button" className="icon-button" aria-label="Close form" onClick={() => setShowExceptionForm(false)}><X size={17} /></button>}>
-          <form className="credit-request-form" onSubmit={submitException}>
+          <form autoComplete="off" className="credit-request-form" onSubmit={submitException}>
             <div className="credit-form-note form-wide"><Sparkles size={16} /><span>The exception ID, exposure, and severity are generated automatically. AI provider will create the business justification, risk implications, remediation, and escalation guidance from your description and this compliance review.</span></div>
             <label><span>Credit request ID</span><input autoComplete="off" value={selectedRequest} readOnly /></label>
             <label><span>Exception type</span><input required autoComplete="off" value={exceptionForm.exception_type} onChange={(event) => updateException("exception_type", event.target.value)} /></label>
@@ -266,7 +266,7 @@ export default function Compliance({ notify, session }) {
         </Card>
       )}
       <Card className="compliance-runner-card" title="Run Policy Rule Assessment">
-        <form className="compliance-runner" onSubmit={runAgent}>
+        <form autoComplete="off" className="compliance-runner" onSubmit={runAgent}>
           <label>
             <span>Credit request</span>
             <select value={selectedRequest} disabled={loadingRequests || loadingStored || running} onChange={(event) => setSelectedRequest(event.target.value)}>
@@ -383,7 +383,7 @@ function ComplianceCopilot({ session, requestNumber }) {
       </div>
       {error && <div className="data-message error">{error}</div>}
       <div className="suggestions">{["What policies are breached?", "Show warnings", "What should be remediated?"].map((text) => <button type="button" key={text} disabled={sending} onClick={(event) => ask(event, text)}>{text}</button>)}</div>
-      <form className="chat-input" onSubmit={ask}><input autoComplete="off" minLength={2} maxLength={1000} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask about these findings..." disabled={sending} aria-label="Ask Compliance Copilot" /><button type="submit" disabled={sending || question.trim().length < 2} aria-label="Send question"><Send size={16} /></button></form>
+      <form autoComplete="off" className="chat-input" onSubmit={ask}><input autoComplete="off" minLength={2} maxLength={1000} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask about these findings..." disabled={sending} aria-label="Ask Compliance Copilot" /><button type="submit" disabled={sending || question.trim().length < 2} aria-label="Send question"><Send size={16} /></button></form>
     </Card>
   );
 }

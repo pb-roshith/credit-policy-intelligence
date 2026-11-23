@@ -68,11 +68,17 @@ export default function Observability({ session, notify }) {
   const auditSources = Array.isArray(selected?.retrieved_sources) ? selected.retrieved_sources : [];
   const auditFlow = Array.isArray(selected?.flow_steps) && selected.flow_steps.length >= 5 ? selected.flow_steps : selected ? legacyFlow(selected, auditSources) : [];
   const overview = data?.overview || {};
-  const exportJson = () => {
+  const exportJson = async () => {
     if (!data) return;
-    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
-    const link = document.createElement("a"); link.href = url; link.download = `cpi-ai-telemetry-${new Date().toISOString()}.json`; link.click(); URL.revokeObjectURL(url);
-    notify("Current AI telemetry exported.");
+    try {
+      const report = await apiRequest("/api/observability/export", { method: "POST" });
+      const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: "application/json" }));
+      const link = document.createElement("a"); link.href = url; link.download = `cpi-ai-telemetry-${new Date().toISOString()}.json`; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      notify("AI telemetry summary exported.");
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   };
 
   return <>

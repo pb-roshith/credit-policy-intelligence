@@ -10,6 +10,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.trace import Status, StatusCode
 
 from .config import MISTRAL_POLICY_MODEL
+from .data_encryption import encrypt_text
 from .database import run_db_transaction, account_user_id
 
 
@@ -100,12 +101,14 @@ def _response_text(response) -> str | None:
     if hasattr(response, 'json'):
         try:
             payload = response.json()
-            if isinstance(payload, dict):
-                choices = payload.get('choices') or []
-                if choices:
-                    return choices[0].get('message', {}).get('content') or json.dumps(payload)
         except Exception:
-            pass
+            payload = None
+        if isinstance(payload, dict):
+            choices = payload.get('choices') or []
+            if choices and isinstance(choices, list) and isinstance(choices[0], dict):
+                message = choices[0].get('message')
+                if isinstance(message, dict):
+                    return message.get('content') or json.dumps(payload)
     choices = getattr(response, "choices", None) or []
     if choices:
         content = getattr(getattr(choices[0], "message", None), "content", None)
@@ -129,7 +132,7 @@ def _response_text(response) -> str | None:
 
 @contextmanager
 def observe_ai(feature: str, operation: str, user_id: str, target: str | None = None,
-               model: str = MISTRAL_POLICY_MODEL, input_payload: str | None = None,
+               model: str = MISTRAL_POLICY_MODEL, input_payload: str | list | dict | None = None,
                retrieved_sources: list[str] | None = None):
     """Create an OpenTelemetry span and persist its measured AI request metrics."""
     started_at = datetime.now(timezone.utc)
@@ -189,6 +192,10 @@ def observe_ai(feature: str, operation: str, user_id: str, target: str | None = 
                     span.set_attribute(name, value)
             context = span.get_span_context()
             try:
+                trace_input = response_holder.get("input")
+                if trace_input is not None and not isinstance(trace_input, str):
+                    trace_input = json.dumps(trace_input, default=str)
+
                 def persist(connection):
                     connection.execute("""
                         INSERT INTO ai_observability_spans
@@ -200,8 +207,8 @@ def observe_ai(feature: str, operation: str, user_id: str, target: str | None = 
                     """, (format(context.span_id, "016x"), format(context.trace_id, "032x"), feature,
                           operation, model, target, "failed" if error else "success", latency_ms,
                           input_tokens, output_tokens, total_tokens,
-                          type(error).__name__ if error else None, str(error)[:2000] if error else None,
-                          started_at, ended_at, response_holder.get("input"), output_payload,
+                          type(error).__name__ if error else None, encrypt_text(str(error)[:2000]) if error else None,
+                          started_at, ended_at, encrypt_text(trace_input), encrypt_text(output_payload),
                           json.dumps(sources), json.dumps(flow_steps)))
                 run_db_transaction(persist)
             except Exception as persistence_error:

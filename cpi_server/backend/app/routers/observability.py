@@ -1,13 +1,25 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from ..database import db_connection
-from ..security import current_user
+from ..data_encryption import decrypt_text
+from ..security import audit_export, current_user
 
 router = APIRouter()
 
 
 @router.get("/api/observability")
 def observability(_: dict = Depends(current_user)):
+    return observability_snapshot(include_traces=True)
+
+
+@router.post("/api/observability/export")
+def export_observability(request: Request, user: dict = Depends(current_user)):
+    report = observability_snapshot(include_traces=False)
+    audit_export(request, user, "ai-telemetry-summary")
+    return report
+
+
+def observability_snapshot(*, include_traces: bool):
     """Aggregate account-scoped OpenTelemetry spans for user-facing AI features."""
     with db_connection() as connection:
         connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
@@ -74,6 +86,9 @@ def observability(_: dict = Depends(current_user)):
                    retrieved_sources, flow_steps
             FROM "user".current_ai_observability_spans
             ORDER BY started_at DESC LIMIT 200
-        """).fetchall()
+        """).fetchall() if include_traces else []
         generated_at = connection.execute("SELECT CURRENT_TIMESTAMP AS value").fetchone()["value"]
+    for trace in traces:
+        trace["input_payload"] = decrypt_text(trace["input_payload"])
+        trace["output_payload"] = decrypt_text(trace["output_payload"])
     return {"overview": overview, "features": features, "traces": traces, "generated_at": generated_at}

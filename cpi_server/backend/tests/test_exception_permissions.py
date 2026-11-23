@@ -112,7 +112,7 @@ class ExceptionPermissionTests(unittest.TestCase):
     def test_manager_cannot_delete_another_account_exception(self):
         with patch('app.routers.exceptions.db_connection') as scoped, \
              patch('app.routers.exceptions.shared_policy_connection') as shared:
-            response = self.client.delete('/api/exceptions/EX-1?account_user_id=other')
+            response = self.client.request('DELETE', '/api/exceptions/EX-1', json={'user_id': 'other'})
             self.assertEqual(response.status_code, 403)
             scoped.assert_not_called()
             shared.assert_not_called()
@@ -122,7 +122,7 @@ class ExceptionPermissionTests(unittest.TestCase):
         with patch('app.routers.exceptions.shared_policy_connection') as factory:
             connection = factory.return_value.__enter__.return_value
             connection.execute.return_value.fetchone.return_value = {'exception_id': 'EX-1'}
-            response = self.client.delete('/api/exceptions/EX-1?account_user_id=manager')
+            response = self.client.request('DELETE', '/api/exceptions/EX-1', json={'user_id': 'manager'})
             self.assertEqual(response.status_code, 200)
             self.assertEqual(connection.execute.call_args.args[1], ('manager', 'EX-1'))
 

@@ -33,16 +33,16 @@ def request_totals(deals, local, reviews):
         statuses[row["status"]] += 1
         try:
             score = Decimal(str(row["score"]))
-            if score.is_finite() and 0 <= score <= 100:
-                scores.append(score)
         except (InvalidOperation, TypeError):
-            pass
+            score = None
+        if score is not None and score.is_finite() and 0 <= score <= 100:
+            scores.append(score)
         try:
             amount = Decimal(str(row["amount"]))
             if row["currency"] and amount.is_finite() and amount >= 0:
                 currencies[row["currency"]] += amount
         except (InvalidOperation, TypeError):
-            pass
+            continue  # This row has no usable amount for the currency totals.
     return {"active_requests": sum(statuses[s] for s in ("Pending", "In Review", "Escalated")),
             "total_requests": len(records), "assessed_requests": sum(r['assessed'] for r in records),
             "unassessed_requests": sum(not r['assessed'] for r in records),

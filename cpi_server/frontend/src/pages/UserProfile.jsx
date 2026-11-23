@@ -64,7 +64,10 @@ export default function UserProfile({ session, onLogout }) {
     setMessage(null);
     setQuestions([]);
     setAnswers([]);
-    apiRequest(`/api/auth/recovery/${encodeURIComponent(session.user.user_id)}`)
+    apiRequest("/api/auth/recovery", {
+      method: "POST",
+      body: JSON.stringify({ user_id: session.user.user_id }),
+    })
       .then((data) => {
         setQuestions(data.questions);
         setAnswers(data.questions.map(() => ""));
@@ -95,6 +98,10 @@ export default function UserProfile({ session, onLogout }) {
       setMessage({ type: "error", text: "Please satisfy every password requirement" });
       return;
     }
+    const confirmation = needsRecoverySetup
+      ? "Update your recovery questions and change your password? You will need to sign in again."
+      : "Change your password? You will need to sign in again.";
+    if (!window.confirm(confirmation)) return;
     setBusy(true);
     try {
       if (needsRecoverySetup) {
@@ -137,9 +144,9 @@ export default function UserProfile({ session, onLogout }) {
           </dl>
         </Card>
         <Card title="Set a new password" sub={needsRecoverySetup ? "Verify your current password and save three security answers to set a new password." : "Answer your three saved security questions to verify your identity."}>
-          <form className="profile-password-form" onSubmit={changePassword}>
+          <form autoComplete="off" className="profile-password-form" onSubmit={changePassword}>
             {message && <div className={`auth-message ${message.type}`}>{message.text}</div>}
-            {needsRecoverySetup && <AuthField label="Current password"><SecretInput required autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Enter your current password" /></AuthField>}
+            {needsRecoverySetup && <AuthField label="Current password"><SecretInput required autoComplete="off" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Enter your current password" /></AuthField>}
             <div className="profile-security-list">
               {questions.map((question, index) => (
                 <AuthField key={question} label={`${index + 1}. ${question}`}>

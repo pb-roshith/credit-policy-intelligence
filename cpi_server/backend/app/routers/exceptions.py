@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
-from ..schemas import CreateExceptionRequest, ExceptionAction
+from fastapi import APIRouter, Depends, HTTPException, Request
+from ..schemas import AccountIdentifierRequest, CreateExceptionRequest, ExceptionAction
+from ..access_control import has_permission
 from ..security import current_user
 from ..database import db_connection, shared_policy_connection, retry_on_db_conflict, run_db_transaction
 from ..services.assessment_request import normalize_request_id, deal_assessment_context
@@ -30,6 +31,8 @@ def _workflow_for_status(status: str) -> list[dict]:
 
 @router.get("/api/exceptions")
 def exception_registry(status: str | None = None, _: dict = Depends(current_user)):
+    if not has_permission(_, "exceptions.read"):
+        raise HTTPException(403, 'Exception read access is unavailable.')
     from ..services.current_knowledge import bind_current_views
     from ..services.semantic_matching import load_matcher
     fingerprint=load_matcher().fingerprint
@@ -47,7 +50,7 @@ def exception_registry(status: str | None = None, _: dict = Depends(current_user
 
 @router.post("/api/exceptions", status_code=201)
 def create_exception(payload: CreateExceptionRequest, user: dict = Depends(current_user)):
-    if user.get('role') != 'relationship_manager':
+    if not has_permission(user, "exceptions.create"):
         raise HTTPException(403, 'Only relationship managers can create exceptions.')
     if payload.status not in {'Active', 'Pending Approval'}:
         raise HTTPException(403, 'New exceptions must await credit analyst approval.')
@@ -118,11 +121,13 @@ def create_exception(payload: CreateExceptionRequest, user: dict = Depends(curre
 
 @router.delete("/api/exceptions/{exception_id}")
 @retry_on_db_conflict
-def delete_exception(exception_id: str, account_user_id: str | None = None, user: dict = Depends(current_user)):
-    if user.get('role') not in {'relationship_manager', 'credit_analyst'}:
+def delete_exception(exception_id: str, request: Request, payload: AccountIdentifierRequest | None = None, user: dict = Depends(current_user)):
+    if not has_permission(user, "exceptions.delete"):
         raise HTTPException(403, 'Exception workflow access is unavailable.')
-    account = account_user_id or user['user_id']
-    if account != user['user_id'] and user['role'] != 'credit_analyst':
+    if "account_user_id" in request.query_params:
+        raise HTTPException(400, 'Send the account ID in the request body.')
+    account = payload.user_id if payload else user['user_id']
+    if account != user['user_id'] and not has_permission(user, "accounts.cross_account"):
         raise HTTPException(403, 'You can only delete your own exceptions.')
     factory = shared_policy_connection if user['role'] == 'credit_analyst' else db_connection
     with factory() as connection:
@@ -138,11 +143,11 @@ def delete_exception(exception_id: str, account_user_id: str | None = None, user
 @router.post("/api/exceptions/{exception_id}/action")
 @retry_on_db_conflict
 def exception_action(exception_id: str, payload: ExceptionAction, _: dict = Depends(current_user)):
-    if payload.action == 'approve' and _.get('role') != 'credit_analyst':
+    if payload.action == "approve" and not has_permission(_, "exceptions.approve"):
         raise HTTPException(403, 'Only credit analysts can approve exceptions.')
-    if _.get('role') not in {'relationship_manager', 'credit_analyst'}:
+    if not has_permission(_, "exceptions.update"):
         raise HTTPException(403, 'Exception workflow access is unavailable.')
-    if payload.account_user_id and payload.account_user_id != _['user_id'] and _['role'] != 'credit_analyst':
+    if payload.account_user_id and payload.account_user_id != _['user_id'] and not has_permission(_, "accounts.cross_account"):
         raise HTTPException(403, 'You can only update your own exceptions.')
     new_status = {
         "approve": "Remediation",

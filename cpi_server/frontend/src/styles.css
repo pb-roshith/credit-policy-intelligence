@@ -4352,3 +4352,8 @@ tbody tr.selected {
 .graph-matching-outer-chevron { flex-shrink: 0; color: var(--aqua); transition: transform .15s ease; }
 .graph-matching-collapsible[open] > summary .graph-matching-outer-chevron { transform: rotate(180deg); }
 .graph-matching-collapsible:not([open]) > .graph-matching-content { display: none; }
+
+@media print {
+  #root { display: none !important; }
+  body::after { content: "Printing is disabled. Use an approved export where available."; }
+}

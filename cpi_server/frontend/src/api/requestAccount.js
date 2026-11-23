@@ -1,6 +1,6 @@
 export function prepareAccountRequest(path, options = {}) {
   // Keep identical request numbers from different manager accounts distinct.
-  let account;
+  let account = undefined;
   const unqualify = value => {
     if (typeof value !== 'string' || !/^CR-[0-9]+@/.test(value)) return value;
     const split = value.indexOf('@');

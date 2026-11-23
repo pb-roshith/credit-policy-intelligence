@@ -14,7 +14,7 @@ from app.services.semantic_matching import load_matcher
 
 
 def main():
-    root=Path(__file__).resolve().parents[2]
+    root=Path(__file__).resolve().parents[1]
     out=root/'outputs'/'finalization'
     out.mkdir(parents=True,exist_ok=True)
     matcher=load_matcher()

@@ -55,7 +55,9 @@ class APITests(unittest.TestCase):
         doc=upload.json()
         response=self.client.post('/api/risk-knowledge/documents/'+doc['document_id']+'/process')
         self.assertEqual(response.status_code,410)
-        self.assertEqual(self.client.get('/api/risk-knowledge/documents/'+doc['document_id']+'/download').content,text)
+        with patch('app.routers.risk_knowledge.audit_export') as audit:
+            self.assertEqual(self.client.get('/api/risk-knowledge/documents/'+doc['document_id']+'/download').content,text)
+            self.assertEqual(audit.call_args.args[2], 'risk-knowledge-document:' + doc['document_id'])
 
     def test_candidate_approval_gate(self):
         d=self.service.ingest('Ambiguous.txt',b'Bespoke approval is required.','policy')
@@ -89,9 +91,11 @@ class APITests(unittest.TestCase):
     def test_schema_contract_and_export(self):
         schema=self.client.get('/openapi.json').json()
         self.assertIn('/api/risk-knowledge/evaluate',schema['paths'])
-        with patch('app.routers.risk_knowledge.semantic_knowledge',return_value={'rules':[]}) as current:
+        with patch('app.routers.risk_knowledge.semantic_knowledge',return_value={'rules':[]}) as current, \
+             patch('app.routers.risk_knowledge.audit_export') as audit:
             self.assertEqual(self.client.get('/api/risk-knowledge/export/rules').json(),{'rules':[]})
             current.assert_called_once()
+            self.assertEqual(audit.call_args.args[2], 'risk-knowledge:rules')
         self.assertTrue(self.client.get('/api/risk-knowledge/request-fields').json())
 
 

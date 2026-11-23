@@ -2,6 +2,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 MAX_SAFE_MONETARY_AMOUNT = 1_000_000_000_000_000
+USER_ID_PATTERN = r"^[A-Za-z0-9._-]+$"
 
 
 class StrictRequestModel(BaseModel):
@@ -14,21 +15,25 @@ class SecurityAnswer(StrictRequestModel):
 
 
 class RegisterRequest(StrictRequestModel):
-    user_id: str = Field(min_length=3, max_length=64, pattern=r"^[A-Za-z0-9._-]+$")
+    user_id: str = Field(min_length=3, max_length=64, pattern=USER_ID_PATTERN)
     password: str = Field(min_length=1, max_length=128)
     role: Literal["relationship_manager", "credit_analyst"]
     security_answers: list[SecurityAnswer]
 
 
 class LoginRequest(StrictRequestModel):
-    user_id: str
-    password: str
+    user_id: str = Field(min_length=1, max_length=64, pattern=USER_ID_PATTERN)
+    password: str = Field(min_length=1, max_length=128)
 
 
 class ResetPasswordRequest(StrictRequestModel):
-    user_id: str
+    user_id: str = Field(min_length=1, max_length=64, pattern=USER_ID_PATTERN)
     password: str = Field(min_length=1, max_length=128)
     security_answers: list[SecurityAnswer]
+
+
+class AccountIdentifierRequest(StrictRequestModel):
+    user_id: str = Field(min_length=1, max_length=64, pattern=USER_ID_PATTERN)
 
 
 class ConfigureRecoveryRequest(StrictRequestModel):

@@ -4,12 +4,13 @@ import json
 from datetime import date
 from uuid import uuid4
 from fastapi import HTTPException
+from ..access_control import has_permission
 from ..database import shared_policy_connection
 from .inventory_schema import GovernedRuleInput
 
 
 def reviewer(user):
-    if user.get('role') not in ('credit_analyst','admin'):
+    if not has_permission(user, "policy.review"):
         raise HTTPException(403,'A credit analyst or administrator must review rules')
 
 
@@ -170,8 +171,8 @@ def change_status(rule_id,action,comment,user):
                 from ..risk_knowledge.pipeline import refresh_rule_evidence
                 try:
                     refresh_rule_evidence(dict(target),user,shared_policy_connection)
-                except ValueError as error:
-                    raise HTTPException(422,str(error)) from None
+                except ValueError:
+                    raise HTTPException(422, "Check that the rule has valid policy evidence before approving it.") from None
             with shared_policy_connection() as c:
                 refreshed=c.execute('SELECT * FROM policy_rule_versions WHERE id=%s',(rule_id,)).fetchone()
             if refreshed and refreshed['status']=='Approved' and refreshed.get('approved_by')=='system:auto-approval':

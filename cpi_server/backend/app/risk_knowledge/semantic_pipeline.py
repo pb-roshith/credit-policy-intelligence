@@ -2,6 +2,7 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
+import logging
 import re
 from pydantic import ValidationError
 from .repositories import PostgreSQLRepository
@@ -238,10 +239,10 @@ def process_source(policy, version, clauses, repo, *, provider=llm_extract, prog
         from .semantic_scope import enrich_scope
         try:
             record=enrich_scope(repo,record)
-        except Exception:
+        except Exception as error:
             # Rules stay available; missing scope is explicitly unresolved by
             # graph matching and can be retried independently of rule extraction.
-            pass
+            logging.getLogger(__name__).warning("Policy scope enrichment failed (%s)", type(error).__name__)
     approved = sum(r['status'] == 'APPROVED' for r in record['rules'])
     unresolved = len(clauses) - len(record['coverage']) + sum(r['disposition'] == 'UNRESOLVED' for r in record['coverage'])
     unresolved += sum(r['status'] == 'PROPOSED' for r in record['rules'])

@@ -90,6 +90,20 @@ def shared_policy_connection():
     return connection
 
 
+def verify_runtime_database_role():
+    """Reject production credentials that can administer PostgreSQL."""
+    with _connect() as connection:
+        privileged = connection.execute("""
+            SELECT EXISTS (
+                SELECT 1 FROM pg_roles
+                WHERE (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication)
+                  AND pg_has_role(current_user, oid, 'MEMBER')
+            ) AS permitted
+        """).fetchone()["permitted"]
+    if privileged:
+        raise RuntimeError("Production requires a database runtime role without PostgreSQL administration privileges")
+
+
 def _connect():
     return psycopg.connect(
         DATABASE_URL,

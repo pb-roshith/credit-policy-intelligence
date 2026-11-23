@@ -79,7 +79,7 @@ Run/export from `backend`:
 Revalidation performs no LLM calls. It checks already extracted assertions
 against their exact stored sources, preserves human decisions, and records
 resulting automatic approvals in the audit history. Review artifacts and JSON/RDF
-graph snapshots are written to `cpi_server/outputs/extracted-knowledge/` inside `cpi_server`.
+graph snapshots are written to `cpi_server/backend/outputs/extracted-knowledge/` inside `cpi_server`.
 
 The live user-sentence demonstration runs in an isolated temporary SQLite store
 and writes `user-ltv-example.json`. It is explicitly illustrative and never

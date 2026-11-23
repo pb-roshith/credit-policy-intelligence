@@ -8,6 +8,7 @@ from contextvars import copy_context
 from datetime import date
 from difflib import SequenceMatcher
 from uuid import uuid4
+from anyio import CapacityLimiter, to_thread
 from fastapi import HTTPException
 from pydantic import ValidationError
 from app.ai_provider import AIClient as Mistral
@@ -229,6 +230,14 @@ def process_policy(policy_id,user,job_id=None,progress=None,knowledge=None):
             failures=c.execute("SELECT COUNT(*) AS n FROM agent_execution_logs WHERE policy_version_id=%s AND status='Failed' AND (%s::uuid IS NULL OR job_id=%s::uuid)",(version['id'],job_id,job_id)).fetchone()['n']
         definitions=[r['definition'] for r in partial]
         return {'policy_id':policy_id,'policy_name':policy['title'],'status':'Failed','error':str(error) if isinstance(error,ValueError) else type(error).__name__,'clauses_processed':completed_clauses,'clauses_discovered':len(clauses),'rules_proposed':len(partial),'quantitative_rules':sum(d['rule_type']=='quantitative' for d in definitions),'qualitative_rules':sum(d['rule_type']!='quantitative' for d in definitions),'manual_review_rules':sum(bool(d.get('missing_information')) for d in definitions),'missing_thresholds':sum(d.get('threshold_value') is None for d in definitions),'validation_failures':max(1,failed_batches),'validation_attempt_failures':failures,'duplicate_candidates':0}
+
+
+_inventory_job_limiter = CapacityLimiter(1)
+
+
+async def run_background_inventory_job(job_id, user):
+    # Keep bulk extraction off the worker capacity reserved for request handlers.
+    await to_thread.run_sync(run_inventory_job, job_id, user, limiter=_inventory_job_limiter)
 
 
 @account_ai_job

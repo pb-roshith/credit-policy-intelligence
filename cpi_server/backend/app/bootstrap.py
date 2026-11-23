@@ -68,7 +68,7 @@ def ensure_database_exists() -> None:
                     sql.SQL("CREATE DATABASE {}").format(sql.Identifier(target_database))
                 )
             except psycopg.errors.DuplicateDatabase:
-                pass
+                return  # Another startup created the database.
     except psycopg.errors.InsufficientPrivilege as error:
         raise RuntimeError(
             f"Database {target_database!r} does not exist and the PostgreSQL role "
@@ -195,6 +195,21 @@ def _create_public_tables(connection) -> None:
     )
     connection.execute(
         "ALTER TABLE public.sessions ALTER COLUMN csrf_token_hash SET NOT NULL"
+    )
+    connection.execute("""
+        DELETE FROM public.sessions AS session
+        USING (
+            SELECT token_hash, ROW_NUMBER() OVER (
+                PARTITION BY application_id, LOWER(user_id)
+                ORDER BY (expires_at > CURRENT_TIMESTAMP) DESC, created_at DESC, token_hash
+            ) AS position
+            FROM public.sessions
+        ) AS ranked
+        WHERE session.token_hash = ranked.token_hash AND ranked.position > 1
+    """)
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS sessions_application_account_idx "
+        "ON public.sessions (application_id, LOWER(user_id))"
     )
     connection.execute(
         "CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON public.sessions (LOWER(user_id))"

@@ -30,7 +30,7 @@ def main():
     run_inventory_job(str(job['id']), user)
     repo = PostgreSQLRepository(shared_policy_connection, None)
     records = current_records(repo)
-    out = Path(__file__).resolve().parents[2] / 'outputs' / 'extracted-knowledge'
+    out = Path(__file__).resolve().parents[1] / 'outputs' / 'extracted-knowledge'
     out.mkdir(parents=True, exist_ok=True)
     with shared_policy_connection() as c:
         result = c.execute('SELECT * FROM rule_inventory_jobs WHERE id=%s', (job['id'],)).fetchone()

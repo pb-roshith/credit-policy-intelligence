@@ -85,7 +85,7 @@ def main():
     if not report['conforms']:raise ValueError(report['errors'][:3])
     for record in records:
         if record['policy_id'] not in active:save(repo,record,expected_digests[record['id']],ACTOR,'REVALIDATE_EXACT_SOURCE')
-    out=Path(__file__).resolve().parents[2]/'outputs'/'extracted-knowledge'
+    out=Path(__file__).resolve().parents[1]/'outputs'/'extracted-knowledge'
     out.mkdir(parents=True,exist_ok=True)
     summary={'policies':len(records),'extracted_rules':sum(len(r['rules']) for r in records),
         'published_rules':len(approved_rules(records)),'proposed_rules':sum(x['status']=='PROPOSED' for r in records for x in r['rules']),

@@ -1,0 +1,51 @@
+# Include inside nginx's http block. Replace both certificate paths and the intranet hostname.
+# Run the frontend, API, and MCP services on the same host as this gateway.
+ssl_protocols TLSv1.2 TLSv1.3;
+
+server {
+    listen 443 ssl;
+    server_name dossier.example.internal;
+    ssl_certificate certs/dossier-fullchain.pem;
+    ssl_certificate_key certs/dossier-key.pem;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    access_log off;
+
+    location /api/ {
+        client_max_body_size 64m;
+        proxy_pass http://127.0.0.1:8003;
+        proxy_http_version 1.1;
+        proxy_set_header Host dossier.example.internal;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_hide_header Strict-Transport-Security;
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_read_timeout 7500s;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host dossier.example.internal;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+    }
+}
+
+# Use a certificate with 127.0.0.1 in its IP subject alternative names.
+server {
+    listen 127.0.0.1:8444 ssl;
+    server_name 127.0.0.1;
+    ssl_certificate certs/mcp-fullchain.pem;
+    ssl_certificate_key certs/mcp-key.pem;
+    access_log off;
+
+    location / {
+        proxy_pass http://127.0.0.1:8004;
+        proxy_http_version 1.1;
+        proxy_set_header Host 127.0.0.1:8004;
+        proxy_set_header Connection "";
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_read_timeout 600s;
+    }
+}

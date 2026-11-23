@@ -32,7 +32,7 @@ class KnowledgeAutoExporter:
                     self.last_fingerprint = envelope['payload'].get('database_fingerprint')
             except (ValueError, KeyError, OSError):
                 # An invalid/missing prior package is replaced from the database.
-                pass
+                logger.warning("Ignoring unreadable prior knowledge export")
 
     def tick(self):
         """Export a committed snapshot once; retain the previous file on failure."""
@@ -79,6 +79,6 @@ class KnowledgeAutoExporter:
 
 
 def create_auto_exporter():
-    if os.getenv('POLICY_KNOWLEDGE_AUTO_EXPORT', 'true').lower() not in ('true', '1', 'yes'):
+    if os.getenv('POLICY_KNOWLEDGE_AUTO_EXPORT', 'false').lower() not in ('true', '1', 'yes'):
         return None
     return KnowledgeAutoExporter(directory=os.getenv('POLICY_KNOWLEDGE_EXPORT_DIR') or PACKAGE_DIR)

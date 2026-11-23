@@ -123,7 +123,7 @@ def write_markdown(data, path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parents[2] / 'outputs' / 'policy-taxonomy')
+    parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parents[1] / 'outputs' / 'policy-taxonomy')
     args = parser.parse_args()
     schema = PostgreSQLRepository(shared_policy_connection, None).all('taxonomy_concepts')
     data = current_taxonomy(shared_policy_connection, schema)

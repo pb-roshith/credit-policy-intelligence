@@ -22,7 +22,7 @@ def main():
     validation=validate_instance(graph)
     if not validation['conforms']:raise ValueError(validation['errors'][:3])
     active=approved_rules(records)
-    out=Path(__file__).resolve().parents[2]/'outputs'/'extracted-knowledge'
+    out=Path(__file__).resolve().parents[1]/'outputs'/'extracted-knowledge'
     out.mkdir(parents=True,exist_ok=True)
     summary={'policies':len(records),'source_passages':sum(len(r['source_clauses']) for r in records),
         'extracted_rules':sum(len(r['rules']) for r in records),'published_rules':len(active),

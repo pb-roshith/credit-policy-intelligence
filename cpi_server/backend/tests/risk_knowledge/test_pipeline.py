@@ -256,7 +256,7 @@ class ExtractionRouteTests(unittest.TestCase):
         app.include_router(routes.router)
         app.dependency_overrides[routes.current_user]=lambda:{'user_id':'manager','role':'relationship_manager'}
         with patch('app.routers.rules.enqueue_inventory',return_value={'id':'job-1'} ) as enqueue, \
-             patch('app.routers.rules.run_inventory_job') as run,TestClient(app) as client:
+             patch('app.routers.rules.run_background_inventory_job') as run,TestClient(app) as client:
             response=client.post('/api/risk-knowledge/extractions',json={'policy_ids':[7,7,9]})
         self.assertEqual(response.status_code,200)
         enqueue.assert_called_once_with({'user_id':'manager','role':'relationship_manager'},[7,9])

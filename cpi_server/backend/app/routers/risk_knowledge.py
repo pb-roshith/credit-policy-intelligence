@@ -5,14 +5,15 @@ from pathlib import Path
 from threading import RLock
 from typing import Literal
 from xml.etree.ElementTree import ParseError
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
 from pydantic import Field
 from fastapi.responses import FileResponse
 from pypdf.errors import PdfReadError
 from openpyxl.utils.exceptions import InvalidFileException
 from ..config import BASE_DIR
 from ..database import shared_policy_connection
-from ..security import current_user
+from ..access_control import has_permission
+from ..security import audit_export, current_user
 from ..risk_knowledge.catalog import read_catalog, documents_from_catalog, project_catalog
 from ..risk_knowledge.ingestion import MAX_BYTES
 from ..risk_knowledge.models import CreditRequest, Model, Review
@@ -73,7 +74,13 @@ def semantic_policy_representation(policy_id: int):
 
 
 @router.get('/semantic-knowledge/export')
-def export_semantic_knowledge():
+def export_semantic_knowledge(request: Request, user=Depends(current_user)):
+    report = semantic_graph_export()
+    audit_export(request, user, "risk-knowledge:graph")
+    return report
+
+
+def semantic_graph_export():
     from ..risk_knowledge.semantic_pipeline import current_records
     from ..risk_knowledge.semantic_extraction import assemble_graph
     return assemble_graph(current_records(semantic_repository()))
@@ -96,14 +103,14 @@ class SemanticScopeReview(Model):
 
 @router.post('/semantic-policies/{policy_id}/scope')
 def semantic_scope_review(policy_id:int,body:SemanticScopeReview,user=Depends(current_user)):
-    if user['role'] not in ('credit_analyst','admin'):raise HTTPException(403,'A credit analyst or administrator must review scope')
+    if not has_permission(user, "knowledge.review"):raise HTTPException(403,'A credit analyst or administrator must review scope')
     from ..risk_knowledge.semantic_scope import review_scope
     return invoke(lambda:review_scope(semantic_repository(),policy_id,body.expected_digest,body.scope,body.status,user['user_id'],body.notes))
 
 
 @router.post('/semantic-rules/review')
 def semantic_rule_review(body: SemanticReview, user=Depends(current_user)):
-    if user['role'] not in ('credit_analyst','admin'):
+    if not has_permission(user, "knowledge.review"):
         raise HTTPException(403,'A credit analyst or administrator must override extracted knowledge')
     from ..risk_knowledge.semantic_pipeline import review_rule
     return invoke(lambda: review_rule(semantic_repository(),body.rule_id,status=body.status,
@@ -117,17 +124,21 @@ def business_semantic_schema():
 
 
 @router.get('/semantic-model/ontology.ttl')
-def business_semantic_owl():
+def business_semantic_owl(request: Request, user=Depends(current_user)):
     from fastapi.responses import Response
     from ..risk_knowledge.semantic_rdf import ontology_graph
-    return Response(ontology_graph().serialize(format='turtle'), media_type='text/turtle')
+    content = ontology_graph().serialize(format='turtle')
+    audit_export(request, user, "risk-knowledge:owl-ontology")
+    return Response(content, media_type='text/turtle')
 
 
 @router.get('/semantic-model/shapes.ttl')
-def business_semantic_shapes():
+def business_semantic_shapes(request: Request, user=Depends(current_user)):
     from fastapi.responses import Response
     from ..risk_knowledge.semantic_rdf import shapes_graph
-    return Response(shapes_graph().serialize(format='turtle'), media_type='text/turtle')
+    content = shapes_graph().serialize(format='turtle')
+    audit_export(request, user, "risk-knowledge:shacl-shapes")
+    return Response(content, media_type='text/turtle')
 
 
 @router.get('/semantic-model/example')
@@ -182,12 +193,14 @@ def invoke(operation):
             return operation()
     except KeyError:
         raise HTTPException(404, 'Risk knowledge object not found') from None
-    except (ValueError, PdfReadError, ParseError, InvalidFileException) as error:
-        raise HTTPException(422, str(error)) from None
+    except (PdfReadError, ParseError, InvalidFileException):
+        raise HTTPException(422, "The document could not be read. Check the file format and upload it again.") from None
+    except ValueError:
+        raise HTTPException(422, "Check the submitted risk knowledge data and try again.") from None
 
 
 def reviewer(user=Depends(current_user)):
-    if user['role'] not in ('credit_analyst', 'admin'):
+    if not has_permission(user, "knowledge.review"):
         raise HTTPException(403, 'A credit analyst or administrator must review or change risk knowledge')
     return user
 
@@ -230,8 +243,8 @@ def extract_policies(body: PolicyExtractionInput, background: BackgroundTasks, u
 @router.post('/extractions/{job_id}/retry')
 def retry_extraction(job_id: str, background: BackgroundTasks, user=Depends(current_user)):
     from uuid import UUID
-    from ..services.rule_extraction import run_inventory_job
-    if user['role'] not in ('relationship_manager','credit_analyst','admin'):
+    from ..services.rule_extraction import run_background_inventory_job
+    if not has_permission(user, "policy.extraction.execute"):
         raise HTTPException(403,'Rule extraction is unavailable for this role')
     try:
         UUID(job_id)
@@ -250,12 +263,12 @@ def retry_extraction(job_id: str, background: BackgroundTasks, user=Depends(curr
         retryable=job['status'] in ('Failed','Completed with errors') or (job['status']=='Completed' and incomplete)
         if not retryable or not report.get('pipeline'):
             raise HTTPException(409,'Only unsuccessful Risk Knowledge jobs can be retried')
-        if user['role']=='relationship_manager' and job['created_by']!=user['user_id']:
+        if not has_permission(user, "knowledge.review") and job["created_by"] != user["user_id"]:
             raise HTTPException(403,'You can retry your own extraction jobs')
         if c.execute("SELECT 1 FROM rule_inventory_jobs WHERE status IN ('Queued','Running')").fetchone():
             raise HTTPException(409,'An extraction is already running')
         job=c.execute("UPDATE rule_inventory_jobs SET status='Queued',error=NULL,finished_at=NULL,heartbeat_at=CURRENT_TIMESTAMP WHERE id=%s RETURNING *",(job_id,)).fetchone()
-    background.add_task(run_inventory_job,job_id,user)
+    background.add_task(run_background_inventory_job,job_id,user)
     return job
 
 
@@ -306,7 +319,10 @@ def fields(service=Depends(get_service)):
 
 @router.post('/assets/{kind}')
 async def upload(kind: Literal['schema','reference','policy'], file: UploadFile=File(), user=Depends(reviewer), service=Depends(get_service)):
-    blob = await file.read(MAX_BYTES + 1)
+    try:
+        blob = await file.read(MAX_BYTES + 1)
+    finally:
+        await file.close()
     def save():
         document = service.ingest(file.filename or 'upload', blob, kind)
         service.refresh()
@@ -331,7 +347,7 @@ def document(document_id: str, service=Depends(get_service)):
 
 
 @router.get('/documents/{document_id}/download')
-def download(document_id: str, service=Depends(get_service)):
+def download(document_id: str, request: Request, service=Depends(get_service), user=Depends(current_user)):
     doc = lookup_document(document_id, service)
     registered = doc['metadata'].get('registered_path')
     path = Path(registered).resolve() if registered else (service.upload_dir / Path(doc['metadata']['stored_file']).name).resolve()
@@ -339,6 +355,7 @@ def download(document_id: str, service=Depends(get_service)):
         # Isolated dependency-overridden tests use their own upload directory.
         if not path.is_relative_to(service.upload_dir.resolve()) or not path.is_file():
             raise HTTPException(404, 'Original source file is unavailable')
+    audit_export(request, user, f"risk-knowledge-document:{document_id}")
     return FileResponse(path, filename=doc['metadata'].get('original_file_name') or doc['document_name'])
 
 
@@ -409,9 +426,16 @@ def conflict_explanation(finding_id: str, service=Depends(get_service)):
 
 
 @router.get('/export/{kind}')
-def export(kind: Literal['rules','taxonomy','ontology','graph','audit'], service=Depends(get_service)):
-    if kind == 'graph': return export_semantic_knowledge()
-    if kind == 'rules': return semantic_knowledge()
-    if kind == 'ontology': return business_semantic_model()
-    if kind == 'taxonomy': return policy_classification_taxonomy()
-    raise HTTPException(410, 'Earlier audit records remain archived. Current rule reviews retain their own audit history.')
+def export(kind: Literal['rules','taxonomy','ontology','schema','example','graph','audit'], request: Request, user=Depends(current_user)):
+    if kind == 'audit':
+        raise HTTPException(410, 'Earlier audit records remain archived. Current rule reviews retain their own audit history.')
+    report = {
+        'graph': semantic_graph_export,
+        'rules': semantic_knowledge,
+        'ontology': business_semantic_model,
+        'schema': business_semantic_schema,
+        'example': business_semantic_example,
+        'taxonomy': policy_classification_taxonomy,
+    }[kind]()
+    audit_export(request, user, f"risk-knowledge:{kind}")
+    return report

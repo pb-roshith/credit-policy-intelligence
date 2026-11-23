@@ -137,8 +137,15 @@ export default function Dashboard({ session }) {
     }
   }
 
-  function exportReport() {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  async function exportReport() {
+    let report = null;
+    try {
+      report = await apiRequest("/api/dashboard/export", { method: "POST" });
+    } catch (requestError) {
+      setError(requestError.message);
+      return;
+    }
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -185,7 +192,7 @@ export default function Dashboard({ session }) {
             </div>
             {chatError && <p role="alert" className="dashboard-empty">{chatError}</p>}
           </div>
-          <form className="chat-input" onSubmit={ask}>
+          <form autoComplete="off" className="chat-input" onSubmit={ask}>
             <input value={question} onChange={event => setQuestion(event.target.value)} maxLength={2000} disabled={asking} autoComplete="off" placeholder="Ask about your portfolio..." aria-label="Ask Portfolio Insights" />
             <button type="submit" disabled={asking || loading || !!error || question.trim().length < 2} aria-label="Send portfolio question"><Send size={16} /></button>
           </form>

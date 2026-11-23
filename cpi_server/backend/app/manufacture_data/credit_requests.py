@@ -22,7 +22,8 @@ def manufacture_assessment_data(payload: dict, user: dict = Depends(current_user
     proposal,_,_=GenerativeComplianceReviewAgent._context(number)
     rules=active_rule_candidates(date.today());sync_registry(rules)
     try:store_record(synthetic_record(proposal,rules,payload.get('scenario','compliant')))
-    except ValueError as error:raise HTTPException(422,str(error)) from error
+    except ValueError:
+        raise HTTPException(422, "Check the selected manufacturing scenario and credit request data.") from None
     return {'credit_request_number':number,'message':'Stored Manufactured Demonstration Data in the canonical schema. Run a new assessment to use it.'}
 
 EXCEPTION_TYPES = [

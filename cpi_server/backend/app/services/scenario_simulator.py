@@ -2,7 +2,7 @@ import json
 from fastapi import HTTPException
 from app.ai_provider import AIClient as Mistral
 
-from ..config import MISTRAL_API_KEY, MISTRAL_POLICY_MODEL
+from ..config import AI_PROVIDER, MISTRAL_API_KEY, MISTRAL_POLICY_MODEL
 from ..database import shared_policy_connection
 from ..manufacture_data.policy_generation_service import _json_object, _response_text
 from ..telemetry import observe_ai
@@ -94,7 +94,7 @@ def recommended_case(inputs: dict) -> tuple[dict, dict]:
 class ScenarioRecommendationAgent:
     def _agent_id(self) -> str:
         if not MISTRAL_API_KEY:
-            raise HTTPException(status_code=503, detail="MISTRAL_API_KEY is not configured")
+            raise HTTPException(status_code=503, detail=f"{AI_PROVIDER.upper()}_API_KEY is not configured")
         with shared_policy_connection() as connection:
             connection.execute("SELECT pg_advisory_xact_lock(hashtext('scenario_recommendation_agent'))")
             row = connection.execute(
@@ -159,5 +159,5 @@ class ScenarioRecommendationAgent:
         except Exception as error:
             raise HTTPException(
                 status_code=502,
-                detail="Mistral could not generate valid scenario recommendations. Please try again.",
+                detail=f"{AI_PROVIDER.capitalize()} could not generate valid scenario recommendations. Please try again.",
             ) from error

@@ -45,6 +45,8 @@ import { API, apiRequest } from "../api/client";
 import { META, POLICY_TYPE_ORDER, policyDisplayName } from "../config";
 import { AuthField, Badge, Bars, Card, DataTable, DEFAULT_PASSWORD_POLICY, Heading, Insight, LineChart, Metric, NO_CLIPBOARD, PasswordPolicy, SecretInput, money, passwordRules } from "../components/ui";
 
+const USER_ID_PATTERN = String.raw`[A-Za-z0-9._\x2d]+`;
+
 export default function AuthScreen({ onAuthenticated, initialMessage = "", applicationName="Credit Policy Intelligence", tagline="Decisions backed by policy, insight, and control." }) {
   const [view, setView] = useState("login");
   const [busy, setBusy] = useState(false);
@@ -139,7 +141,10 @@ export default function AuthScreen({ onAuthenticated, initialMessage = "", appli
     setBusy(true);
     setMessage(null);
     try {
-      const data = await apiRequest(`/api/auth/recovery/${encodeURIComponent(reset.user_id)}`);
+      const data = await apiRequest("/api/auth/recovery", {
+        method: "POST",
+        body: JSON.stringify({ user_id: reset.user_id.trim() }),
+      });
       setRecoveryQuestions(data.questions);
       setReset((current) => ({ ...current, answers: data.questions.map(() => "") }));
     } catch (error) {
@@ -153,6 +158,7 @@ export default function AuthScreen({ onAuthenticated, initialMessage = "", appli
     setMessage(null);
     if (reset.password !== reset.confirm) return setMessage({ type: "error", text: "Passwords do not match" });
     if (!passwordRules(passwordPolicy, reset.user_id).every(([, test]) => test(reset.password))) return setMessage({ type: "error", text: "Please satisfy every password requirement" });
+    if (!window.confirm("Reset your password and end existing sessions?")) return;
     setBusy(true);
     try {
       const data = await apiRequest("/api/auth/reset-password", {
@@ -193,9 +199,9 @@ export default function AuthScreen({ onAuthenticated, initialMessage = "", appli
           {message && <div className={`auth-message ${message.type}`}>{message.text}</div>}
 
           {view === "login" && (
-            <form onSubmit={submitLogin} className="auth-form">
-              <AuthField label="User ID"><input {...NO_CLIPBOARD} autoFocus required autoComplete="off" value={login.user_id} onChange={(e) => setLogin({ ...login, user_id: e.target.value })} placeholder="Enter your user ID" /></AuthField>
-              <AuthField label="Password"><SecretInput required autoComplete="off" value={login.password} onChange={(e) => setLogin({ ...login, password: e.target.value })} placeholder="Enter your password" /></AuthField>
+            <form autoComplete="off" onSubmit={submitLogin} className="auth-form">
+              <AuthField label="User ID"><input {...NO_CLIPBOARD} autoFocus required autoComplete="off" maxLength={64} pattern={USER_ID_PATTERN} value={login.user_id} onChange={(e) => setLogin({ ...login, user_id: e.target.value })} placeholder="Enter your user ID" /></AuthField>
+              <AuthField label="Password"><SecretInput required autoComplete="off" maxLength={128} value={login.password} onChange={(e) => setLogin({ ...login, password: e.target.value })} placeholder="Enter your password" /></AuthField>
               <button className="auth-link forgot-link" type="button" onClick={() => changeView("forgot")}>Forgot password?</button>
               <button className="btn primary auth-submit" disabled={busy}>{busy ? "Signing in..." : "Sign in"}<ArrowRight size={16} /></button>
               <div className="auth-divider"><span>New to the platform?</span></div>
@@ -204,9 +210,9 @@ export default function AuthScreen({ onAuthenticated, initialMessage = "", appli
           )}
 
           {view === "register" && (
-            <form onSubmit={submitRegistration} className="auth-form">
+            <form autoComplete="off" onSubmit={submitRegistration} className="auth-form">
               <div className="auth-grid">
-                <AuthField label="User ID"><input {...NO_CLIPBOARD} required autoComplete="off" minLength="3" maxLength="64" value={registration.user_id} onChange={(e) => setRegistration({ ...registration, user_id: e.target.value })} placeholder="Choose a unique user ID (no spaces)" /></AuthField>
+                <AuthField label="User ID"><input {...NO_CLIPBOARD} required autoComplete="off" minLength="3" maxLength="64" pattern={USER_ID_PATTERN} value={registration.user_id} onChange={(e) => setRegistration({ ...registration, user_id: e.target.value })} placeholder="Choose a unique user ID (no spaces)" /></AuthField>
                 <AuthField label="Role"><select required value={registration.role} onChange={(e) => setRegistration({ ...registration, role: e.target.value })}><option value="relationship_manager">Relationship Manager</option><option value="credit_analyst">Credit Analyst</option></select></AuthField>
                 <AuthField label="Password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={registration.password} onChange={(e) => setRegistration({ ...registration, password: e.target.value })} placeholder="Create a password" /></AuthField>
                 <AuthField label="Confirm password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={registration.confirm} onChange={(e) => setRegistration({ ...registration, confirm: e.target.value })} placeholder="Re-enter your password" /></AuthField>
@@ -229,8 +235,8 @@ export default function AuthScreen({ onAuthenticated, initialMessage = "", appli
           )}
 
           {view === "forgot" && (
-            <form onSubmit={recoveryQuestions.length ? submitReset : loadRecoveryQuestions} className="auth-form">
-              <AuthField label="User ID"><input {...NO_CLIPBOARD} required autoComplete="off" disabled={recoveryQuestions.length > 0} value={reset.user_id} onChange={(e) => setReset({ ...reset, user_id: e.target.value })} placeholder="Enter your user ID" /></AuthField>
+            <form autoComplete="off" onSubmit={recoveryQuestions.length ? submitReset : loadRecoveryQuestions} className="auth-form">
+              <AuthField label="User ID"><input {...NO_CLIPBOARD} required autoComplete="off" maxLength={64} pattern={USER_ID_PATTERN} disabled={recoveryQuestions.length > 0} value={reset.user_id} onChange={(e) => setReset({ ...reset, user_id: e.target.value })} placeholder="Enter your user ID" /></AuthField>
               {recoveryQuestions.map((question, index) => <AuthField label={question} key={question}><SecretInput required autoComplete="off" value={reset.answers[index] || ""} onChange={(e) => setReset({ ...reset, answers: reset.answers.map((answer, i) => i === index ? e.target.value : answer) })} placeholder="Your answer" /></AuthField>)}
               {recoveryQuestions.length > 0 && <><AuthField label="New password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={reset.password} onChange={(e) => setReset({ ...reset, password: e.target.value })} /></AuthField><AuthField label="Confirm new password"><SecretInput required maxLength={passwordPolicy.maximum_length} autoComplete="off" value={reset.confirm} onChange={(e) => setReset({ ...reset, confirm: e.target.value })} /></AuthField><PasswordPolicy password={reset.password} userId={reset.user_id} policy={passwordPolicy} /></>}
               <button className="btn primary auth-submit" disabled={busy}>{busy ? "Please wait..." : recoveryQuestions.length ? "Reset password & unlock" : "Continue"}</button>

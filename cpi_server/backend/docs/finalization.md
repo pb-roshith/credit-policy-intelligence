@@ -42,9 +42,9 @@ The spreadsheet remains a source reference dictionary. Taxonomy suggestions do n
 
 ## Verification
 
-`cpi_server/outputs/finalization/consistency-report.json` records 41 read-only corpus checks, including every policy's expandable rule view, source references, graph/schema conformance, and equality between published library rules and graph rule IDs. The release manifest hashes the refreshed taxonomy, ontology and populated graph artifacts.
+`cpi_server/backend/outputs/finalization/consistency-report.json` records 41 read-only corpus checks, including every policy's expandable rule view, source references, graph/schema conformance, and equality between published library rules and graph rule IDs. The release manifest hashes the refreshed taxonomy, ontology and populated graph artifacts.
 
-The graph and ontology exports were regenerated from existing records without extracting policy text again. Superseded demonstration files, retry checkpoints and ontology packages were moved to `cpi_server/outputs/archive/superseded-artifacts`. No policy source, historical rule or account audit record was deleted.
+The graph and ontology exports were regenerated from existing records without extracting policy text again. Superseded demonstration files, retry checkpoints and ontology packages were moved to `cpi_server/backend/outputs/archive/superseded-artifacts`. No policy source, historical rule or account audit record was deleted.
 
 Regression validation: backend suite ran 544 tests successfully (28 skipped); frontend suite passed 57 tests; Vite production build passed. JSON Schema, RDF/Turtle, SHACL positive validation and a negative incompatible-unit case passed. The 41 corpus consistency checks all passed. Account exception creation/isolation/analyst-approval integration uses rolled-back writes and passed. No live LLM extraction was run during validation.
 
@@ -60,4 +60,4 @@ Control generation is append-only. Each submission adds 1-5 controls per policy,
 
 ## Dedicated Data Manufacturing application
 
-Data Manufacturing now lives in `dm_server/frontend` with its own API entry point in `dm_server/backend`. Open UI port 5174 and API port 8005. CPI retains its other pages on 5173/8002 and no longer mounts generation endpoints or navigation. Common identity, authorization, data services, login UI and styles are reused, with separate application-scoped sessions and cookies. The shared store preserves generated-data availability in CPI. Setup and verification are documented in `dm_server/run.md` at the workspace root.
+Data Manufacturing now lives in `dm_server/frontend` with its own API entry point in `dm_server/backend`. Open UI port 5174 and API port 8005. CPI retains its other pages on 5173/8002 and no longer mounts generation endpoints or navigation. Common identity, authorization, data services, login UI and styles are reused, with separate application-scoped sessions and cookies. The shared store preserves generated-data availability in CPI. Setup and verification are documented in the [workspace run guide](../../../run.md#data-manufacturing).

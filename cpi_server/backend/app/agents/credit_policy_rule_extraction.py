@@ -35,7 +35,8 @@ def resolve_clause(rule,clauses):
     matches=[]
     for clause in candidates:
         try:matches.append((clause,source_span(rule.source_excerpt,clause['source_excerpt'])))
-        except SourceValidationError:pass
+        except SourceValidationError:
+            continue
     if len(matches)>1:
         matches=[item for item in matches if item[0].get('section_heading')==rule.source_section and item[0].get('page_number')==rule.source_page]
     if len(matches)!=1:raise SourceValidationError('Rule does not identify one exact supplied source span')

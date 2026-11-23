@@ -1,4 +1,4 @@
-"""Load the shared AI provider housed in cd_cpi_server."""
+"""Load the shared AI provider housed in the Dossier backend."""
 import importlib.util
 from pathlib import Path
 import sys
@@ -6,7 +6,8 @@ import sys
 _name = "credit_ai_runtime"
 if _name not in sys.modules:
     _path = next(candidate for parent in Path(__file__).resolve().parents
-                 for candidate in (parent / "ai_runtime.py", parent / "cd_cpi_server" / "ai_runtime.py")
+                 for candidate in (parent / "ai_runtime.py", parent / "backend" / "ai_runtime.py",
+                                   parent / "cd_cpi_server" / "backend" / "ai_runtime.py")
                  if candidate.is_file())
     _spec = importlib.util.spec_from_file_location(_name, _path)
     _module = importlib.util.module_from_spec(_spec)

@@ -1,9 +1,9 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-if not exist "cd_cpi_server\credit_dossier_backend\.venv\Scripts\python.exe" goto missing
+if not exist "cd_cpi_server\backend\.venv\Scripts\python.exe" goto missing
 if not exist "cpi_server\backend\.venv\Scripts\python.exe" goto missing
-if not exist "cd_cpi_server\credit_dossier_frontend\node_modules" goto missing
+if not exist "cd_cpi_server\frontend\node_modules" goto missing
 if not exist "cpi_server\frontend\node_modules" goto missing
 if not exist "dm_server\frontend\node_modules" goto missing
 set "DM_PYTHON=..\..\cpi_server\backend\.venv\Scripts\python.exe"
@@ -13,9 +13,9 @@ if errorlevel 1 goto missing
 where wt.exe >nul 2>&1
 if errorlevel 1 goto terminal_missing
 wt.exe -w new ^
- new-tab --title "Dossier MCP - 8004" --suppressApplicationTitle -d "%~dp0cd_cpi_server\credit_dossier_mcp" cmd.exe /k "..\credit_dossier_backend\.venv\Scripts\python.exe server.py" ; ^
- new-tab --title "Dossier Backend - 8003" --suppressApplicationTitle -d "%~dp0cd_cpi_server\credit_dossier_backend" cmd.exe /k ".venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8003" ; ^
- new-tab --title "Dossier Frontend - 8081" --suppressApplicationTitle -d "%~dp0cd_cpi_server\credit_dossier_frontend" cmd.exe /k "npm.cmd run dev" ; ^
+ new-tab --title "Dossier MCP - 8004" --suppressApplicationTitle -d "%~dp0cd_cpi_server\mcp" cmd.exe /k "..\backend\.venv\Scripts\python.exe server.py" ; ^
+ new-tab --title "Dossier Backend - 8003" --suppressApplicationTitle -d "%~dp0cd_cpi_server\backend" cmd.exe /k ".venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8003" ; ^
+ new-tab --title "Dossier Frontend - 8081" --suppressApplicationTitle -d "%~dp0cd_cpi_server\frontend" cmd.exe /k "npm.cmd run dev" ; ^
  new-tab --title "CPI Backend - 8002" --suppressApplicationTitle -d "%~dp0cpi_server\backend" cmd.exe /k ".venv\Scripts\python.exe -m uvicorn main:app --reload --host 127.0.0.1 --port 8002" ; ^
  new-tab --title "CPI Frontend - 5173" --suppressApplicationTitle -d "%~dp0cpi_server\frontend" cmd.exe /k "npm.cmd run dev" ; ^
  new-tab --title "DM Backend - 8005" --suppressApplicationTitle -d "%~dp0dm_server\backend" cmd.exe /k "%DM_PYTHON% -m uvicorn main:app --reload --reload-dir . --reload-dir ..\..\cpi_server\backend\app --host 127.0.0.1 --port 8005" ; ^
@@ -36,6 +36,6 @@ echo Windows Terminal could not open the server tabs. Check that it is installed
 pause
 exit /b 1
 :missing
-echo Dependencies are missing. Follow cd_cpi_server\run.md cpi_server\run.md and dm_server\run.md first.
+echo Dependencies are missing. Follow the setup instructions in the root run.md first.
 pause
 exit /b 1

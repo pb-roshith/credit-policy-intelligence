@@ -19,7 +19,7 @@ Generate the portable, validated package from `backend`:
 .venv/Scripts/python.exe scripts/export_semantic_model.py
 ```
 
-The files are written to `cpi_server/outputs/ontology/` inside `cpi_server`. The package
+The files are written to `cpi_server/backend/outputs/ontology/` inside `cpi_server`. The package
 includes the semantic contract JSON, JSON Schema 2020-12, ontology Turtle,
 SHACL Turtle, illustrative JSON/RDF instances, a full dictionary/guide,
 validation results and checksum manifest, bundled in a ZIP archive.
@@ -52,7 +52,7 @@ example isolation. RDF consumers use SHACL-SPARQL with inference disabled as
 explained in the generated guide. OWL declarations alone are not validation.
 
 Source-backed population is provided by `semantic_pipeline.py` and exported separately
-under `cpi_server/outputs/extracted-knowledge`. Schema validation and business review
+under `cpi_server/backend/outputs/extracted-knowledge`. Schema validation and business review
 remain separate operations. Schema validity does not grant business approval,
 prove correct interpretation of a source, or make an assertion executable.
 

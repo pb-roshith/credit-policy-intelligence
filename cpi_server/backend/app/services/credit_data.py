@@ -1,7 +1,7 @@
 """Canonical, evidence-backed facts. Policy definitions are never modified here."""
 from copy import deepcopy
 from datetime import date, datetime, timezone
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import calendar
 import json
 import math
@@ -366,9 +366,10 @@ def resolve_actual(rule, record, *, entity_id=None, period=None, as_of=None, tax
 
 def load_record(request_id):
     from ..database import db_connection
+    from ..data_encryption import decode_record
     with db_connection() as c:
         row = c.execute('SELECT data,revision FROM credit_data_records WHERE request_id=%s', (request_id,)).fetchone()
-    return {**row['data'], 'revision': row['revision']} if row else None
+    return {**decode_record(row['data']), 'revision': row['revision']} if row else None
 
 
 def project_record(record):
@@ -387,12 +388,18 @@ def project_record(record):
 def validate_record(record):
     if not isinstance(record.get('request_id'), str) or not isinstance(record.get('entities'), dict): raise ValueError('Request ID and entities required')
     for domain, entities in record['entities'].items():
+        if not isinstance(entities, list):
+            raise ValueError('Entity groups must be lists')
         ids = set()
         for entity in entities:
+            if not isinstance(entity, dict) or not isinstance(entity.get('attributes'), dict):
+                raise ValueError('Entity attributes must be an object')
             identity = (entity['entity_id'], entity.get('period_end'))
             if identity in ids: raise ValueError('Duplicate entity/period')
             ids.add(identity)
             for key, item in entity['attributes'].items():
+                if not isinstance(item, dict) or not isinstance(item.get('provenance'), dict):
+                    raise ValueError('Attribute provenance must be an object')
                 p = item['provenance']; name = domain+'.'+key
                 required_provenance = {'request_id','attribute_name','value','unit','source_type','source_identifier',
                                        'source_document_id','source_page','source_section','source_reference','extraction_method',
@@ -408,26 +415,39 @@ def validate_record(record):
                 date.fromisoformat(item['as_of_date'])
                 dtype, _ = field_spec(name)
                 if item['value'] is not None and dtype in ('number', 'integer'):
-                    if isinstance(item['value'], bool) or not Decimal(str(item['value'])).is_finite(): raise ValueError('Invalid number')
-                    if dtype=='integer' and Decimal(str(item['value'])) != Decimal(str(item['value'])).to_integral_value(): raise ValueError('Invalid integer')
+                    try:
+                        number = Decimal(str(item['value']))
+                    except InvalidOperation as error:
+                        raise ValueError('Invalid number') from error
+                    if not number.is_finite(): raise ValueError('Invalid number')
+                    if dtype == 'integer' and number != number.to_integral_value(): raise ValueError('Invalid integer')
                 if item['value'] is not None and dtype=='string' and not isinstance(item['value'],str): raise ValueError('Invalid string')
                 if item['value'] is not None and dtype=='boolean' and not isinstance(item['value'],bool): raise ValueError('Invalid boolean')
                 if item['value'] is not None and dtype=='object' and not isinstance(item['value'],(dict,list)): raise ValueError('Invalid structured value')
     return record
 
 
+class CreditDataRevisionConflict(ValueError):
+    pass
+
+
 def store_record(record, expected_revision=None, *, connection=None):
     from contextlib import nullcontext
     from ..database import db_connection
+    from ..data_encryption import decode_record, encode_record
     validate_record(record)
+    encoded = encode_record(record)
     with (nullcontext(connection) if connection is not None else db_connection()) as c:
         current = c.execute('SELECT revision FROM credit_data_records WHERE request_id=%s FOR UPDATE', (record['request_id'],)).fetchone()
-        if expected_revision is not None and (current['revision'] if current else 0) != expected_revision: raise ValueError('Credit data revision changed')
+        if expected_revision is not None and (current['revision'] if current else 0) != expected_revision:
+            raise CreditDataRevisionConflict('Credit data revision changed')
         saved=c.execute('''INSERT INTO credit_data_records(request_id,data) VALUES (%s,%s::jsonb)
             ON CONFLICT(user_id,request_id) DO UPDATE SET data=excluded.data,revision=credit_data_records.revision+1,updated_at=now()
-            WHERE %s::integer IS NULL OR credit_data_records.revision=%s RETURNING revision''',
-                  (record['request_id'], json.dumps(record, default=str),expected_revision,expected_revision)).fetchone()
-        if saved is None: raise ValueError('Credit data revision changed')
+            WHERE %s::integer IS NULL OR credit_data_records.revision=%s RETURNING data,revision''',
+                  (record['request_id'], encoded, expected_revision, expected_revision)).fetchone()
+        if saved is None:
+            raise CreditDataRevisionConflict('Credit data revision changed')
+        return {**decode_record(saved['data']), 'revision': saved['revision']}
 
 
 def synthetic_record(proposal, rules, scenario='compliant', as_of=None):

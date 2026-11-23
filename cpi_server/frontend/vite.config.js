@@ -25,6 +25,7 @@ export default defineConfig(({ command, isPreview }) => {
 
   return {
     cacheDir: "node_modules/.vite-cpi-dev",
+    build: { minify: false, cssMinify: false },
     plugins: [
       react(),
       {

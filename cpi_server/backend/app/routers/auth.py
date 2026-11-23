@@ -4,8 +4,8 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from ..config import ADMIN_PASSWORD, ADMIN_USER_ID, SECURITY_QUESTIONS, SESSION_COOKIE_SECURE
 from ..database import db_connection
-from ..schemas import LoginRequest, PasswordPolicyRequest, RegisterRequest, ResetPasswordRequest
-from ..security import create_session, current_admin, current_user, get_password_policy, public_user, resolve_session, revoke_session, revoke_user_sessions, write_admin_log, write_user_log
+from ..schemas import AccountIdentifierRequest, LoginRequest, PasswordPolicyRequest, RegisterRequest, ResetPasswordRequest
+from ..security import create_session, current_admin, current_user, get_password_policy, public_user, resolve_session, revoke_session, revoke_user_sessions, sensitive_admin, sensitive_user, write_admin_log, write_user_log
 
 router = APIRouter()
 
@@ -14,7 +14,7 @@ from ..schemas import ConfigureRecoveryRequest
 
 
 @router.post('/api/auth/profile/security-questions')
-def configure_profile_recovery(payload: ConfigureRecoveryRequest, user: dict = Depends(current_user)):
+def configure_profile_recovery(payload: ConfigureRecoveryRequest, user: dict = Depends(sensitive_user)):
     from ..services.dossier_identity import identity_call
     return identity_call(user.get('dossier_user_id') or user['user_id'], {
         'current_password': payload.current_password,
@@ -54,8 +54,8 @@ def public_password_policy():
 
 
 @router.get("/api/auth/me")
-def authenticated_user(user: dict = Depends(current_user)):
-    return {"user": user}
+def authenticated_user(request: Request, user: dict = Depends(current_user)):
+    return {"user": user, "expires_at": request.state.session_expires_at}
 
 
 @router.post("/api/auth/logout")
@@ -94,7 +94,7 @@ def register(payload: RegisterRequest, request: Request):
 @router.post("/api/auth/login")
 def login(payload: LoginRequest, request: Request, response: Response):
     if hmac.compare_digest(payload.user_id.casefold(), ADMIN_USER_ID.casefold()):
-        if not hmac.compare_digest(payload.password, ADMIN_PASSWORD):
+        if not ADMIN_PASSWORD or not hmac.compare_digest(payload.password.encode(), ADMIN_PASSWORD.encode()):
             write_admin_log(ADMIN_USER_ID, "ADMIN_LOGIN_FAILED", ADMIN_USER_ID,
                             "Invalid credentials", source_ip(request),
                             "error", "failure", "warning", "INVALID_CREDENTIALS")
@@ -118,24 +118,30 @@ def login(payload: LoginRequest, request: Request, response: Response):
     raise HTTPException(401, 'Invalid user ID or password')
 
 
-@router.get("/api/auth/recovery/{user_id}")
-def recovery_questions(user_id: str):
+@router.post("/api/auth/recovery")
+def recovery_questions(payload: AccountIdentifierRequest):
     from ..services.dossier_identity import identity_call
-    return identity_call(user_id, {'user_id':user_id.strip().lower()}, 'questions')
+    user_id = payload.user_id.lower()
+    return identity_call(user_id, {'user_id': user_id}, 'questions')
 
 
 @router.post('/api/auth/reset-password')
 def reset_password(payload: ResetPasswordRequest, request: Request):
     from ..services.dossier_identity import identity_call
+    request.state.password_reset_user_id = payload.user_id
     result = identity_call(payload.user_id, {
         'user_id':payload.user_id.strip().lower(), 'new_password':payload.password,
         'confirm_password':payload.password,
         'security_questions':[entry.model_dump() for entry in payload.security_answers],
     }, 'reset-password')
-    with db_connection() as connection:
-        connection.execute('UPDATE public.users SET failed_attempts=0,locked=false WHERE LOWER(user_id)=LOWER(%s)', (payload.user_id,))
-    revoke_user_sessions(payload.user_id)
-    write_user_log(payload.user_id, 'PASSWORD_RESET', payload.user_id, 'Shared password reset; sessions invalidated in both applications', source_ip(request))
+    request.state.password_reset_completed = True
+    try:
+        with db_connection() as connection:
+            connection.execute('UPDATE public.users SET failed_attempts=0,locked=false WHERE LOWER(user_id)=LOWER(%s)', (payload.user_id,))
+        revoke_user_sessions(payload.user_id)
+    finally:
+        write_user_log(payload.user_id, 'PASSWORD_RESET', payload.user_id,
+                       'Shared password reset succeeded', source_ip(request))
     return result
 
 
@@ -153,30 +159,36 @@ def admin_password_policy(_: dict = Depends(current_admin)):
 
 
 @router.put("/api/admin/password-policy")
-def update_password_policy(payload: PasswordPolicyRequest, request: Request, admin: dict = Depends(current_admin)):
+def update_password_policy(payload: PasswordPolicyRequest, request: Request, admin: dict = Depends(sensitive_admin)):
     if payload.minimum_length > payload.maximum_length:
         raise HTTPException(status_code=422, detail="Minimum length cannot exceed maximum length")
     required_characters = payload.minimum_uppercase + payload.minimum_lowercase + payload.minimum_digits + payload.minimum_special
     if required_characters > payload.maximum_length:
         raise HTTPException(status_code=422, detail="Character requirements cannot exceed the maximum password length")
     from ..services.dossier_identity import identity_call
-    identity_call(admin['user_id'], {
+    requested_policy = {
         'min_length':payload.minimum_length,'max_length':payload.maximum_length,
         'min_uppercase':payload.minimum_uppercase,'min_lowercase':payload.minimum_lowercase,
         'min_digits':payload.minimum_digits,'min_special':payload.minimum_special,
-    }, 'password-policy')
+    }
+    confirmed_policy = identity_call(admin['user_id'], requested_policy, 'password-policy')
+    if any(confirmed_policy.get(key) != value for key, value in requested_policy.items()):
+        raise HTTPException(502, "The shared service did not confirm the requested password policy")
     with db_connection() as connection:
-        connection.execute("""
+        saved = connection.execute("""
             UPDATE public.password_policy SET
                 minimum_length = %s, maximum_length = %s, minimum_uppercase = %s,
                 minimum_lowercase = %s, minimum_digits = %s, minimum_special = %s,
                 updated_at = %s, updated_by = %s
             WHERE id = 1
+            RETURNING id
         """, (
             payload.minimum_length, payload.maximum_length, payload.minimum_uppercase,
             payload.minimum_lowercase, payload.minimum_digits, payload.minimum_special,
             datetime.now(timezone.utc), admin["user_id"],
-        ))
+        )).fetchone()
+        if saved is None:
+            raise HTTPException(500, "Local password policy could not be updated")
     write_admin_log(admin["user_id"], "PASSWORD_POLICY_UPDATED", "Password policy", json.dumps(payload.model_dump()), source_ip(request))
     return {"message": "Password policy updated", **payload.model_dump()}
 
@@ -213,9 +225,10 @@ def user_logs(page: int = 1, admin: dict = Depends(current_admin)):
     return {"logs": rows, "page": page, "page_size": page_size, "total": total, "pages": max(1, (total + page_size - 1) // page_size)}
 
 
-@router.post("/api/admin/users/{user_id}/approve")
-def approve_user(user_id: str, request: Request, admin: dict = Depends(current_admin)):
+@router.post("/api/admin/users/approve")
+def approve_user(payload: AccountIdentifierRequest, request: Request, admin: dict = Depends(sensitive_admin)):
     from ..services.dossier_identity import identity_call
+    user_id = payload.user_id
     identity_call(admin['user_id'], {'user_id':user_id.strip().lower()}, 'approve')
     with db_connection() as connection:
         cursor = connection.execute(
@@ -228,9 +241,10 @@ def approve_user(user_id: str, request: Request, admin: dict = Depends(current_a
     return {"message": f"{user_id} approved"}
 
 
-@router.post("/api/admin/users/{user_id}/unlock")
-def unlock_user(user_id: str, request: Request, admin: dict = Depends(current_admin)):
+@router.post("/api/admin/users/unlock")
+def unlock_user(payload: AccountIdentifierRequest, request: Request, admin: dict = Depends(sensitive_admin)):
     from ..services.dossier_identity import identity_call
+    user_id = payload.user_id
     identity_call(admin['user_id'], {'user_id':user_id.strip().lower()}, 'unlock')
     with db_connection() as connection:
         cursor = connection.execute("UPDATE public.users SET locked = FALSE, failed_attempts = 0 WHERE user_id = %s", (user_id,))

@@ -66,13 +66,12 @@ def _review_context(review: dict | None, exception: dict) -> dict:
 def _retry_delay(error: Exception, attempt: int) -> float:
     response = getattr(error, 'raw_response', None)
     value = getattr(response, 'headers', {}).get('Retry-After')
+    fallback = 10 * (2 ** attempt)
     try:
         delay = float(value)
-        if math.isfinite(delay) and delay >= 0:
-            return delay
     except (TypeError, ValueError):
-        pass
-    return 10 * (2 ** attempt)
+        return fallback
+    return delay if math.isfinite(delay) and delay >= 0 else fallback
 
 
 def generate_exception_rationale(proposal: dict, exception: dict, compliance_review: dict | None, user_id: str) -> dict:

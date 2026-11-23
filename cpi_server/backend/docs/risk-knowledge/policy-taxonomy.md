@@ -41,7 +41,7 @@ To reproduce the deliverables from the current database, run from `backend`:
 .venv/Scripts/python.exe scripts/export_policy_taxonomy.py
 ```
 
-Default output is `cpi_server/outputs/policy-taxonomy/` inside `cpi_server`:
+Default output is `cpi_server/backend/outputs/policy-taxonomy/` inside `cpi_server`:
 
 - `policy-taxonomy.xlsx`: dictionary, tree, assignments, dimensions and evidence,
   complete coverage, unclassified passages and source inventory.

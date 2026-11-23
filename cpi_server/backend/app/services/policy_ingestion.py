@@ -1,5 +1,6 @@
 """Local source ingestion. Documents are inert data and never executable prompts."""
 import hashlib
+from contextlib import closing
 import re
 from pathlib import Path
 from zipfile import ZipFile, BadZipFile
@@ -18,11 +19,11 @@ def parse_document(path):
     paragraphs=[]
     if kind=='.pdf':
         from pypdf import PdfReader
-        reader=PdfReader(path)
-        if reader.is_encrypted: raise ValueError('Encrypted PDF cannot be ingested')
-        for page_no,page in enumerate(reader.pages,1):
-            text=page.extract_text(extraction_mode='plain') or ''
-            paragraphs.extend((part.strip(),page_no,False) for part in re.split(r'\n\s*\n|\n(?=\d+(?:\.\d+)*[.) ]|[A-Z][A-Z &]{5,}\n)',text) if part.strip())
+        with closing(PdfReader(path)) as reader:
+            if reader.is_encrypted: raise ValueError('Encrypted PDF cannot be ingested')
+            for page_no,page in enumerate(reader.pages,1):
+                text=page.extract_text(extraction_mode='plain') or ''
+                paragraphs.extend((part.strip(),page_no,False) for part in re.split(r'\n\s*\n|\n(?=\d+(?:\.\d+)*[.) ]|[A-Z][A-Z &]{5,}\n)',text) if part.strip())
     elif kind=='.docx':
         with ZipFile(path) as archive:
             if sum(i.file_size for i in archive.infolist())>RULE_MAX_FILE_BYTES*5: raise ValueError('DOCX expanded content exceeds limit')
@@ -103,8 +104,11 @@ def ingest_policy(policy_id):
         if not snapshot.exists():
             from uuid import uuid4
             temporary=archive_dir / (checksum+'.'+uuid4().hex+'.tmp')
-            temporary.write_bytes(source_bytes)
-            temporary.replace(snapshot)
+            try:
+                temporary.write_bytes(source_bytes)
+                temporary.replace(snapshot)
+            finally:
+                temporary.unlink(missing_ok=True)
         elif hashlib.sha256(snapshot.read_bytes()).hexdigest()!=checksum:
             raise ValueError('Archived policy checksum does not match')
         clauses=parse_document(snapshot)

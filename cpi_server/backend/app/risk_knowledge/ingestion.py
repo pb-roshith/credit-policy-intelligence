@@ -1,5 +1,6 @@
 """Source readers adapted from the existing policy_ingestion module, without DB coupling."""
 import hashlib
+from contextlib import closing
 import json
 import re
 from datetime import date, datetime
@@ -31,44 +32,43 @@ def safe_archive(blob):
 
 def parse_schema(name, blob):
     safe_archive(blob)
-    workbook = openpyxl.load_workbook(BytesIO(blob), data_only=False, read_only=True)
-    digest = hashlib.sha256(blob).hexdigest()
-    doc_id = uid('DOC-', digest)
-    records, concepts, warnings, raw_sheets = [], [], [], {}
-    for sheet in workbook:
-        rows = list(sheet.iter_rows(values_only=True))
-        # Preserve scratch sheets as source records, never infer relations from layout.
-        raw_sheets[sheet.title] = [[v.isoformat() if isinstance(v, (date, datetime)) else v for v in r] for r in rows]
-        header_index = next((i for i, row in enumerate(rows[:30]) if 'CRDM Entity' in row and 'CRDM Attribute' in row), None)
-        if header_index is None:
-            warnings.append(f'{sheet.title}: no attribute table header; retained verbatim as auxiliary source data.')
-            continue
-        headers = [str(v).strip() if v is not None else '' for v in rows[header_index]]
-        col = {v: i for i, v in enumerate(headers) if v}
-        entities = {}
-        for row_no, row in enumerate(rows[header_index + 1:], header_index + 2):
-            record = {h: row[i] for h, i in col.items()}
-            entity, attribute = record.get('CRDM Entity'), record.get('CRDM Attribute')
-            if not isinstance(entity, str) or not isinstance(attribute, str) or not entity.strip() or not attribute.strip():
+    with closing(openpyxl.load_workbook(BytesIO(blob), data_only=False, read_only=True)) as workbook:
+        digest = hashlib.sha256(blob).hexdigest()
+        doc_id = uid('DOC-', digest)
+        records, concepts, warnings, raw_sheets = [], [], [], {}
+        for sheet in workbook:
+            rows = list(sheet.iter_rows(values_only=True))
+            # Preserve scratch sheets as source records, never infer relations from layout.
+            raw_sheets[sheet.title] = [[v.isoformat() if isinstance(v, (date, datetime)) else v for v in r] for r in rows]
+            header_index = next((i for i, row in enumerate(rows[:30]) if 'CRDM Entity' in row and 'CRDM Attribute' in row), None)
+            if header_index is None:
+                warnings.append(f'{sheet.title}: no attribute table header; retained verbatim as auxiliary source data.')
                 continue
-            records.append(record)
-            source = Provenance(document_id=doc_id, document_name=name, origin='SOURCE_SCHEMA',
-                                passage=json.dumps(record, default=str, ensure_ascii=False),
-                                sheet=sheet.title, cell=f'A{row_no}:{get_column_letter(len(headers))}{row_no}', clause=str(row_no))
-            entity_id = uid('SCHEMA-', f'{doc_id}|{sheet.title}|{entity}')
-            if entity not in entities:
-                entities[entity] = entity_id
-                concepts.append(Concept(concept_id=entity_id, preferred_name=entity, kind='ENTITY', source=source,
-                                        metadata={'entity_class': record.get('FACT/DIM/LKP/Report')}))
-            concept_id = uid('FIELD-', f'{doc_id}|{sheet.title}|{row_no}')
-            concepts.append(Concept(concept_id=concept_id, preferred_name=attribute,
-                                    description=str(record.get('Description') or 'UNKNOWN'), parent_concept=entity_id,
-                                    source=source, metadata={'unique_reference': record.get('Unique Reference'),
-                                    'key_flag': record.get('PK/FK'), 'source_entity': entity,
-                                    'source_review': str(record.get('Modler-Review') or ''),
-                                    'source_review_date': str(record.get('Review_date') or ''),
-                                    'source_comment': str(record.get('Modeler Comment') or '')}))
-    workbook.close()
+            headers = [str(v).strip() if v is not None else '' for v in rows[header_index]]
+            col = {v: i for i, v in enumerate(headers) if v}
+            entities = {}
+            for row_no, row in enumerate(rows[header_index + 1:], header_index + 2):
+                record = {h: row[i] for h, i in col.items()}
+                entity, attribute = record.get('CRDM Entity'), record.get('CRDM Attribute')
+                if not isinstance(entity, str) or not isinstance(attribute, str) or not entity.strip() or not attribute.strip():
+                    continue
+                records.append(record)
+                source = Provenance(document_id=doc_id, document_name=name, origin='SOURCE_SCHEMA',
+                                    passage=json.dumps(record, default=str, ensure_ascii=False),
+                                    sheet=sheet.title, cell=f'A{row_no}:{get_column_letter(len(headers))}{row_no}', clause=str(row_no))
+                entity_id = uid('SCHEMA-', f'{doc_id}|{sheet.title}|{entity}')
+                if entity not in entities:
+                    entities[entity] = entity_id
+                    concepts.append(Concept(concept_id=entity_id, preferred_name=entity, kind='ENTITY', source=source,
+                                            metadata={'entity_class': record.get('FACT/DIM/LKP/Report')}))
+                concept_id = uid('FIELD-', f'{doc_id}|{sheet.title}|{row_no}')
+                concepts.append(Concept(concept_id=concept_id, preferred_name=attribute,
+                                        description=str(record.get('Description') or 'UNKNOWN'), parent_concept=entity_id,
+                                        source=source, metadata={'unique_reference': record.get('Unique Reference'),
+                                        'key_flag': record.get('PK/FK'), 'source_entity': entity,
+                                        'source_review': str(record.get('Modler-Review') or ''),
+                                        'source_review_date': str(record.get('Review_date') or ''),
+                                        'source_comment': str(record.get('Modeler Comment') or '')}))
     if not records:
         raise ValueError('No CRDM Entity / CRDM Attribute table found. Supply an XLSX using those headers.')
     warnings.append('Data types, risk-domain classifications, controlled vocabularies and FK targets are UNKNOWN unless explicitly supplied. PK/FK flags do not identify join targets.')
@@ -86,12 +86,12 @@ def parse_document(name, blob, kind):
     spans = []
     if suffix == '.pdf':
         from pypdf import PdfReader
-        reader = PdfReader(BytesIO(blob))
-        if reader.is_encrypted:
-            raise ValueError('Encrypted PDFs are unsupported')
-        for page, item in enumerate(reader.pages, 1):
-            text = item.extract_text() or ''
-            spans.extend((part, page, False) for part in re.split(r'\n\s*\n|\n(?=\d+(?:\.\d+)*[.)]?\s)', text) if part.strip())
+        with closing(PdfReader(BytesIO(blob))) as reader:
+            if reader.is_encrypted:
+                raise ValueError('Encrypted PDFs are unsupported')
+            for page, item in enumerate(reader.pages, 1):
+                text = item.extract_text() or ''
+                spans.extend((part, page, False) for part in re.split(r'\n\s*\n|\n(?=\d+(?:\.\d+)*[.)]?\s)', text) if part.strip())
     elif suffix == '.docx':
         safe_archive(blob)
         ns = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}

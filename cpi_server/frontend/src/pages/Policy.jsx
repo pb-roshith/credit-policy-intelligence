@@ -409,7 +409,7 @@ function PolicyCopilot({ session, onSelectPolicy }) {
         {sending && <div className="chat-ai copilot-thinking"><Sparkles size={18} /><p>Searching the policy library...</p></div>}
       </div>
       {chatError && <div className="data-message error">{chatError}</div>}
-      <form className="chat-input" onSubmit={sendQuestion}>
+      <form autoComplete="off" className="chat-input" onSubmit={sendQuestion}>
         <input
           autoComplete="off"
           value={question}

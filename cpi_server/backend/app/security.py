@@ -4,8 +4,9 @@ import hmac
 import json
 import re
 import secrets
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
+from .access_control import has_permission
 from .config import ADMIN_USER_ID
 from .database import db_connection, account_user_id, ensure_account_defaults, retry_on_db_conflict
 
@@ -76,10 +77,25 @@ def write_user_log(action_owner_id: str, action: str, resource_id: str | None = 
 
 def write_request_error(request: Request, status_code: int, error_code: str, details: str) -> None:
     """Write a sanitized request failure to the audit tables without reading its body."""
+    if (request.method == "POST" and request.url.path.rstrip("/") == "/api/auth/reset-password"
+            and not getattr(request.state, "password_reset_completed", False)):
+        submitted_id = getattr(request.state, "password_reset_user_id", None)
+        target = submitted_id.strip().lower() if isinstance(submitted_id, str) else ""
+        if not re.fullmatch(r"[a-z0-9._-]{1,64}", target):
+            target = None
+        write_user_log(
+            target or "anonymous", "PASSWORD_RESET", target, "Password reset request failed",
+            request.client.host if request.client else None,
+            "error", "failure", "critical" if status_code >= 500 else "warning", error_code,
+        )
+        return
     actor = "anonymous"
     role = None
     application=session_application(request)
     token = request.cookies.get(application+"_session")
+    renewed = getattr(request.state, "renewed_session", None)
+    if renewed:
+        token = renewed[0]
     if token:
         with db_connection() as connection:
             session = connection.execute(
@@ -103,6 +119,16 @@ def write_request_error(request: Request, status_code: int, error_code: str, det
             actor, "HTTP_REQUEST_FAILED", path, details, ip_address,
             "error", "failure", severity, error_code,
         )
+
+
+def audit_export(request: Request, user: dict, resource_id: str):
+    scope = account_user_id.set(None)
+    try:
+        log = write_admin_log if user["role"] == "admin" else write_user_log
+        log(user["user_id"], "DATA_EXPORT", resource_id,
+            source_ip=request.client.host if request.client else None)
+    finally:
+        account_user_id.reset(scope)
 
 
 def normalize_answer(answer: str) -> str:
@@ -166,6 +192,9 @@ def resolve_session(request: Request) -> tuple[str, dict]:
                 connection.execute("DELETE FROM public.sessions WHERE token_hash = %s", (token_hash,))
                 raise HTTPException(status_code=401, detail="Session is invalid or expired")
             user = public_user(row)
+    if application == "cpi" and user["role"] != "admin" and user.get("auth_provider") != "dossier":
+        revoke_session(token)
+        raise HTTPException(401, "Use your shared account to sign in again.")
     if user.get("auth_provider") == "dossier":
         from .services.shared_deals import call_shared_deals
         try:
@@ -193,11 +222,16 @@ def create_session(user: dict,application: str="cpi") -> dict:
     with db_connection() as connection:
         connection.execute("DELETE FROM public.sessions WHERE expires_at <= CURRENT_TIMESTAMP")
         connection.execute(
-            "DELETE FROM public.sessions WHERE LOWER(user_id) = LOWER(%s) AND application_id = %s",
-            (user["user_id"],application),
-        )
-        connection.execute(
-            "INSERT INTO public.sessions (token_hash, csrf_token_hash, user_id, role, expires_at, application_id) VALUES (%s, %s, %s, %s, %s, %s)",
+            """INSERT INTO public.sessions
+                (token_hash, csrf_token_hash, user_id, role, expires_at, application_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (application_id, LOWER(user_id)) DO UPDATE SET
+                token_hash = EXCLUDED.token_hash,
+                csrf_token_hash = EXCLUDED.csrf_token_hash,
+                user_id = EXCLUDED.user_id,
+                role = EXCLUDED.role,
+                expires_at = EXCLUDED.expires_at,
+                created_at = CURRENT_TIMESTAMP""",
             (_session_token_hash(token), _session_token_hash(csrf_token), user["user_id"], user["role"], expires_at,application),
         )
     return {"token": token, "csrf_token": csrf_token, "user": user, "expires_at": expires_at.isoformat(), "session_minutes": duration}
@@ -220,17 +254,43 @@ def revoke_user_sessions(user_id: str) -> None:
 
 def current_admin(request: Request):
     _, session = resolve_session(request)
-    if session["user"]["role"] != "admin":
+    if not has_permission(session["user"], "admin.manage"):
         raise HTTPException(status_code=403, detail="Administrator access required")
     return session["user"]
 
 
+@retry_on_db_conflict
+def rotate_session_id(token: str, application: str):
+    replacement = secrets.token_urlsafe(32)
+    with db_connection() as connection:
+        row = connection.execute(
+            "UPDATE public.sessions SET token_hash = %s "
+            "WHERE token_hash = %s AND application_id = %s AND expires_at > CURRENT_TIMESTAMP "
+            "RETURNING expires_at",
+            (_session_token_hash(replacement), _session_token_hash(token), application),
+        ).fetchone()
+        if not row:
+            raise HTTPException(401, "Session is invalid or expired")
+    return replacement, row["expires_at"]
+
+
+async def renew_sensitive_session(request: Request):
+    application = session_application(request)
+    token = request.cookies.get(application + "_session")
+    if not token:
+        raise HTTPException(401, "Authentication required")
+    request.state.renewed_session = await run_in_threadpool(rotate_session_id, token, application)
+
+
 async def current_user(request: Request):
     _, session = await run_in_threadpool(resolve_session, request)
+    request.state.session_expires_at = session["expires_at"]
     selected_account = request.headers.get("X-Account-User-Id")
     actor = session["user"]
+    if not has_permission(actor, "workspace.access"):
+        raise HTTPException(403, "Workspace access required")
     if selected_account and selected_account != actor['user_id']:
-        if actor['role'] != 'credit_analyst':
+        if not has_permission(actor, "accounts.cross_account"):
             raise HTTPException(403, 'Only credit analysts can view another relationship manager account.')
         def validate_account():
             with db_connection() as connection:
@@ -243,4 +303,19 @@ async def current_user(request: Request):
         yield session["user"]
     finally:
         account_user_id.reset(scope)
+
+
+async def sensitive_admin(request: Request, user: dict = Depends(current_admin)):
+    await renew_sensitive_session(request)
+    return user
+
+
+async def sensitive_user(request: Request, user: dict = Depends(current_user)):
+    # Rotation updates the session store outside the account-scoped database role.
+    scope = account_user_id.set(None)
+    try:
+        await renew_sensitive_session(request)
+    finally:
+        account_user_id.reset(scope)
+    return user
 

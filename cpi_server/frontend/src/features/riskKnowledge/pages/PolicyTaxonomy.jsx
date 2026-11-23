@@ -22,7 +22,14 @@ export default function PolicyTaxonomy({showSource}) {
   if(selectedConcept)rows=rows.filter(a=>a.category_id===selected||a.topic_id===selected);
   const seen=new Set();return rows.filter(a=>{if(seen.has(a.clause_id))return false;seen.add(a.clause_id);return !query||[a.source.document_name,a.source.passage,a.category,a.topic].join(' ').toLowerCase().includes(query.toLowerCase())});
  },[assignments,coverage,view,selected,selectedNode,selectedConcept,query]);
- function exportJSON(){const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='policy-taxonomy.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+ async function exportJSON(){
+  try {
+   const report=await api('/export/taxonomy');
+   const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));
+   const a=document.createElement('a');a.href=url;a.download='policy-taxonomy.json';a.click();
+   setTimeout(()=>URL.revokeObjectURL(url),1000);
+  } catch (error) { setError(error.message); }
+ }
  function changeView(value){setView(value);setSelected(null);setLimit(40)}
  if(loading)return <p role="status">Reading current policy sources and building the classification tree…</p>;
  if(error)return <div role="alert" className="notice error">{error}<button onClick={reload}>Retry</button></div>;

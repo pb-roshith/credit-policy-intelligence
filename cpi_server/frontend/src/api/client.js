@@ -1,6 +1,11 @@
 import { prepareAccountRequest } from "./requestAccount.js";
 const APPLICATION=import.meta.env.VITE_APPLICATION_ID==='dm'?'dm':'cpi';
-export const API = import.meta.env.VITE_API_URL || (APPLICATION==='dm'?"http://localhost:8005":"http://localhost:8002");
+const configuredApi = import.meta.env.VITE_API_URL;
+const securePage = window.location.protocol === "https:";
+export const API = securePage
+  ? (configuredApi && new URL(configuredApi, window.location.origin).protocol === "https:"
+      ? configuredApi : window.location.origin)
+  : configuredApi || (APPLICATION === "dm" ? "http://localhost:8005" : "http://localhost:8002");
 const REQUEST_TIMEOUT_MS = 120000;
 const csrfToken = () => document.cookie
   .split("; ")
@@ -12,8 +17,8 @@ export async function apiRequest(path, options = {}) {
   path = prepared.path;
   options = prepared.options;
   const account = prepared.account;
-  let response;
-  let body;
+  let response = null;
+  let body = null;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort("timeout"), REQUEST_TIMEOUT_MS);
   const externalSignal = options.signal;
@@ -29,6 +34,7 @@ export async function apiRequest(path, options = {}) {
       ...options,
       signal: controller.signal,
       credentials: "include",
+      cache: "no-store",
       headers: {
         ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
         ...(csrf ? { "X-CSRF-Token": csrf } : {}),
@@ -36,7 +42,11 @@ export async function apiRequest(path, options = {}) {
         ...options.headers,
       },
     });
-    body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      body = await response.json().catch(() => null);
+    } else if (response.status !== 204 && response.status !== 205 && method !== "HEAD") {
+      body = await response.json();
+    }
   } catch (error) {
     if (controller.signal.aborted && !externalSignal?.aborted) {
       throw new Error("The request timed out. Please try again.");
@@ -49,14 +59,14 @@ export async function apiRequest(path, options = {}) {
   if (!response.ok) {
     const message = response.status >= 500
       ? "An unexpected error occurred. Please try again later."
-      : Array.isArray(body.detail)
+      : Array.isArray(body?.detail)
       ? "Please check the information you entered and try again."
-      : typeof body.detail === "string" && body.detail.trim()
+      : typeof body?.detail === "string" && body.detail.trim()
       ? body.detail
       : "The request could not be completed. Please try again.";
     const error = new Error(message);
     error.status = response.status;
     throw error;
   }
-  return body;
+  return body ?? {};
 }

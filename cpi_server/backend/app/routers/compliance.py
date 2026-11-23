@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.ai_provider import AIClient as Mistral
+from ..access_control import has_permission
 from ..config import MISTRAL_API_KEY, MISTRAL_TIMEOUT_MS, MISTRAL_POLICY_MODEL
 from ..database import db_connection
 from ..manufacture_data.policy_generation_service import _json_object
@@ -22,6 +23,8 @@ def request_policy_mapping(credit_request_number: str,user: dict = Depends(curre
 
 @router.post('/api/compliance-review/applicability')
 def check_applicability(payload: ComplianceReviewRequest,user: dict = Depends(current_user)):
+    if not has_permission(user, "compliance.execute"):
+        raise HTTPException(403, "Compliance execution is unavailable")
     from ..services.rule_assessment import assessment_request_context
     from ..services.semantic_matching import load_matcher
     request_id,data=assessment_request_context(payload.credit_request_number,user)
@@ -62,6 +65,8 @@ def historical_review(review_id: int, user: dict = Depends(current_user)):
 
 @router.post("/api/compliance-review/run")
 def run_compliance_review(payload: ComplianceReviewRequest, user: dict = Depends(current_user)):
+    if not has_permission(user, "compliance.execute"):
+        raise HTTPException(403, "Compliance execution is unavailable")
     from ..services.semantic_assessment import run_rule_assessment
     review = run_rule_assessment(normalize_request_id(payload.credit_request_number), user["user_id"], user=user)
     review["cached"] = False

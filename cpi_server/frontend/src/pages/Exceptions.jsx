@@ -103,6 +103,8 @@ export default function Exceptions({ session, notify }) {
   };
   const runAction = async (action) => {
     if (!row || acting) return;
+    const verb = action.charAt(0).toUpperCase() + action.slice(1);
+    if (!window.confirm(`${verb} exception ${row.id}?`)) return;
     setActing(true);
     try {
       await apiRequest(`/api/exceptions/${row.id}/action`, { method: "POST", body: JSON.stringify({ action, account_user_id: row.account_user_id }) }, session.token);
@@ -123,8 +125,10 @@ export default function Exceptions({ session, notify }) {
     setDeleteError("");
     try {
       const target = deleteTarget;
-      const accountQuery = target.account_user_id ? `?account_user_id=${encodeURIComponent(target.account_user_id)}` : "";
-      await apiRequest(`/api/exceptions/${encodeURIComponent(target.id)}${accountQuery}`, { method: "DELETE" });
+      await apiRequest(`/api/exceptions/${encodeURIComponent(target.id)}`, {
+        method: "DELETE",
+        ...(target.account_user_id ? { body: JSON.stringify({ user_id: target.account_user_id }) } : {}),
+      });
       setExceptions(current => current.filter(item => !(item.id === target.id && item.account_user_id === target.account_user_id)));
       setSelected(null);
       setDeleteTarget(null);

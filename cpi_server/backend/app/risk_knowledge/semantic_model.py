@@ -220,24 +220,8 @@ def validators():
         kind:Draft202012Validator(schema['$defs'][kind],format_checker=checker) for kind in CLASSES}
 
 
-def validate_instance(data):
-    """Validate transport shape and graph-wide semantic consistency without writes."""
-    validator,typed_validators=validators()
-    errors = [{'code': 'JSON_SCHEMA', 'path': '/'.join(map(str, e.absolute_path)), 'message': e.message[:500]}
-        for e in sorted(validator.iter_errors(data), key=lambda e: str(list(e.absolute_path)))][:100]
-    if not errors:
-        for index,node in enumerate(data['nodes']):
-            errors.extend({'code':'JSON_SCHEMA','path':f'nodes/{index}/'+'/'.join(map(str,e.absolute_path)),
-                'message':e.message[:500]} for e in typed_validators[node['type']].iter_errors(node))
-            if len(errors)>=100:
-                errors=errors[:100];break
-    if errors:
-        return {'conforms': False, 'ontology_version': VERSION, 'errors': errors}
-
-    def fail(code, message, path=''):
-        if len(errors) < 100:
-            errors.append({'code': code, 'path': path, 'message': message})
-
+def index_graph(data, fail):
+    """Index graph nodes and check IDs and relationship endpoints."""
     nodes = {}
     ids = set()
     for node in data['nodes']:
@@ -261,18 +245,11 @@ def validate_instance(data):
         if not set(class_lineage(a['type'])) & set(spec['domain']) or not set(class_lineage(b['type'])) & set(spec['range']):
             fail('TYPED_ENDPOINTS', 'Relationship violates domain/range: ' + edge['id'])
         outgoing.setdefault((edge['subject'], edge['predicate']), []).append(edge['object'])
+    return nodes, outgoing
 
-    # Do not traverse structurally invalid endpoints in later consistency checks.
-    if errors:
-        return {'conforms': False, 'ontology_version': VERSION, 'errors': errors}
 
-    def targets(node, predicate):
-        return outgoing.get((node['id'], predicate), [])
-
-    def one(node, predicate):
-        values = targets(node, predicate)
-        return nodes.get(values[0]) if len(values) == 1 else None
-
+def validate_graph_semantics(data, nodes, targets, one, fail):
+    """Check provenance, relationship cardinality, and policy node rules."""
     for item in [*data['nodes'], *data['relationships']]:
         for ref in item['source_refs']:
             if ref not in nodes or nodes[ref]['type'] != 'SourcePassage':
@@ -339,6 +316,40 @@ def validate_instance(data):
             fail('EFFECTIVE_DATES', 'End date precedes start date: ' + node['id'])
         if kind == 'ConditionGroup' and props['logic'] == 'NOT' and len(targets(node, 'HAS_MEMBER')) != 1:
             fail('CONDITION_LOGIC', 'NOT must have exactly one member: ' + node['id'])
+
+
+def validate_instance(data):
+    """Validate transport shape and graph-wide semantic consistency without writes."""
+    validator,typed_validators=validators()
+    errors = [{'code': 'JSON_SCHEMA', 'path': '/'.join(map(str, e.absolute_path)), 'message': e.message[:500]}
+        for e in sorted(validator.iter_errors(data), key=lambda e: str(list(e.absolute_path)))][:100]
+    if not errors:
+        for index,node in enumerate(data['nodes']):
+            errors.extend({'code':'JSON_SCHEMA','path':f'nodes/{index}/'+'/'.join(map(str,e.absolute_path)),
+                'message':e.message[:500]} for e in typed_validators[node['type']].iter_errors(node))
+            if len(errors)>=100:
+                errors=errors[:100];break
+    if errors:
+        return {'conforms': False, 'ontology_version': VERSION, 'errors': errors}
+
+    def fail(code, message, path=''):
+        if len(errors) < 100:
+            errors.append({'code': code, 'path': path, 'message': message})
+
+    nodes, outgoing = index_graph(data, fail)
+
+    # Do not traverse structurally invalid endpoints in later consistency checks.
+    if errors:
+        return {'conforms': False, 'ontology_version': VERSION, 'errors': errors}
+
+    def targets(node, predicate):
+        return outgoing.get((node['id'], predicate), [])
+
+    def one(node, predicate):
+        values = targets(node, predicate)
+        return nodes.get(values[0]) if len(values) == 1 else None
+
+    validate_graph_semantics(data, nodes, targets, one, fail)
     import networkx as nx
     for predicate in ('HAS_MEMBER', 'PARENT_SECTION'):
         graph = nx.DiGraph((e['subject'], e['object']) for e in data['relationships'] if e['predicate'] == predicate)

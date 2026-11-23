@@ -6,7 +6,7 @@ import {API} from '../../../api/client';
 export default function SemanticOntology() {
  const [model,setModel]=useState(null),[error,setError]=useState('');
  useEffect(()=>{let active=true;api('/semantic-model').then(d=>{if(active)setModel(d)}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[]);
- async function download(kind){try{setError('');const data=kind==='model'?model:await api('/semantic-model/'+kind);const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=kind==='schema'?'instances.schema.json':kind==='example'?'illustrative-example.json':'semantic-model.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(e){setError(e.message)}}
+ async function download(kind){try{setError('');const data=await api('/export/'+(kind==='model'?'ontology':kind));const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=kind==='schema'?'instances.schema.json':kind==='example'?'illustrative-example.json':'semantic-model.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(e){setError(e.message)}}
  return <>
   {error&&<div role="alert" className="notice error">{error}</div>}
   {!model?<p role="status">Loading semantic schema…</p>:<>
