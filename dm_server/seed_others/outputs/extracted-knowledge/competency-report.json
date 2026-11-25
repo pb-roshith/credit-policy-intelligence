@@ -1,0 +1,2103 @@
+{
+  "model": {
+    "ontology_version": "1.4.0",
+    "counts": {
+      "nodes": 3702,
+      "relationships": 7674
+    },
+    "candidate_count": 38,
+    "policy_count": 35,
+    "source_passages": 1609
+  },
+  "archived_sources": [
+    {
+      "policy_id": 1,
+      "title": "4.1 Underwriting Standards",
+      "version": "4.2",
+      "checksum": "21b6dc2ac5a7b626d6f486564ebfa1ffd0d49d8a47aec79f488f82a87ccfcb8e",
+      "passages": 20
+    },
+    {
+      "policy_id": 2,
+      "title": "4.2 Leverage Limits",
+      "version": "4.2",
+      "checksum": "dcf967eb4e6f0aa4101bd1dae53a8260a8cb662e8a45cd6ce883fdd3b766430c",
+      "passages": 21
+    },
+    {
+      "policy_id": 3,
+      "title": "4.3 Tenor Limits",
+      "version": "4.2",
+      "checksum": "7af9f2abcbbb8744948914bbc8041bd5e8268bc55c583ef18af14a36ae656ad2",
+      "passages": 20
+    },
+    {
+      "policy_id": 4,
+      "title": "4.4 Covenant Package",
+      "version": "4.2",
+      "checksum": "ed2c3ab4351c2b264e5cc27e6c013de3d4d8cee114f40e2c33328172889e1df5",
+      "passages": 21
+    },
+    {
+      "policy_id": 5,
+      "title": "3.1 DSCR Minimums",
+      "version": "3.1",
+      "checksum": "58065e833dd68879f239c9bc9b41406402af03091875effc1641a6145f3bc489",
+      "passages": 20
+    },
+    {
+      "policy_id": 6,
+      "title": "3.2 LTV Ceilings",
+      "version": "3.1",
+      "checksum": "bf50dd9c0c4dccbbcf70a49edc56d70485262c9d6d116211909e092615d0e96f",
+      "passages": 20
+    },
+    {
+      "policy_id": 7,
+      "title": "1.1 Enterprise Limits",
+      "version": "1.0",
+      "checksum": "6b3bf9c190ff659c1ac64106df816991db4e26223717c8c98feeea2addefa70c",
+      "passages": 20
+    },
+    {
+      "policy_id": 8,
+      "title": "3.5 Sector Concentration",
+      "version": "1.0",
+      "checksum": "d2ec1d78bee541d14bace4fea235eed9fcf460eb088763e820659985702df05c",
+      "passages": 20
+    },
+    {
+      "policy_id": 9,
+      "title": "4.2 Country Risk",
+      "version": "1.0",
+      "checksum": "94dc4af6acabbacb87abaf31760cbf7b02d3c70b267457e9f40c7c06d0459c5a",
+      "passages": 20
+    },
+    {
+      "policy_id": 10,
+      "title": "2.1 Coverage Ratios",
+      "version": "2.4",
+      "checksum": "f0f4e6260c627d43eb8b58e67793b57bde109ac6ae80977423b62fc82bad51e5",
+      "passages": 20
+    },
+    {
+      "policy_id": 11,
+      "title": "2.2 Eligible Collateral",
+      "version": "2.4",
+      "checksum": "067ea0df55a1950a6f414e2436d7ac36cad81a25ad50f752f9ba8449ed70a5eb",
+      "passages": 20
+    },
+    {
+      "policy_id": 12,
+      "title": "2.3 Haircuts",
+      "version": "2.4",
+      "checksum": "57daf82286a273df900c1ea4ba94e1cc2f901b066d3e1221937e96760ef9739d",
+      "passages": 20
+    },
+    {
+      "policy_id": 13,
+      "title": "1.1 RAROC Floors",
+      "version": "1.7",
+      "checksum": "b699e0131a8b6811106a8f2e6b270c4c07dbdbfb4dcab01531aecf7f82001a12",
+      "passages": 21
+    },
+    {
+      "policy_id": 14,
+      "title": "1.2 Spread Grid",
+      "version": "1.7",
+      "checksum": "a31614bc9583cac5c205cf3ac248b30964fb2ecb3c011a9d90d81ca1e5d5d963",
+      "passages": 20
+    },
+    {
+      "policy_id": 15,
+      "title": "2.1 CRE Sub-sector Limits",
+      "version": "2.0",
+      "checksum": "b80889a26cb577a996729bcf2be14b0134ee6688799b0a90edb704a5bd0b1958",
+      "passages": 20
+    },
+    {
+      "policy_id": 16,
+      "title": "2.2 Construction Guidance",
+      "version": "2.0",
+      "checksum": "350cf7f7d62e85428cf6a9698bfd3ab07d8e9c57b05722882ba5e0af64e6dcab",
+      "passages": 20
+    },
+    {
+      "policy_id": 17,
+      "title": "3.1 Approval Authorities",
+      "version": "3.3",
+      "checksum": "38a6e70887fe9524760b8bed0f04a977db2eaac85d866baa58606dfeb258a05e",
+      "passages": 20
+    },
+    {
+      "policy_id": 18,
+      "title": "3.2 Escalation Rules",
+      "version": "3.3",
+      "checksum": "fd93de0b531f7b06b26a6a55c8dd136cbac2a641dd3fc8ac1611fa9ccfc04995",
+      "passages": 21
+    },
+    {
+      "policy_id": 19,
+      "title": "A.1 RWA Treatment",
+      "version": "Basel IV",
+      "checksum": "0171f0f0bb413e95a3c9a8253d8c5f71b9496025d505b0e93709b7366b224fc5",
+      "passages": 20
+    },
+    {
+      "policy_id": 20,
+      "title": "A.2 Capital Floors",
+      "version": "Basel IV",
+      "checksum": "124566926bfd9f4ebe2d18795df04f73f70fba22a895c4181d767a9bf0156aaa",
+      "passages": 21
+    },
+    {
+      "policy_id": 21,
+      "title": "POL-71 Delinquency Management Policy",
+      "version": "1.0",
+      "checksum": "b7cfbf2608eaebc80334527a1bdeefb24cbf5aafe3ca8e8aae7aac49ba86057d",
+      "passages": 110
+    },
+    {
+      "policy_id": 22,
+      "title": "POL-72 Collections Policy",
+      "version": "1.0",
+      "checksum": "80db0ab3861949d729d9ba87a55ada2de6357e143e6dbb048588441f195532ce",
+      "passages": 110
+    },
+    {
+      "policy_id": 23,
+      "title": "POL-73 Hardship & Forbearance Policy",
+      "version": "1.0",
+      "checksum": "030befb0d9fc017af86b7d88d3d8e358354bcbd1770ae5838052f8d6371d4ccc",
+      "passages": 110
+    },
+    {
+      "policy_id": 24,
+      "title": "POL-74 Restructuring & Modification Policy",
+      "version": "1.0",
+      "checksum": "3e3734a27cdaf4991739c4ebd09d63b875a43abd9ccfc5e692e5f45a241b87a5",
+      "passages": 110
+    },
+    {
+      "policy_id": 25,
+      "title": "POL-75 Non-Performing Loan (NPL) Policy",
+      "version": "1.0",
+      "checksum": "b47f5eb5d9e226109929d7b1f303a2eaac74560764d5e0845018523a9b5a94f3",
+      "passages": 110
+    },
+    {
+      "policy_id": 26,
+      "title": "POL-76 Watchlist & Special Mention Policy",
+      "version": "1.0",
+      "checksum": "cd4bf5c73b9a0d472a016228b5723e3cf326c945e85d942ffeea9c8a90c264e3",
+      "passages": 110
+    },
+    {
+      "policy_id": 27,
+      "title": "POL-77 Special Assets Management Policy",
+      "version": "1.0",
+      "checksum": "359c75f36ef12c992d0cf594af32fa080c6fea79daf8f762749d051b578333c9",
+      "passages": 110
+    },
+    {
+      "policy_id": 28,
+      "title": "POL-78 Recovery Policy",
+      "version": "1.0",
+      "checksum": "4dadf9b840d7ee4a96889dc194db838b8de525b7e844f39a1af195f22f5613af",
+      "passages": 110
+    },
+    {
+      "policy_id": 29,
+      "title": "POL-79 Write-Off Policy",
+      "version": "1.0",
+      "checksum": "d1896594bbb1e031524110785eaf09776756cb1b2a0a57e8c67c52264103b881",
+      "passages": 110
+    },
+    {
+      "policy_id": 30,
+      "title": "POL-80 Debt Sale Policy",
+      "version": "1.0",
+      "checksum": "d22abc2db5d7d00853552c8fedff9b754da856f68c46f8ab2edb85ab3df3fe5d",
+      "passages": 112
+    },
+    {
+      "policy_id": 31,
+      "title": "Credit Rating Standards",
+      "version": "1.0",
+      "checksum": "e6bb9031cfd51e60c492e3ee404912c4ccff3400a083ae4d6675fdf73e31d0b9",
+      "passages": 22
+    },
+    {
+      "policy_id": 32,
+      "title": "Industry Risk Assessment Policy",
+      "version": "1.0",
+      "checksum": "528dc698bb0b8ab51b5341d3aab1f4dd722cf242883a42dbba768a3148aeafbc",
+      "passages": 20
+    },
+    {
+      "policy_id": 33,
+      "title": "Foreign Currency Credit Risk Policy",
+      "version": "1.0",
+      "checksum": "73475ce70f69ec133b5dc556ebf945f063e0b9b02b47f72a2b9bdea63bd9a9dc",
+      "passages": 20
+    },
+    {
+      "policy_id": 34,
+      "title": "Credit Duration Risk Policy",
+      "version": "1.0",
+      "checksum": "1dd66e05d6be0b8de2ae8d5020a930941c17fa515a794474c89f049c3098bae3",
+      "passages": 20
+    },
+    {
+      "policy_id": 35,
+      "title": "Credit Portfolio Liquidity Policy",
+      "version": "1.0",
+      "checksum": "f55b2599f076c2c3cd110aa13a8fa88abde99e1a4028d824284dba40e3093b68",
+      "passages": 20
+    }
+  ],
+  "missing_extraction_policies": [],
+  "relationship_counts": {
+    "VERSION_OF": 35,
+    "HAS_VERSION": 35,
+    "HAS_EFFECTIVE_PERIOD": 25,
+    "HAS_MEMBER": 89,
+    "TESTS_ATTRIBUTE": 53,
+    "HAS_APPLICABILITY": 19,
+    "COMPARES_SCOPE_VALUE": 44,
+    "HAS_EXCLUSION": 9,
+    "SOURCE_IN_VERSION": 1609,
+    "PART_OF_VERSION": 1101,
+    "DERIVED_FROM": 865,
+    "CONTAINS_SECTION": 238,
+    "CONTAINS_RULE": 863,
+    "APPLIES_TO_PRODUCT": 142,
+    "APPLIES_TO_SEGMENT": 65,
+    "USES_METRIC": 146,
+    "EVALUATES_RISK_ATTRIBUTE": 146,
+    "HAS_THRESHOLD": 150,
+    "MEASURED_BY": 150,
+    "HAS_CONDITION": 35,
+    "CLASSIFIED_AS": 1355,
+    "REQUIRES_EVIDENCE": 58,
+    "REQUIRES_APPROVAL": 162,
+    "REQUIRES_APPROVAL_FROM": 161,
+    "BINDS_TO_ATTRIBUTE": 15,
+    "CONCERNS": 65,
+    "REQUIRES_APPROVAL_ABOVE_THRESHOLD": 7,
+    "REQUIRES_APPROVAL_ON_BREACH": 8,
+    "APPLIES_IN": 9,
+    "APPLIES_TO_SUBSECTOR": 6,
+    "DOCUMENTS_PRODUCT_SCOPE": 2,
+    "HAS_EXCEPTION": 2,
+    "EXCEPTION_TO": 2,
+    "APPLIES_TO_INDUSTRY_TIER": 2,
+    "IMPLEMENTED_BY_RULE": 1
+  },
+  "competency_checks": [
+    {
+      "question": "borrower",
+      "value": "",
+      "illustrative_request": true,
+      "total": 32,
+      "examples": [
+        {
+          "candidate_id": "13",
+          "candidate_type": "Policy",
+          "policy_id": 13,
+          "policy_name": "1.1 RAROC Floors",
+          "applicability": "Applicable",
+          "reason": "Policy inclusion determined from current source-backed graph rule paths",
+          "graph_node_id": "urn:cpi:policy:13",
+          "applicable_rule_count": 8,
+          "unresolved_rule_count": 1
+        },
+        {
+          "candidate_id": "14",
+          "candidate_type": "Policy",
+          "policy_id": 14,
+          "policy_name": "1.2 Spread Grid",
+          "applicability": "Applicable",
+          "reason": "Policy inclusion determined from current source-backed graph rule paths",
+          "graph_node_id": "urn:cpi:policy:14",
+          "applicable_rule_count": 17,
+          "unresolved_rule_count": 0
+        },
+        {
+          "candidate_id": "15",
+          "candidate_type": "Policy",
+          "policy_id": 15,
+          "policy_name": "2.1 CRE Sub-sector Limits",
+          "applicability": "Applicable",
+          "reason": "Policy inclusion determined from current source-backed graph rule paths",
+          "graph_node_id": "urn:cpi:policy:15",
+          "applicable_rule_count": 4,
+          "unresolved_rule_count": 1
+        }
+      ]
+    },
+    {
+      "question": "industry",
+      "value": "Hospitality",
+      "illustrative_request": false,
+      "total": 1,
+      "examples": [
+        {
+          "id": "urn:cpi:version:53",
+          "label": "2.1 CRE Sub-sector Limits",
+          "policy_id": 15,
+          "policy": "2.1 CRE Sub-sector Limits",
+          "version": "2.0",
+          "policy_version_id": 53,
+          "synthetic": true,
+          "scope": "hospitality",
+          "scope_type": "Subsector",
+          "relationship": "APPLIES_TO_SUBSECTOR",
+          "scope_sources": [
+            {
+              "node_id": "urn:cpi:source:53:325",
+              "clause": "2",
+              "page": 2,
+              "quote": "2. 2. Scope\nThis synthetic policy applies to all CRE lending activities conducted by the bank, including but not limited to originations,\nrenewals, refinancings, and acquisitions of CRE loans. It covers all business units, subsidiaries, and geographic regions where\nthe bank operates, ensuring a uniform approach to managing CRE sub-sector exposure across the organization.\nThe policy is specifically focused on sub-sector limits within the CRE portfolio. Sub-sectors are defined as distinct categories of\nCRE properties, each with its own risk profile. For the purposes of this policy, the primary sub-sectors include office, retail,\nindustrial, multifamily, hospitality, and specialized real estate (e.g., healthcare, education, or data centers). Each sub-sector is\nsubject to individual exposure limits as outlined in Section 5: Quantitative Limits.\nExcluded from this policy are residential mortgage lending, consumer lending, and non-real estate commercial lending. While\nthese areas may have their own concentration risk policies, they are not addressed within this document. Additionally, this\npolicy does not apply to the bank’s investment portfolio or proprietary trading activities, which are governed by separate risk\nmanagement frameworks.\nThe policy is binding for all employees, contractors, and third-party vendors involved in CRE lending activities. Compliance with\nthis policy is mandatory, and deviations must be approved through the formal exception process described in Section 8:\nExceptions. Failure to adhere to the policy may result in disciplinary action, up to and including termination of employment or\ncontract.\nThis synthetic policy is designed to be scalable and adaptable to the bank’s evolving business needs. As such, it may be\nsupplemented by additional guidelines or procedures tailored to specific regions, business units, or product types, provided they\ndo not conflict with the core principles outlined herein."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "question": "industry",
+      "value": "Commercial Real Estate",
+      "illustrative_request": false,
+      "total": 0,
+      "examples": []
+    },
+    {
+      "question": "industry",
+      "value": "Tier 1",
+      "illustrative_request": false,
+      "total": 1,
+      "examples": [
+        {
+          "id": "urn:cpi:rule:v70:clause1585:r2",
+          "label": "Tier 1 and Tier 2 Exception Approval Requirement",
+          "policy_id": 32,
+          "policy": "Industry Risk Assessment Policy",
+          "version": "1.0",
+          "policy_version_id": 70,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "For Tier 1 and\nTier 2 industries, exceptions may be approved by the Head of Credit Risk or a Senior Credit Officer, depending on the\nmateriality of the deviation.",
+          "conditions": {
+            "logic": "AND",
+            "groups": [],
+            "conditions": [
+              {
+                "unit": null,
+                "field": "industry_tier",
+                "value": [
+                  "Tier 1",
+                  "Tier 2"
+                ],
+                "evidence": "Tier 1 and\nTier 2 industries",
+                "operator": "IN"
+              }
+            ]
+          },
+          "thresholds": [],
+          "approvals": [
+            {
+              "triggered_by_breach": false,
+              "above_threshold": false,
+              "authorities": [
+                "Head of Credit Risk"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "Head of Credit Risk"
+              }
+            },
+            {
+              "triggered_by_breach": false,
+              "above_threshold": false,
+              "authorities": [
+                "Senior Credit Officer"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "Senior Credit Officer"
+              }
+            }
+          ],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Exceptions",
+            "Approval authority"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:70:1585",
+              "clause": "9",
+              "page": 9,
+              "quote": "9. 9. Exception Management and Escalation\nThe IND-1.0 Policy establishes a formal exception management process to address instances where credit exposures deviate\nfrom industry risk guidelines. Exceptions may arise due to strategic opportunities, client relationship considerations, or other\njustifiable reasons, but they must be carefully evaluated and approved to ensure that risk is appropriately managed.\nAll exceptions to industry risk guidelines, including concentration limit breaches, underwriting criteria waivers, or approval\nauthority overrides, must be documented in the Exception Log. The log captures the nature of the exception, the rationale for\nthe deviation, the risk mitigation measures in place, and the approval authority. The Exception Log is maintained by the Industry\nRisk Team and reviewed quarterly by the CRC.\nExceptions to concentration limits or underwriting criteria for Tier 3 and Tier 4 industries require CRC approval. For Tier 1 and\nTier 2 industries, exceptions may be approved by the Head of Credit Risk or a Senior Credit Officer, depending on the\nmateriality of the deviation. All exceptions must include a risk-adjusted return analysis to justify the deviation from policy.\nEscalation paths are clearly defined to ensure timely resolution of exceptions. Credit officers or BUROs must escalate potential\nexceptions to the Industry Risk Team within two business days of identification. The Industry Risk Team then evaluates the\nexception and presents it to the appropriate approval authority. Urgent exceptions, such as those posing immediate risk to the\nportfolio, must be escalated to the CRO within 24 hours.\nThis synthetic exception management process is designed to illustrate how deviations from policy are handled in a structured\nand controlled manner. The escalation paths, approval authorities, and documentation requirements described are fictional and\nintended for demonstration purposes."
+            }
+          ],
+          "scope": "Tier 1",
+          "scope_type": "IndustryTier",
+          "relationship": "APPLIES_TO_INDUSTRY_TIER",
+          "scope_sources": [
+            {
+              "node_id": "urn:cpi:source:70:1585",
+              "clause": "9",
+              "page": 9,
+              "quote": "9. 9. Exception Management and Escalation\nThe IND-1.0 Policy establishes a formal exception management process to address instances where credit exposures deviate\nfrom industry risk guidelines. Exceptions may arise due to strategic opportunities, client relationship considerations, or other\njustifiable reasons, but they must be carefully evaluated and approved to ensure that risk is appropriately managed.\nAll exceptions to industry risk guidelines, including concentration limit breaches, underwriting criteria waivers, or approval\nauthority overrides, must be documented in the Exception Log. The log captures the nature of the exception, the rationale for\nthe deviation, the risk mitigation measures in place, and the approval authority. The Exception Log is maintained by the Industry\nRisk Team and reviewed quarterly by the CRC.\nExceptions to concentration limits or underwriting criteria for Tier 3 and Tier 4 industries require CRC approval. For Tier 1 and\nTier 2 industries, exceptions may be approved by the Head of Credit Risk or a Senior Credit Officer, depending on the\nmateriality of the deviation. All exceptions must include a risk-adjusted return analysis to justify the deviation from policy.\nEscalation paths are clearly defined to ensure timely resolution of exceptions. Credit officers or BUROs must escalate potential\nexceptions to the Industry Risk Team within two business days of identification. The Industry Risk Team then evaluates the\nexception and presents it to the appropriate approval authority. Urgent exceptions, such as those posing immediate risk to the\nportfolio, must be escalated to the CRO within 24 hours.\nThis synthetic exception management process is designed to illustrate how deviations from policy are handled in a structured\nand controlled manner. The escalation paths, approval authorities, and documentation requirements described are fictional and\nintended for demonstration purposes."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "question": "geography",
+      "value": "India",
+      "illustrative_request": false,
+      "total": 0,
+      "examples": []
+    },
+    {
+      "question": "geography",
+      "value": "foreign jurisdiction",
+      "illustrative_request": false,
+      "total": 1,
+      "examples": [
+        {
+          "id": "urn:cpi:version:47",
+          "label": "4.2 Country Risk",
+          "policy_id": 9,
+          "policy": "4.2 Country Risk",
+          "version": "1.0",
+          "policy_version_id": 47,
+          "synthetic": true,
+          "scope": "foreign jurisdiction",
+          "scope_type": "Geography",
+          "relationship": "APPLIES_IN",
+          "scope_sources": [
+            {
+              "node_id": "urn:cpi:source:47:204",
+              "clause": "2",
+              "page": 2,
+              "quote": "2. 4.2.2 Scope\nThe scope of this Country Risk clause applies to all credit exposures, both direct and indirect, where the obligor, guarantor, or\nunderlying economic activity is located in or tied to a foreign jurisdiction. This includes sovereign lending, corporate lending to\nentities domiciled or operating abroad, trade finance transactions, and investments in foreign securities or assets. The policy is\nglobally applicable and binds all business units, subsidiaries, and branches of the bank, regardless of their geographic location.\nFor the purposes of this synthetic demonstration, country risk is defined as the risk of loss arising from a borrower’s or\ncounterparty’s inability to fulfill its financial obligations due to country-specific factors. These factors may include, but are not\nlimited to, sovereign default, currency controls, political unrest, legal or regulatory changes, and economic crises. The policy\nexplicitly excludes risks that are purely commercial or idiosyncratic in nature, such as a borrower’s individual financial distress\nunrelated to country-level conditions.\nThe clause distinguishes between two primary categories of country risk: transfer risk and convertibility risk. Transfer risk refers\nto the potential for a foreign government to impose restrictions on the movement of capital or payments, thereby preventing the\nbank from repatriating funds. Convertibility risk, on the other hand, pertains to the inability to convert local currency into a freely\nusable currency due to exchange controls or illiquidity in the foreign exchange market. Both categories are addressed\ncomprehensively within this policy.\nTo ensure clarity, the synthetic policy outlines the types of exposures that fall under its purview. These include loans and\nadvances to foreign governments or state-owned enterprises, cross-border lending to private sector entities, letters of credit and\nguarantees issued on behalf of foreign obligors, and investments in foreign debt or equity instruments. Additionally, the policy\ncovers contingent liabilities, such as derivatives or credit derivatives, where the underlying reference entity or collateral is tied to\na foreign jurisdiction.\nExclusions from this policy’s scope are limited but important. Domestic exposures, where both the obligor and the economic\nactivity are within the bank’s home jurisdiction, are not subject to the country risk assessment framework described herein.\nSimilarly, exposures to supranational entities, such as multilateral development banks, are excluded due to their preferred\ncreditor status and historically low default rates. These exclusions are clearly documented to avoid ambiguity in the application\nof the policy."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "question": "product",
+      "value": "CRE loans",
+      "illustrative_request": false,
+      "total": 5,
+      "examples": [
+        {
+          "id": "urn:cpi:rule:v53:clause333:r2",
+          "label": "Loan Approval Authority Between 5 Million and 20 Million",
+          "policy_id": 15,
+          "policy": "2.1 CRE Sub-sector Limits",
+          "version": "2.0",
+          "policy_version_id": 53,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "Loans between $5 million and $20 million require approval from\nthe Regional Credit Officer (RCO),",
+          "conditions": null,
+          "thresholds": [],
+          "approvals": [
+            {
+              "triggered_by_breach": false,
+              "above_threshold": false,
+              "authorities": [
+                "Regional Credit Officer (RCO)"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "Regional Credit Officer (RCO)"
+              }
+            }
+          ],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Approval authority",
+            "Decision and escalation authority"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:53:333",
+              "clause": "6",
+              "page": 6,
+              "quote": "6. 6. Approvals\nThe approval process for CRE loans under this synthetic policy is designed to ensure that all transactions comply with the\nbank’s underwriting criteria, sub-sector limits, and risk appetite. Approval authority is delegated based on loan size, complexity,\nand risk profile, with higher-risk or larger loans requiring approval from more senior levels of management.\nLoans with an outstanding balance of up to $5 million may be approved by a designated CRE Underwriting Manager, provided\nthey comply with all policy criteria, including sub-sector limits. Loans between $5 million and $20 million require approval from\nthe Regional Credit Officer (RCO), while loans exceeding $20 million must be approved by the Chief Credit Officer (CCO) or\ntheir delegate.\nLoans that would cause the bank’s exposure to a sub-sector to exceed its quantitative limit require approval from the CRE Risk\nManagement Team, in addition to the standard underwriting approval. The CRE Risk Management Team must conduct a\nthorough review of the loan’s risk profile, the current exposure to the sub-sector, and the potential impact on the bank’s\nportfolio. If the loan is approved, it must be classified as an exception and reported to the Credit Risk Committee.\nThe approval process also includes a secondary review for loans with complex structures, such as those involving multiple\nproperties, cross-collateralization, or non-recourse financing. These loans must be reviewed by the CRE Risk Management\nTeam, regardless of size, to ensure compliance with the policy and to assess any additional risks.\nAll approvals must be documented in the bank’s loan origination system, with clear evidence of compliance with the policy’s\ncriteria. Approval records must include the names and titles of the approving authorities, the date of approval, and any\nconditions or stipulations attached to the approval. This documentation is subject to internal audit and regulatory review."
+            }
+          ],
+          "scope": "CRE loans",
+          "scope_type": "Product",
+          "relationship": "APPLIES_TO_PRODUCT",
+          "scope_sources": [
+            {
+              "node_id": "urn:cpi:source:53:325",
+              "clause": "2",
+              "page": 2,
+              "quote": "2. 2. Scope\nThis synthetic policy applies to all CRE lending activities conducted by the bank, including but not limited to originations,\nrenewals, refinancings, and acquisitions of CRE loans. It covers all business units, subsidiaries, and geographic regions where\nthe bank operates, ensuring a uniform approach to managing CRE sub-sector exposure across the organization.\nThe policy is specifically focused on sub-sector limits within the CRE portfolio. Sub-sectors are defined as distinct categories of\nCRE properties, each with its own risk profile. For the purposes of this policy, the primary sub-sectors include office, retail,\nindustrial, multifamily, hospitality, and specialized real estate (e.g., healthcare, education, or data centers). Each sub-sector is\nsubject to individual exposure limits as outlined in Section 5: Quantitative Limits.\nExcluded from this policy are residential mortgage lending, consumer lending, and non-real estate commercial lending. While\nthese areas may have their own concentration risk policies, they are not addressed within this document. Additionally, this\npolicy does not apply to the bank’s investment portfolio or proprietary trading activities, which are governed by separate risk\nmanagement frameworks.\nThe policy is binding for all employees, contractors, and third-party vendors involved in CRE lending activities. Compliance with\nthis policy is mandatory, and deviations must be approved through the formal exception process described in Section 8:\nExceptions. Failure to adhere to the policy may result in disciplinary action, up to and including termination of employment or\ncontract.\nThis synthetic policy is designed to be scalable and adaptable to the bank’s evolving business needs. As such, it may be\nsupplemented by additional guidelines or procedures tailored to specific regions, business units, or product types, provided they\ndo not conflict with the core principles outlined herein."
+            }
+          ],
+          "inherited_scope": true
+        },
+        {
+          "id": "urn:cpi:rule:v53:clause333:r3",
+          "label": "Loan Approval Authority Exceeding 20 Million",
+          "policy_id": 15,
+          "policy": "2.1 CRE Sub-sector Limits",
+          "version": "2.0",
+          "policy_version_id": 53,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "while loans exceeding $20 million must be approved by the Chief Credit Officer (CCO) or\ntheir delegate.",
+          "conditions": null,
+          "thresholds": [],
+          "approvals": [
+            {
+              "triggered_by_breach": false,
+              "above_threshold": true,
+              "authorities": [
+                "Chief Credit Officer (CCO) or their delegate"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "Chief Credit Officer (CCO) or\ntheir delegate"
+              }
+            }
+          ],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Approval authority",
+            "Decision and escalation authority"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:53:333",
+              "clause": "6",
+              "page": 6,
+              "quote": "6. 6. Approvals\nThe approval process for CRE loans under this synthetic policy is designed to ensure that all transactions comply with the\nbank’s underwriting criteria, sub-sector limits, and risk appetite. Approval authority is delegated based on loan size, complexity,\nand risk profile, with higher-risk or larger loans requiring approval from more senior levels of management.\nLoans with an outstanding balance of up to $5 million may be approved by a designated CRE Underwriting Manager, provided\nthey comply with all policy criteria, including sub-sector limits. Loans between $5 million and $20 million require approval from\nthe Regional Credit Officer (RCO), while loans exceeding $20 million must be approved by the Chief Credit Officer (CCO) or\ntheir delegate.\nLoans that would cause the bank’s exposure to a sub-sector to exceed its quantitative limit require approval from the CRE Risk\nManagement Team, in addition to the standard underwriting approval. The CRE Risk Management Team must conduct a\nthorough review of the loan’s risk profile, the current exposure to the sub-sector, and the potential impact on the bank’s\nportfolio. If the loan is approved, it must be classified as an exception and reported to the Credit Risk Committee.\nThe approval process also includes a secondary review for loans with complex structures, such as those involving multiple\nproperties, cross-collateralization, or non-recourse financing. These loans must be reviewed by the CRE Risk Management\nTeam, regardless of size, to ensure compliance with the policy and to assess any additional risks.\nAll approvals must be documented in the bank’s loan origination system, with clear evidence of compliance with the policy’s\ncriteria. Approval records must include the names and titles of the approving authorities, the date of approval, and any\nconditions or stipulations attached to the approval. This documentation is subject to internal audit and regulatory review."
+            }
+          ],
+          "scope": "CRE loans",
+          "scope_type": "Product",
+          "relationship": "APPLIES_TO_PRODUCT",
+          "scope_sources": [
+            {
+              "node_id": "urn:cpi:source:53:325",
+              "clause": "2",
+              "page": 2,
+              "quote": "2. 2. Scope\nThis synthetic policy applies to all CRE lending activities conducted by the bank, including but not limited to originations,\nrenewals, refinancings, and acquisitions of CRE loans. It covers all business units, subsidiaries, and geographic regions where\nthe bank operates, ensuring a uniform approach to managing CRE sub-sector exposure across the organization.\nThe policy is specifically focused on sub-sector limits within the CRE portfolio. Sub-sectors are defined as distinct categories of\nCRE properties, each with its own risk profile. For the purposes of this policy, the primary sub-sectors include office, retail,\nindustrial, multifamily, hospitality, and specialized real estate (e.g., healthcare, education, or data centers). Each sub-sector is\nsubject to individual exposure limits as outlined in Section 5: Quantitative Limits.\nExcluded from this policy are residential mortgage lending, consumer lending, and non-real estate commercial lending. While\nthese areas may have their own concentration risk policies, they are not addressed within this document. Additionally, this\npolicy does not apply to the bank’s investment portfolio or proprietary trading activities, which are governed by separate risk\nmanagement frameworks.\nThe policy is binding for all employees, contractors, and third-party vendors involved in CRE lending activities. Compliance with\nthis policy is mandatory, and deviations must be approved through the formal exception process described in Section 8:\nExceptions. Failure to adhere to the policy may result in disciplinary action, up to and including termination of employment or\ncontract.\nThis synthetic policy is designed to be scalable and adaptable to the bank’s evolving business needs. As such, it may be\nsupplemented by additional guidelines or procedures tailored to specific regions, business units, or product types, provided they\ndo not conflict with the core principles outlined herein."
+            }
+          ],
+          "inherited_scope": true
+        },
+        {
+          "id": "urn:cpi:rule:v53:clause333:r1",
+          "label": "Loan Approval Authority Up To 5 Million",
+          "policy_id": 15,
+          "policy": "2.1 CRE Sub-sector Limits",
+          "version": "2.0",
+          "policy_version_id": 53,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "Loans with an outstanding balance of up to $5 million may be approved by a designated CRE Underwriting Manager, provided\nthey comply with all policy criteria, including sub-sector limits.",
+          "conditions": null,
+          "thresholds": [],
+          "approvals": [
+            {
+              "triggered_by_breach": false,
+              "above_threshold": false,
+              "authorities": [
+                "CRE Underwriting Manager"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "CRE Underwriting Manager"
+              }
+            }
+          ],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Approval authority",
+            "Decision and escalation authority"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:53:333",
+              "clause": "6",
+              "page": 6,
+              "quote": "6. 6. Approvals\nThe approval process for CRE loans under this synthetic policy is designed to ensure that all transactions comply with the\nbank’s underwriting criteria, sub-sector limits, and risk appetite. Approval authority is delegated based on loan size, complexity,\nand risk profile, with higher-risk or larger loans requiring approval from more senior levels of management.\nLoans with an outstanding balance of up to $5 million may be approved by a designated CRE Underwriting Manager, provided\nthey comply with all policy criteria, including sub-sector limits. Loans between $5 million and $20 million require approval from\nthe Regional Credit Officer (RCO), while loans exceeding $20 million must be approved by the Chief Credit Officer (CCO) or\ntheir delegate.\nLoans that would cause the bank’s exposure to a sub-sector to exceed its quantitative limit require approval from the CRE Risk\nManagement Team, in addition to the standard underwriting approval. The CRE Risk Management Team must conduct a\nthorough review of the loan’s risk profile, the current exposure to the sub-sector, and the potential impact on the bank’s\nportfolio. If the loan is approved, it must be classified as an exception and reported to the Credit Risk Committee.\nThe approval process also includes a secondary review for loans with complex structures, such as those involving multiple\nproperties, cross-collateralization, or non-recourse financing. These loans must be reviewed by the CRE Risk Management\nTeam, regardless of size, to ensure compliance with the policy and to assess any additional risks.\nAll approvals must be documented in the bank’s loan origination system, with clear evidence of compliance with the policy’s\ncriteria. Approval records must include the names and titles of the approving authorities, the date of approval, and any\nconditions or stipulations attached to the approval. This documentation is subject to internal audit and regulatory review."
+            }
+          ],
+          "scope": "CRE loans",
+          "scope_type": "Product",
+          "relationship": "APPLIES_TO_PRODUCT",
+          "scope_sources": [
+            {
+              "node_id": "urn:cpi:source:53:325",
+              "clause": "2",
+              "page": 2,
+              "quote": "2. 2. Scope\nThis synthetic policy applies to all CRE lending activities conducted by the bank, including but not limited to originations,\nrenewals, refinancings, and acquisitions of CRE loans. It covers all business units, subsidiaries, and geographic regions where\nthe bank operates, ensuring a uniform approach to managing CRE sub-sector exposure across the organization.\nThe policy is specifically focused on sub-sector limits within the CRE portfolio. Sub-sectors are defined as distinct categories of\nCRE properties, each with its own risk profile. For the purposes of this policy, the primary sub-sectors include office, retail,\nindustrial, multifamily, hospitality, and specialized real estate (e.g., healthcare, education, or data centers). Each sub-sector is\nsubject to individual exposure limits as outlined in Section 5: Quantitative Limits.\nExcluded from this policy are residential mortgage lending, consumer lending, and non-real estate commercial lending. While\nthese areas may have their own concentration risk policies, they are not addressed within this document. Additionally, this\npolicy does not apply to the bank’s investment portfolio or proprietary trading activities, which are governed by separate risk\nmanagement frameworks.\nThe policy is binding for all employees, contractors, and third-party vendors involved in CRE lending activities. Compliance with\nthis policy is mandatory, and deviations must be approved through the formal exception process described in Section 8:\nExceptions. Failure to adhere to the policy may result in disciplinary action, up to and including termination of employment or\ncontract.\nThis synthetic policy is designed to be scalable and adaptable to the bank’s evolving business needs. As such, it may be\nsupplemented by additional guidelines or procedures tailored to specific regions, business units, or product types, provided they\ndo not conflict with the core principles outlined herein."
+            }
+          ],
+          "inherited_scope": true
+        }
+      ]
+    },
+    {
+      "question": "product",
+      "value": "Construction Loan",
+      "illustrative_request": false,
+      "total": 2,
+      "examples": [
+        {
+          "id": "urn:cpi:rule:v54:clause349:r14",
+          "label": "Mandatory First-Priority Lien and Personal or Corporate Guarantees",
+          "policy_id": 16,
+          "policy": "2.2 Construction Guidance",
+          "version": "2.0",
+          "policy_version_id": 54,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "All construction loans must be supported by a first-priority lien on the property being developed, as well as personal or\ncorporate guarantees from the borrower.",
+          "conditions": null,
+          "thresholds": [],
+          "approvals": [],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Collateral"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:54:349",
+              "clause": "4",
+              "page": 4,
+              "quote": "4. 4. Underwriting Criteria\nUnderwriting for construction loans must adhere to stringent criteria to ensure the borrower’s financial capacity and the project’s\nfeasibility. The bank requires a minimum FICO score of 700 for individual borrowers or a minimum credit rating of BBB- for\ncorporate borrowers. For project-specific underwriting, the borrower must demonstrate a track record of successfully completing\nat least three similar projects within the past five years, with no material defaults or cost overruns exceeding 10% of the original\nbudget.\nThe Loan-to-Cost (LTC) ratio for construction loans shall not exceed 80% for commercial projects or 85% for residential\nprojects. For speculative developments, the LTC ratio is capped at 70%. The Loan-to-Value (LTV) ratio, based on the appraised\nvalue of the completed project, must not exceed 65% for commercial properties or 75% for residential properties. These\nthresholds are designed to provide a buffer against cost overruns and market downturns.\nBorrowers are required to contribute a minimum of 20% of the total project cost as equity, which must be injected prior to the\nfirst disbursement of loan funds. Equity contributions may include cash, land (valued at no more than 50% of its appraised\nvalue), or other unencumbered assets acceptable to the bank. The bank will not recognize sweat equity or future profits as valid\nforms of equity contribution.\nA comprehensive feasibility study must be submitted as part of the loan application, prepared by an independent third-party\nconsultant approved by the bank. The study must include detailed market analysis, pro forma financial projections, and\nsensitivity analysis for key variables such as construction costs, absorption rates, and interest rates. The bank reserves the\nright to commission its own feasibility study at the borrower’s expense if deemed necessary.\nAll construction loans must be supported by a first-priority lien on the property being developed, as well as personal or\ncorporate guarantees from the borrower. Additional collateral, such as assignments of contracts or letters of credit, may be\nrequired at the discretion of the underwriter. The bank will not proceed with any construction loan without a valid, enforceable\nsecurity interest in place."
+            }
+          ],
+          "scope": "Construction loan",
+          "scope_type": "Product",
+          "relationship": "DOCUMENTS_PRODUCT_SCOPE",
+          "scope_sources": [
+            {
+              "node_id": "urn:cpi:source:54:349",
+              "clause": "4",
+              "page": 4,
+              "quote": "4. 4. Underwriting Criteria\nUnderwriting for construction loans must adhere to stringent criteria to ensure the borrower’s financial capacity and the project’s\nfeasibility. The bank requires a minimum FICO score of 700 for individual borrowers or a minimum credit rating of BBB- for\ncorporate borrowers. For project-specific underwriting, the borrower must demonstrate a track record of successfully completing\nat least three similar projects within the past five years, with no material defaults or cost overruns exceeding 10% of the original\nbudget.\nThe Loan-to-Cost (LTC) ratio for construction loans shall not exceed 80% for commercial projects or 85% for residential\nprojects. For speculative developments, the LTC ratio is capped at 70%. The Loan-to-Value (LTV) ratio, based on the appraised\nvalue of the completed project, must not exceed 65% for commercial properties or 75% for residential properties. These\nthresholds are designed to provide a buffer against cost overruns and market downturns.\nBorrowers are required to contribute a minimum of 20% of the total project cost as equity, which must be injected prior to the\nfirst disbursement of loan funds. Equity contributions may include cash, land (valued at no more than 50% of its appraised\nvalue), or other unencumbered assets acceptable to the bank. The bank will not recognize sweat equity or future profits as valid\nforms of equity contribution.\nA comprehensive feasibility study must be submitted as part of the loan application, prepared by an independent third-party\nconsultant approved by the bank. The study must include detailed market analysis, pro forma financial projections, and\nsensitivity analysis for key variables such as construction costs, absorption rates, and interest rates. The bank reserves the\nright to commission its own feasibility study at the borrower’s expense if deemed necessary.\nAll construction loans must be supported by a first-priority lien on the property being developed, as well as personal or\ncorporate guarantees from the borrower. Additional collateral, such as assignments of contracts or letters of credit, may be\nrequired at the discretion of the underwriter. The bank will not proceed with any construction loan without a valid, enforceable\nsecurity interest in place."
+            }
+          ]
+        },
+        {
+          "id": "urn:cpi:rule:v54:clause351:r1",
+          "label": "Maximum Exposure Limit per Single Construction Loan",
+          "policy_id": 16,
+          "policy": "2.2 Construction Guidance",
+          "version": "2.0",
+          "policy_version_id": 54,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO.",
+          "conditions": null,
+          "thresholds": [
+            {
+              "unit": "million USD",
+              "value": 50.0,
+              "evidence": "$50 million",
+              "operator": "LTE",
+              "metric_key": "loan_exposure_amount"
+            }
+          ],
+          "approvals": [
+            {
+              "triggered_by_breach": true,
+              "above_threshold": false,
+              "authorities": [
+                "CLC"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO."
+              }
+            },
+            {
+              "triggered_by_breach": true,
+              "above_threshold": false,
+              "authorities": [
+                "CCO"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO."
+              }
+            }
+          ],
+          "evidence_requirements": [],
+          "exception_ids": [
+            "urn:cpi:rule:v54:clause351:r1:in-statement-exception"
+          ],
+          "policy_classes": [
+            "Limits and thresholds",
+            "Exposure and concentration"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:54:351",
+              "clause": "5",
+              "page": 5,
+              "quote": "5. 5. Quantitative Limits and Thresholds\nThis policy establishes quantitative limits to control the bank’s exposure to construction lending risks. The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO. Aggregate exposure to construction\nlending shall not exceed 25% of the bank’s total loan portfolio at any time. Additionally, the bank’s exposure to any single\nborrower or borrower group for construction purposes is limited to 15% of the bank’s Tier 1 capital.\nFor speculative construction projects, the bank imposes a sub-limit of $25 million per loan and 10% of the total loan portfolio.\nSpeculative projects are defined as those where less than 50% of the units or space are pre-sold or pre-leased at the time of\nloan closing. Projects exceeding these thresholds require additional approvals, including a unanimous vote by the CLC and\nwritten justification from the Relationship Manager.\nThe bank maintains a contingency reserve requirement of 10% of the total project cost for all construction loans. This reserve is\nheld in a separate escrow account and released only upon completion of the project or as approved by the Construction Risk\nOfficer. In the event of cost overruns, the borrower is required to inject additional equity to cover the shortfall before any reserve\nfunds are released.\nInterest rate risk is managed through the use of fixed-rate loans or interest rate caps for variable-rate construction loans. The\nmaximum allowable interest rate for construction loans is the bank’s prime rate plus 200 basis points. For loans with variable\nrates, the bank requires a minimum debt service coverage ratio (DSCR) of 1.25x, calculated using a stressed interest rate of\nprime + 300 basis points.\nThe bank also imposes limits on the duration of construction loans. The maximum term for a construction loan is 36 months,\nwith an option to extend for an additional 12 months subject to CLC approval. Loans that exceed 24 months in duration require\nquarterly progress inspections by an independent third-party engineer, at the borrower’s expense. Failure to meet construction\nmilestones may result in the suspension of disbursements or acceleration of the loan."
+            }
+          ],
+          "scope": "Construction loan",
+          "scope_type": "Product",
+          "relationship": "DOCUMENTS_PRODUCT_SCOPE",
+          "scope_sources": [
+            {
+              "node_id": "urn:cpi:source:54:351",
+              "clause": "5",
+              "page": 5,
+              "quote": "5. 5. Quantitative Limits and Thresholds\nThis policy establishes quantitative limits to control the bank’s exposure to construction lending risks. The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO. Aggregate exposure to construction\nlending shall not exceed 25% of the bank’s total loan portfolio at any time. Additionally, the bank’s exposure to any single\nborrower or borrower group for construction purposes is limited to 15% of the bank’s Tier 1 capital.\nFor speculative construction projects, the bank imposes a sub-limit of $25 million per loan and 10% of the total loan portfolio.\nSpeculative projects are defined as those where less than 50% of the units or space are pre-sold or pre-leased at the time of\nloan closing. Projects exceeding these thresholds require additional approvals, including a unanimous vote by the CLC and\nwritten justification from the Relationship Manager.\nThe bank maintains a contingency reserve requirement of 10% of the total project cost for all construction loans. This reserve is\nheld in a separate escrow account and released only upon completion of the project or as approved by the Construction Risk\nOfficer. In the event of cost overruns, the borrower is required to inject additional equity to cover the shortfall before any reserve\nfunds are released.\nInterest rate risk is managed through the use of fixed-rate loans or interest rate caps for variable-rate construction loans. The\nmaximum allowable interest rate for construction loans is the bank’s prime rate plus 200 basis points. For loans with variable\nrates, the bank requires a minimum debt service coverage ratio (DSCR) of 1.25x, calculated using a stressed interest rate of\nprime + 300 basis points.\nThe bank also imposes limits on the duration of construction loans. The maximum term for a construction loan is 36 months,\nwith an option to extend for an additional 12 months subject to CLC approval. Loans that exceed 24 months in duration require\nquarterly progress inspections by an independent third-party engineer, at the borrower’s expense. Failure to meet construction\nmilestones may result in the suspension of disbursements or acceleration of the loan."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "question": "rating",
+      "value": "",
+      "illustrative_request": false,
+      "total": 11,
+      "examples": [
+        {
+          "id": "urn:cpi:rule:v51:clause288:r1",
+          "label": "RAROC Methodology and Calculation Formula",
+          "policy_id": 13,
+          "policy": "1.1 RAROC Floors",
+          "version": "1.7",
+          "policy_version_id": 51,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "4. 4. RAROC Methodology and Calculation\nThe RAROC for each credit exposure is calculated using the bank’s internal economic profit model, which adjusts nominal\nreturns for risk, cost of capital, and operational expenses. The formula for RAROC is defined as: RAROC = (Risk-Adjusted\nRevenue - Expected Loss - Operating Costs) / Economic Capital. Risk-Adjusted Revenue reflects the net interest income and\nfees associated with the exposure, adjusted for credit spreads and other risk premiums.\nEconomic Capital is determined using the bank’s internal capital allocation model, which assigns capital to each exposure\nbased on its risk characteristics, including probability of default (PD), loss given default (LGD), and exposure at default (EAD).\nThe model incorporates both systematic and idiosyncratic risk factors and is calibrated to a 99.9% confidence interval over a\none-year horizon, in line with Basel III standards.\nExpected Loss is calculated as the product of PD, LGD, and EAD, representing the average annual loss expected from the\nexposure. Operating Costs include all direct and indirect expenses associated with originating, servicing, and monitoring the\ncredit exposure, such as underwriting fees, legal costs, and administrative overhead. These costs are allocated to individual\nexposures based on their complexity and resource requirements.\nThe bank employs a tiered RAROC floor structure, with minimum thresholds varying by asset class, risk rating, and tenure. For\nexample, investment-grade corporate exposures are subject to a minimum RAROC floor of 12%, while sub-investment-grade\nexposures require a floor of 18%. Commercial real estate exposures are assigned a floor of 15%, reflecting their higher volatility\nand illiquidity risk. These thresholds are reviewed annually by the CPC and adjusted based on changes in the bank’s cost of\ncapital, risk appetite, or market conditions.\nAll RAROC calculations must be performed using the bank’s approved modeling tools and validated by the CRM department.\nManual overrides or adjustments to the model inputs are prohibited unless explicitly approved by the CRO. The methodology\nand assumptions underlying the RAROC calculations are documented in the bank’s Model Risk Management Policy, which is\nreferenced in this document.",
+          "conditions": null,
+          "thresholds": [],
+          "approvals": [],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Pricing and returns",
+            "Definitions"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:51:288",
+              "clause": "4",
+              "page": 4,
+              "quote": "4. 4. RAROC Methodology and Calculation\nThe RAROC for each credit exposure is calculated using the bank’s internal economic profit model, which adjusts nominal\nreturns for risk, cost of capital, and operational expenses. The formula for RAROC is defined as: RAROC = (Risk-Adjusted\nRevenue - Expected Loss - Operating Costs) / Economic Capital. Risk-Adjusted Revenue reflects the net interest income and\nfees associated with the exposure, adjusted for credit spreads and other risk premiums.\nEconomic Capital is determined using the bank’s internal capital allocation model, which assigns capital to each exposure\nbased on its risk characteristics, including probability of default (PD), loss given default (LGD), and exposure at default (EAD).\nThe model incorporates both systematic and idiosyncratic risk factors and is calibrated to a 99.9% confidence interval over a\none-year horizon, in line with Basel III standards.\nExpected Loss is calculated as the product of PD, LGD, and EAD, representing the average annual loss expected from the\nexposure. Operating Costs include all direct and indirect expenses associated with originating, servicing, and monitoring the\ncredit exposure, such as underwriting fees, legal costs, and administrative overhead. These costs are allocated to individual\nexposures based on their complexity and resource requirements.\nThe bank employs a tiered RAROC floor structure, with minimum thresholds varying by asset class, risk rating, and tenure. For\nexample, investment-grade corporate exposures are subject to a minimum RAROC floor of 12%, while sub-investment-grade\nexposures require a floor of 18%. Commercial real estate exposures are assigned a floor of 15%, reflecting their higher volatility\nand illiquidity risk. These thresholds are reviewed annually by the CPC and adjusted based on changes in the bank’s cost of\ncapital, risk appetite, or market conditions.\nAll RAROC calculations must be performed using the bank’s approved modeling tools and validated by the CRM department.\nManual overrides or adjustments to the model inputs are prohibited unless explicitly approved by the CRO. The methodology\nand assumptions underlying the RAROC calculations are documented in the bank’s Model Risk Management Policy, which is\nreferenced in this document."
+            }
+          ]
+        },
+        {
+          "id": "urn:cpi:rule:v48:clause230:r10",
+          "label": "Investment-Grade ICR Warning Level Definition",
+          "policy_id": 10,
+          "policy": "2.1 Coverage Ratios",
+          "version": "2.4",
+          "policy_version_id": 48,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "Similarly, an ICR between 2.00x\nand 3.00x (for investment-grade borrowers) triggers a warning,",
+          "conditions": null,
+          "thresholds": [
+            {
+              "unit": "x",
+              "value": 2.0,
+              "evidence": "2.00x",
+              "operator": "GTE",
+              "metric_key": "interest_coverage_ratio"
+            },
+            {
+              "unit": "x",
+              "value": 3.0,
+              "evidence": "3.00x",
+              "operator": "LTE",
+              "metric_key": "interest_coverage_ratio"
+            }
+          ],
+          "approvals": [],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Monitoring",
+            "Interest and collateral coverage"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:48:230",
+              "clause": "5",
+              "page": 5,
+              "quote": "5. 5. Quantitative Limits and Thresholds\nQuantitative limits and thresholds for coverage ratios are established to ensure consistency and discipline in the credit approval\nprocess. The minimum DSCR threshold is set at 1.25x for standard commercial loans, with a higher threshold of 1.50x for loans\nto borrowers in high-risk sectors such as real estate, hospitality, or start-up ventures. For investment-grade borrowers, the\nminimum ICR threshold is 3.00x, while for speculative-grade borrowers, it is 4.00x. These thresholds are synthetic and\ndesigned to illustrate the bank’s risk-based approach to underwriting.\nThe CCR threshold for secured lending is set at a minimum of 1.30x, with haircuts applied to collateral based on its liquidity and\nvolatility. For example, marketable securities are subject to a 10% haircut, while real estate and inventory are subject to a 20%\nhaircut. The policy also requires that collateral be revalued at least annually, with more frequent revaluations triggered by\nmaterial changes in market conditions or the borrower’s financial performance.\nIn addition to the minimum thresholds, the policy establishes warning and breach levels for each ratio. A DSCR between 1.00x\nand 1.25x triggers a warning, requiring enhanced monitoring and a corrective action plan. A DSCR below 1.00x constitutes a\nbreach, requiring immediate escalation to the CCO and the development of a remediation plan. Similarly, an ICR between 2.00x\nand 3.00x (for investment-grade borrowers) triggers a warning, while an ICR below 2.00x constitutes a breach.\nThe policy also includes sector-specific thresholds to account for the unique risks of different industries. For example, borrowers\nin the oil and gas sector may be required to maintain a DSCR of 1.75x due to the volatility of commodity prices. Similarly,\nborrowers in the technology sector may be subject to higher ICR thresholds to account for the uncertainty of future cash flows.\nThese sector-specific thresholds are reviewed annually by the CRC and adjusted as necessary.\nThis section of the synthetic policy highlights the importance of quantitative limits in managing credit risk. The thresholds and\nlimits outlined herein are illustrative and designed to demonstrate the bank’s approach to setting prudent yet flexible\nunderwriting standards. Actual thresholds may vary based on the bank’s risk appetite, regulatory requirements, and market\nconditions."
+            }
+          ]
+        },
+        {
+          "id": "urn:cpi:rule:v48:clause230:r3",
+          "label": "Minimum ICR Threshold for Investment-Grade Borrowers",
+          "policy_id": 10,
+          "policy": "2.1 Coverage Ratios",
+          "version": "2.4",
+          "policy_version_id": 48,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "For investment-grade borrowers, the\nminimum ICR threshold is 3.00x,",
+          "conditions": null,
+          "thresholds": [
+            {
+              "unit": "x",
+              "value": 3.0,
+              "evidence": "3.00x",
+              "operator": "GTE",
+              "metric_key": "interest_coverage_ratio"
+            }
+          ],
+          "approvals": [],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Limits and thresholds",
+            "Interest and collateral coverage"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:48:230",
+              "clause": "5",
+              "page": 5,
+              "quote": "5. 5. Quantitative Limits and Thresholds\nQuantitative limits and thresholds for coverage ratios are established to ensure consistency and discipline in the credit approval\nprocess. The minimum DSCR threshold is set at 1.25x for standard commercial loans, with a higher threshold of 1.50x for loans\nto borrowers in high-risk sectors such as real estate, hospitality, or start-up ventures. For investment-grade borrowers, the\nminimum ICR threshold is 3.00x, while for speculative-grade borrowers, it is 4.00x. These thresholds are synthetic and\ndesigned to illustrate the bank’s risk-based approach to underwriting.\nThe CCR threshold for secured lending is set at a minimum of 1.30x, with haircuts applied to collateral based on its liquidity and\nvolatility. For example, marketable securities are subject to a 10% haircut, while real estate and inventory are subject to a 20%\nhaircut. The policy also requires that collateral be revalued at least annually, with more frequent revaluations triggered by\nmaterial changes in market conditions or the borrower’s financial performance.\nIn addition to the minimum thresholds, the policy establishes warning and breach levels for each ratio. A DSCR between 1.00x\nand 1.25x triggers a warning, requiring enhanced monitoring and a corrective action plan. A DSCR below 1.00x constitutes a\nbreach, requiring immediate escalation to the CCO and the development of a remediation plan. Similarly, an ICR between 2.00x\nand 3.00x (for investment-grade borrowers) triggers a warning, while an ICR below 2.00x constitutes a breach.\nThe policy also includes sector-specific thresholds to account for the unique risks of different industries. For example, borrowers\nin the oil and gas sector may be required to maintain a DSCR of 1.75x due to the volatility of commodity prices. Similarly,\nborrowers in the technology sector may be subject to higher ICR thresholds to account for the uncertainty of future cash flows.\nThese sector-specific thresholds are reviewed annually by the CRC and adjusted as necessary.\nThis section of the synthetic policy highlights the importance of quantitative limits in managing credit risk. The thresholds and\nlimits outlined herein are illustrative and designed to demonstrate the bank’s approach to setting prudent yet flexible\nunderwriting standards. Actual thresholds may vary based on the bank’s risk appetite, regulatory requirements, and market\nconditions."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "question": "exposure",
+      "value": "",
+      "illustrative_request": false,
+      "total": 12,
+      "examples": [
+        {
+          "id": "urn:cpi:rule:v54:clause351:r2",
+          "label": "Aggregate Construction Lending Portfolio Exposure Limit",
+          "policy_id": 16,
+          "policy": "2.2 Construction Guidance",
+          "version": "2.0",
+          "policy_version_id": 54,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "Aggregate exposure to construction\nlending shall not exceed 25% of the bank’s total loan portfolio at any time.",
+          "conditions": null,
+          "thresholds": [
+            {
+              "unit": "%",
+              "value": 25.0,
+              "evidence": "not exceed 25%",
+              "operator": "LTE",
+              "metric_key": "aggregate_exposure_percentage"
+            }
+          ],
+          "approvals": [],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Limits and thresholds",
+            "Exposure and concentration"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:54:351",
+              "clause": "5",
+              "page": 5,
+              "quote": "5. 5. Quantitative Limits and Thresholds\nThis policy establishes quantitative limits to control the bank’s exposure to construction lending risks. The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO. Aggregate exposure to construction\nlending shall not exceed 25% of the bank’s total loan portfolio at any time. Additionally, the bank’s exposure to any single\nborrower or borrower group for construction purposes is limited to 15% of the bank’s Tier 1 capital.\nFor speculative construction projects, the bank imposes a sub-limit of $25 million per loan and 10% of the total loan portfolio.\nSpeculative projects are defined as those where less than 50% of the units or space are pre-sold or pre-leased at the time of\nloan closing. Projects exceeding these thresholds require additional approvals, including a unanimous vote by the CLC and\nwritten justification from the Relationship Manager.\nThe bank maintains a contingency reserve requirement of 10% of the total project cost for all construction loans. This reserve is\nheld in a separate escrow account and released only upon completion of the project or as approved by the Construction Risk\nOfficer. In the event of cost overruns, the borrower is required to inject additional equity to cover the shortfall before any reserve\nfunds are released.\nInterest rate risk is managed through the use of fixed-rate loans or interest rate caps for variable-rate construction loans. The\nmaximum allowable interest rate for construction loans is the bank’s prime rate plus 200 basis points. For loans with variable\nrates, the bank requires a minimum debt service coverage ratio (DSCR) of 1.25x, calculated using a stressed interest rate of\nprime + 300 basis points.\nThe bank also imposes limits on the duration of construction loans. The maximum term for a construction loan is 36 months,\nwith an option to extend for an additional 12 months subject to CLC approval. Loans that exceed 24 months in duration require\nquarterly progress inspections by an independent third-party engineer, at the borrower’s expense. Failure to meet construction\nmilestones may result in the suspension of disbursements or acceleration of the loan."
+            }
+          ]
+        },
+        {
+          "id": "urn:cpi:rule:v54:clause351:r1",
+          "label": "Maximum Exposure Limit per Single Construction Loan",
+          "policy_id": 16,
+          "policy": "2.2 Construction Guidance",
+          "version": "2.0",
+          "policy_version_id": 54,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO.",
+          "conditions": null,
+          "thresholds": [
+            {
+              "unit": "million USD",
+              "value": 50.0,
+              "evidence": "$50 million",
+              "operator": "LTE",
+              "metric_key": "loan_exposure_amount"
+            }
+          ],
+          "approvals": [
+            {
+              "triggered_by_breach": true,
+              "above_threshold": false,
+              "authorities": [
+                "CLC"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO."
+              }
+            },
+            {
+              "triggered_by_breach": true,
+              "above_threshold": false,
+              "authorities": [
+                "CCO"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO."
+              }
+            }
+          ],
+          "evidence_requirements": [],
+          "exception_ids": [
+            "urn:cpi:rule:v54:clause351:r1:in-statement-exception"
+          ],
+          "policy_classes": [
+            "Limits and thresholds",
+            "Exposure and concentration"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:54:351",
+              "clause": "5",
+              "page": 5,
+              "quote": "5. 5. Quantitative Limits and Thresholds\nThis policy establishes quantitative limits to control the bank’s exposure to construction lending risks. The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO. Aggregate exposure to construction\nlending shall not exceed 25% of the bank’s total loan portfolio at any time. Additionally, the bank’s exposure to any single\nborrower or borrower group for construction purposes is limited to 15% of the bank’s Tier 1 capital.\nFor speculative construction projects, the bank imposes a sub-limit of $25 million per loan and 10% of the total loan portfolio.\nSpeculative projects are defined as those where less than 50% of the units or space are pre-sold or pre-leased at the time of\nloan closing. Projects exceeding these thresholds require additional approvals, including a unanimous vote by the CLC and\nwritten justification from the Relationship Manager.\nThe bank maintains a contingency reserve requirement of 10% of the total project cost for all construction loans. This reserve is\nheld in a separate escrow account and released only upon completion of the project or as approved by the Construction Risk\nOfficer. In the event of cost overruns, the borrower is required to inject additional equity to cover the shortfall before any reserve\nfunds are released.\nInterest rate risk is managed through the use of fixed-rate loans or interest rate caps for variable-rate construction loans. The\nmaximum allowable interest rate for construction loans is the bank’s prime rate plus 200 basis points. For loans with variable\nrates, the bank requires a minimum debt service coverage ratio (DSCR) of 1.25x, calculated using a stressed interest rate of\nprime + 300 basis points.\nThe bank also imposes limits on the duration of construction loans. The maximum term for a construction loan is 36 months,\nwith an option to extend for an additional 12 months subject to CLC approval. Loans that exceed 24 months in duration require\nquarterly progress inspections by an independent third-party engineer, at the borrower’s expense. Failure to meet construction\nmilestones may result in the suspension of disbursements or acceleration of the loan."
+            }
+          ]
+        },
+        {
+          "id": "urn:cpi:rule:v49:clause250:r2",
+          "label": "Single Asset Class Concentration Limit",
+          "policy_id": 11,
+          "policy": "2.2 Eligible Collateral",
+          "version": "2.4",
+          "policy_version_id": 49,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "For\nexample, no more than 15% of the bank’s total collateral portfolio may consist of a single asset class, such as commercial real\nestate.",
+          "conditions": null,
+          "thresholds": [
+            {
+              "unit": "%",
+              "value": 15.0,
+              "evidence": "no more than 15%",
+              "operator": "LTE",
+              "metric_key": "asset_class_concentration_percentage"
+            }
+          ],
+          "approvals": [],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Limits and thresholds",
+            "Exposure and concentration"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:49:250",
+              "clause": "5",
+              "page": 5,
+              "quote": "5. 5. Quantitative Limits\nQuantitative limits are established to ensure that the value of collateral is sufficient to cover the credit exposure, even under\nstressed conditions. The bank applies a Loan-to-Value (LTV) ratio to determine the maximum credit exposure that can be\nsecured by a given collateral. For example, residential real estate typically has an LTV limit of 80%, meaning the loan amount\ncannot exceed 80% of the property’s appraised value. Commercial real estate may have a lower LTV limit, such as 65%,\nreflecting its higher volatility.\nHaircuts are applied to the market value of collateral to account for potential declines in value during liquidation. For instance,\npublicly traded equities may have a haircut of 20%, meaning only 80% of their market value is considered as eligible collateral.\nThe haircut percentages are determined based on the asset class, liquidity, and historical volatility, and are reviewed annually\nby the CMU. These limits are synthetic but designed to mirror industry standards.\nThe bank also imposes concentration limits to prevent over-reliance on a single type of collateral or a single borrower. For\nexample, no more than 15% of the bank’s total collateral portfolio may consist of a single asset class, such as commercial real\nestate. Similarly, the bank limits its exposure to any single borrower or group of connected counterparties to 10% of its total\ncapital base, in line with regulatory requirements.\nDynamic limits are applied to collateral that is subject to significant market fluctuations, such as commodities or foreign\nexchange. These limits are adjusted in real-time based on market conditions and are monitored continuously by the CMU. The\nbank uses automated systems to track collateral values and trigger margin calls or additional security requirements when\nthresholds are breached.\nAll quantitative limits are documented in the bank’s internal risk management systems and are subject to regular testing and\nvalidation. The CMU conducts back-testing of the limits at least annually to ensure they remain appropriate and effective in\nmitigating risk. Any proposed changes to the limits must be approved by the CRC and documented in the policy."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "question": "collateral",
+      "value": "",
+      "illustrative_request": false,
+      "total": 38,
+      "examples": [
+        {
+          "id": "urn:cpi:rule:v53:clause329:r3",
+          "label": "Maximum Loan-to-Value Ratio for Most CRE Sub-sectors",
+          "policy_id": 15,
+          "policy": "2.1 CRE Sub-sector Limits",
+          "version": "2.0",
+          "policy_version_id": 53,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "LTV ratios are capped at 70% for most sub-sectors,",
+          "conditions": null,
+          "thresholds": [
+            {
+              "unit": "%",
+              "value": 70.0,
+              "evidence": "capped at 70%",
+              "operator": "LTE",
+              "metric_key": "ltv"
+            }
+          ],
+          "approvals": [],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Limits and thresholds",
+            "LTV"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:53:329",
+              "clause": "4",
+              "page": 4,
+              "quote": "4. 4. Underwriting Criteria\nThe underwriting criteria outlined in this synthetic policy are designed to ensure that all CRE loans adhere to the bank’s risk\nappetite and sub-sector limits. Underwriters must evaluate each loan application against a set of qualitative and quantitative\ncriteria, which include but are not limited to borrower creditworthiness, property cash flow, loan-to-value (LTV) ratios, debt\nservice coverage ratios (DSCR), and sub-sector exposure.\nFor borrower creditworthiness, underwriters must assess the financial strength, experience, and track record of the borrower or\nsponsoring entity. This includes a review of financial statements, credit history, and prior project performance. Borrowers must\ndemonstrate the ability to service debt obligations under stress scenarios, with a minimum DSCR of 1.25x for most sub-sectors.\nHigher DSCR thresholds may be required for higher-risk sub-sectors, such as hospitality, where a minimum of 1.40x may apply.\nProperty-level underwriting must include a thorough analysis of the property’s cash flow, occupancy rates, tenant quality, and\nmarket position. For office and retail properties, underwriters must evaluate lease rollover risk, tenant concentration, and the\nproperty’s ability to attract and retain tenants. Industrial properties require an assessment of location, accessibility, and demand\ndrivers, while multifamily properties must demonstrate stable occupancy and rental income.\nLTV ratios are capped at 70% for most sub-sectors, with stricter limits of 60% for higher-risk sub-sectors such as hospitality or\nspecialized real estate. Exceptions to these limits require approval from the CRE Risk Management Team and must be justified\nby compensating factors, such as strong borrower credit or exceptional property cash flow.\nUnderwriters are also responsible for ensuring that the loan complies with the sub-sector exposure limits defined in Section 5. If\na loan approval would cause the bank’s exposure to a sub-sector to exceed its limit, the underwriter must escalate the request\nto the CRE Risk Management Team for further review and potential exception processing."
+            }
+          ]
+        },
+        {
+          "id": "urn:cpi:rule:v48:clause224:r6",
+          "label": "Collateral Haircut for Illiquid Assets",
+          "policy_id": 10,
+          "policy": "2.1 Coverage Ratios",
+          "version": "2.4",
+          "policy_version_id": 48,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "with a haircut of 20% applied to illiquid assets such as real\nestate or inventory.",
+          "conditions": null,
+          "thresholds": [
+            {
+              "unit": "%",
+              "value": 20.0,
+              "evidence": "20%",
+              "operator": "EQ",
+              "metric_key": "collateral_haircut"
+            }
+          ],
+          "approvals": [],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Collateral",
+            "Collateral haircut"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:48:224",
+              "clause": "2",
+              "page": 2,
+              "quote": "2. 2. Scope and Definitions of Coverage Ratios\nThe scope of this policy encompasses all credit exposures where coverage ratios are a material component of the underwriting\nor monitoring process. This includes commercial lending, corporate finance, project finance, and structured credit transactions.\nThe policy is applicable globally across all jurisdictions where the bank operates, subject to local regulatory adaptations as\napproved by the Group Credit Risk team. For synthetic demonstration purposes, this policy assumes a standardized global\napproach without jurisdiction-specific variations.\nKey definitions under this policy include the Debt Service Coverage Ratio (DSCR), calculated as Net Operating Income (NOI)\ndivided by Total Debt Service (principal and interest). A DSCR of 1.25x is the minimum threshold for standard commercial\nloans, while a threshold of 1.50x applies to higher-risk sectors such as real estate development. The Interest Coverage Ratio\n(ICR), defined as Earnings Before Interest and Taxes (EBIT) divided by Interest Expense, must exceed 3.00x for\ninvestment-grade borrowers and 4.00x for speculative-grade borrowers. These thresholds are synthetic and designed to\nillustrate policy rigor.\nThe Collateral Coverage Ratio (CCR) is defined as the fair market value of pledged collateral divided by the outstanding loan\nbalance. For secured lending, the minimum CCR is set at 1.30x, with a haircut of 20% applied to illiquid assets such as real\nestate or inventory. Liquid assets, such as marketable securities, are subject to a 10% haircut. The policy requires independent\nvaluation of collateral at least annually, with more frequent assessments triggered by material changes in market conditions or\nborrower financial performance.\nAdditional ratios, such as the Loan-to-Value (LTV) ratio and Fixed Charge Coverage Ratio (FCCR), are addressed in\ncomplementary policies within the COL-Std-v2.4 framework. This clause focuses exclusively on coverage ratios as defined\nherein. All calculations must be performed using the bank’s standardized templates, which are embedded in the credit\nunderwriting system. Deviations from these templates require approval from the Head of Credit Analytics.\nFor the purposes of this synthetic policy, all definitions and thresholds are illustrative. The bank’s actual policies may differ\nbased on risk appetite, regulatory requirements, and market conditions. This section is included to demonstrate the depth and\nspecificity of a real credit policy document, emphasizing the importance of clarity and precision in financial definitions."
+            }
+          ]
+        },
+        {
+          "id": "urn:cpi:rule:v48:clause228:r3",
+          "label": "First-Lien Requirement for Standard CCR Threshold",
+          "policy_id": 10,
+          "policy": "2.1 Coverage Ratios",
+          "version": "2.4",
+          "policy_version_id": 48,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "For example, real estate collateral\nmust be insured, and the bank must hold a first-lien position to qualify for the standard CCR threshold.",
+          "conditions": null,
+          "thresholds": [],
+          "approvals": [],
+          "evidence_requirements": [
+            {
+              "evidence": "real estate collateral\nmust be insured, and the bank must hold a first-lien position",
+              "evidence_type": "real estate collateral insurance and first-lien position"
+            }
+          ],
+          "exception_ids": [],
+          "policy_classes": [
+            "Collateral",
+            "Interest and collateral coverage"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:48:228",
+              "clause": "4",
+              "page": 4,
+              "quote": "4. 4. Underwriting Criteria for Coverage Ratios\nUnderwriting criteria for coverage ratios are designed to ensure that borrowers demonstrate sufficient financial strength to\nservice their debt obligations. The primary ratios—DSCR, ICR, and CCR—must meet or exceed the minimum thresholds\nspecified in Section 2. For term loans, the DSCR must be calculated over the entire loan term, while for revolving facilities, it\nmust be assessed on a rolling 12-month basis. Underwriters are required to use the bank’s standardized financial models to\nperform these calculations.\nIn addition to meeting the minimum thresholds, underwriters must evaluate the stability and predictability of the borrower’s cash\nflows. For example, borrowers in cyclical industries, such as commodities or retail, may be subject to higher DSCR thresholds\nor additional covenants to account for revenue volatility. Similarly, borrowers with a high proportion of variable-rate debt may be\nrequired to maintain a higher ICR to mitigate interest rate risk.\nCollateral coverage is a critical component of the underwriting process for secured loans. The CCR must be calculated using\nthe most recent independent valuation of the collateral, with haircuts applied as specified in Section 2. Underwriters must also\nassess the liquidity of the collateral and the legal enforceability of the bank’s security interest. For example, real estate collateral\nmust be insured, and the bank must hold a first-lien position to qualify for the standard CCR threshold.\nUnderwriters are required to document their rationale for any coverage ratio that falls below the minimum threshold but is still\ndeemed acceptable. This documentation must include a detailed analysis of mitigating factors, such as strong sponsorship,\nadditional guarantees, or structural subordination of other creditors. Such cases must be escalated to the Head of Underwriting\nfor approval, with further escalation to the CCO if the deviation exceeds 10% of the threshold.\nThis section of the synthetic policy demonstrates the rigor and granularity of underwriting standards in a real-world credit policy.\nThe criteria outlined herein are illustrative and designed to reflect the bank’s commitment to prudent risk-taking. Actual\nunderwriting criteria may vary based on the bank’s risk appetite, market conditions, and regulatory requirements."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "question": "breach_approval",
+      "value": "",
+      "illustrative_request": false,
+      "total": 14,
+      "examples": [
+        {
+          "id": "urn:cpi:rule:v51:clause292:r3",
+          "label": "Approval Authority for Compliant Exposures Exceeding USD 200 Million",
+          "policy_id": 13,
+          "policy": "1.1 RAROC Floors",
+          "version": "1.7",
+          "policy_version_id": 51,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "while those exceeding USD 200 million must be approved by the Global Credit Committee\n(GCC).",
+          "conditions": null,
+          "thresholds": [
+            {
+              "unit": "USD",
+              "value": 200000000.0,
+              "evidence": "exceeding USD 200 million",
+              "operator": "GT",
+              "metric_key": "credit_exposure"
+            }
+          ],
+          "approvals": [
+            {
+              "triggered_by_breach": false,
+              "above_threshold": true,
+              "authorities": [
+                "Global Credit Committee"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "Global Credit Committee\n(GCC)"
+              }
+            }
+          ],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Approval authority",
+            "Decision and escalation authority"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:51:292",
+              "clause": "6",
+              "page": 6,
+              "quote": "6. 6. Approval Authorities and Escalation Paths\nApproval authorities for credit transactions are delegated based on the size, complexity, and RAROC compliance of the\nexposure. For transactions meeting or exceeding the RAROC floors, approval authority is delegated to the Business Unit Head\nfor exposures up to USD 50 million. Exposures between USD 50 million and USD 200 million require approval from the\nRegional Credit Committee (RCC), while those exceeding USD 200 million must be approved by the Global Credit Committee\n(GCC).\nTransactions that do not meet the RAROC floors are subject to an escalation process, beginning with the Business Unit Head,\nwho must provide a detailed justification for the deviation. If the Business Unit Head approves the exception, it must be\nescalated to the Head of CRM for review. The Head of CRM has the authority to approve exceptions for exposures up to USD"
+            }
+          ]
+        },
+        {
+          "id": "urn:cpi:rule:v52:clause313:r4",
+          "label": "CPC Escalation for Total Spreads Exceeding 500 bps",
+          "policy_id": 14,
+          "policy": "1.2 Spread Grid",
+          "version": "1.7",
+          "policy_version_id": 52,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "Transactions with total spreads exceeding 500 bps or adjustments exceeding ±200 bps must be escalated to the Credit Policy\nCommittee (CPC) for final approval.",
+          "conditions": null,
+          "thresholds": [
+            {
+              "unit": "bps",
+              "value": 500.0,
+              "evidence": "exceeding 500 bps",
+              "operator": "GT",
+              "metric_key": "total_spread"
+            }
+          ],
+          "approvals": [
+            {
+              "triggered_by_breach": false,
+              "above_threshold": true,
+              "authorities": [
+                "Credit Policy Committee"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "Credit Policy\nCommittee (CPC)"
+              }
+            }
+          ],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Approval authority",
+            "Limits and thresholds"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:52:313",
+              "clause": "6",
+              "page": 6,
+              "quote": "6. 6. Approval Authorities and Delegation\nApproval authorities for Spread Grid adjustments are delegated based on the size of the exposure, the risk bucket, and the\nmagnitude of the spread adjustment. For Low and Moderate Risk exposures with total spreads within the standard range\n(100–500 bps), approval authority is delegated to the Business Unit Head or their designated Credit Officer. Adjustments within\nthe permitted qualitative or collateral ranges (up to ±100 bps) do not require additional approvals but must be documented in\nthe credit memorandum.\nFor High Risk exposures (300–400 bps base spread) or adjustments exceeding ±100 bps, approval must be obtained from the\nRegional Credit Committee (RCC). The RCC is composed of senior credit officers, risk managers, and business unit\nrepresentatives and meets bi-weekly to review such requests. Very High Risk exposures (400–500 bps base spread) or\nadjustments exceeding ±150 bps require approval from the Group Credit Committee (GCC), which convenes monthly.\nTransactions with total spreads exceeding 500 bps or adjustments exceeding ±200 bps must be escalated to the Credit Policy\nCommittee (CPC) for final approval. The CPC’s decision is binding and must be documented in the minutes of its meetings. In\nurgent cases, the CRO may grant provisional approval, subject to ratification by the CPC at its next scheduled meeting. All\nprovisional approvals must be communicated to the CPC within 5 business days.\nDelegated authorities are subject to periodic review by Internal Audit and the CRM department to ensure that they remain\nappropriate given the bank’s risk profile and market conditions. Any misuse of delegated authority, such as approving spreads\noutside the permitted ranges without proper justification, may result in the revocation of delegation rights and disciplinary action.\nThe bank maintains a central register of all delegated authorities, which is updated quarterly.\nFor transactions involving related parties, insiders, or conflicts of interest, the Spread Grid approval process is subject to\nadditional controls. Such transactions must be escalated to the next higher level of authority (e.g., from RCC to GCC) and\nreviewed by the Compliance department to ensure adherence to the bank’s conflict-of-interest policy. All related-party\ntransactions must be reported to the Board Risk Committee on a quarterly basis."
+            }
+          ]
+        },
+        {
+          "id": "urn:cpi:rule:v53:clause333:r3",
+          "label": "Loan Approval Authority Exceeding 20 Million",
+          "policy_id": 15,
+          "policy": "2.1 CRE Sub-sector Limits",
+          "version": "2.0",
+          "policy_version_id": 53,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "while loans exceeding $20 million must be approved by the Chief Credit Officer (CCO) or\ntheir delegate.",
+          "conditions": null,
+          "thresholds": [],
+          "approvals": [
+            {
+              "triggered_by_breach": false,
+              "above_threshold": true,
+              "authorities": [
+                "Chief Credit Officer (CCO) or their delegate"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "Chief Credit Officer (CCO) or\ntheir delegate"
+              }
+            }
+          ],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Approval authority",
+            "Decision and escalation authority"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:53:333",
+              "clause": "6",
+              "page": 6,
+              "quote": "6. 6. Approvals\nThe approval process for CRE loans under this synthetic policy is designed to ensure that all transactions comply with the\nbank’s underwriting criteria, sub-sector limits, and risk appetite. Approval authority is delegated based on loan size, complexity,\nand risk profile, with higher-risk or larger loans requiring approval from more senior levels of management.\nLoans with an outstanding balance of up to $5 million may be approved by a designated CRE Underwriting Manager, provided\nthey comply with all policy criteria, including sub-sector limits. Loans between $5 million and $20 million require approval from\nthe Regional Credit Officer (RCO), while loans exceeding $20 million must be approved by the Chief Credit Officer (CCO) or\ntheir delegate.\nLoans that would cause the bank’s exposure to a sub-sector to exceed its quantitative limit require approval from the CRE Risk\nManagement Team, in addition to the standard underwriting approval. The CRE Risk Management Team must conduct a\nthorough review of the loan’s risk profile, the current exposure to the sub-sector, and the potential impact on the bank’s\nportfolio. If the loan is approved, it must be classified as an exception and reported to the Credit Risk Committee.\nThe approval process also includes a secondary review for loans with complex structures, such as those involving multiple\nproperties, cross-collateralization, or non-recourse financing. These loans must be reviewed by the CRE Risk Management\nTeam, regardless of size, to ensure compliance with the policy and to assess any additional risks.\nAll approvals must be documented in the bank’s loan origination system, with clear evidence of compliance with the policy’s\ncriteria. Approval records must include the names and titles of the approving authorities, the date of approval, and any\nconditions or stipulations attached to the approval. This documentation is subject to internal audit and regulatory review."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "question": "exceptions",
+      "value": "",
+      "illustrative_request": false,
+      "total": 5,
+      "examples": [
+        {
+          "id": "urn:cpi:rule:v54:clause351:r1",
+          "label": "Maximum Exposure Limit per Single Construction Loan",
+          "policy_id": 16,
+          "policy": "2.2 Construction Guidance",
+          "version": "2.0",
+          "policy_version_id": 54,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO.",
+          "conditions": null,
+          "thresholds": [
+            {
+              "unit": "million USD",
+              "value": 50.0,
+              "evidence": "$50 million",
+              "operator": "LTE",
+              "metric_key": "loan_exposure_amount"
+            }
+          ],
+          "approvals": [
+            {
+              "triggered_by_breach": true,
+              "above_threshold": false,
+              "authorities": [
+                "CLC"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO."
+              }
+            },
+            {
+              "triggered_by_breach": true,
+              "above_threshold": false,
+              "authorities": [
+                "CCO"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO."
+              }
+            }
+          ],
+          "evidence_requirements": [],
+          "exception_ids": [
+            "urn:cpi:rule:v54:clause351:r1:in-statement-exception"
+          ],
+          "policy_classes": [
+            "Limits and thresholds",
+            "Exposure and concentration"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:54:351",
+              "clause": "5",
+              "page": 5,
+              "quote": "5. 5. Quantitative Limits and Thresholds\nThis policy establishes quantitative limits to control the bank’s exposure to construction lending risks. The maximum exposure\nfor any single construction loan is $50 million, unless approved by the CLC and the CCO. Aggregate exposure to construction\nlending shall not exceed 25% of the bank’s total loan portfolio at any time. Additionally, the bank’s exposure to any single\nborrower or borrower group for construction purposes is limited to 15% of the bank’s Tier 1 capital.\nFor speculative construction projects, the bank imposes a sub-limit of $25 million per loan and 10% of the total loan portfolio.\nSpeculative projects are defined as those where less than 50% of the units or space are pre-sold or pre-leased at the time of\nloan closing. Projects exceeding these thresholds require additional approvals, including a unanimous vote by the CLC and\nwritten justification from the Relationship Manager.\nThe bank maintains a contingency reserve requirement of 10% of the total project cost for all construction loans. This reserve is\nheld in a separate escrow account and released only upon completion of the project or as approved by the Construction Risk\nOfficer. In the event of cost overruns, the borrower is required to inject additional equity to cover the shortfall before any reserve\nfunds are released.\nInterest rate risk is managed through the use of fixed-rate loans or interest rate caps for variable-rate construction loans. The\nmaximum allowable interest rate for construction loans is the bank’s prime rate plus 200 basis points. For loans with variable\nrates, the bank requires a minimum debt service coverage ratio (DSCR) of 1.25x, calculated using a stressed interest rate of\nprime + 300 basis points.\nThe bank also imposes limits on the duration of construction loans. The maximum term for a construction loan is 36 months,\nwith an option to extend for an additional 12 months subject to CLC approval. Loans that exceed 24 months in duration require\nquarterly progress inspections by an independent third-party engineer, at the borrower’s expense. Failure to meet construction\nmilestones may result in the suspension of disbursements or acceleration of the loan."
+            }
+          ]
+        },
+        {
+          "id": "urn:cpi:rule:v49:clause252:r7",
+          "label": "Board Approval for Higher-Risk Exceptions",
+          "policy_id": 11,
+          "policy": "2.2 Eligible Collateral",
+          "version": "2.4",
+          "policy_version_id": 49,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "with higher-risk exceptions requiring\nBoard approval.",
+          "conditions": {
+            "logic": "AND",
+            "groups": [],
+            "conditions": [
+              {
+                "unit": null,
+                "field": "exception_risk_level",
+                "value": "higher-risk",
+                "evidence": "higher-risk exceptions",
+                "operator": "EQ"
+              }
+            ]
+          },
+          "thresholds": [],
+          "approvals": [
+            {
+              "triggered_by_breach": false,
+              "above_threshold": false,
+              "authorities": [
+                "Board"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "Board"
+              }
+            }
+          ],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Exceptions",
+            "Approval authority"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:49:252",
+              "clause": "6",
+              "page": 6,
+              "quote": "6. 6. Approvals\nThe approval process for collateral eligibility and valuation is structured to ensure that all decisions are made by authorized\npersonnel with the appropriate expertise and authority. The process begins with the credit officer, who is responsible for initially\nassessing the collateral’s suitability and documenting the findings in the credit application. The credit officer must verify that the\ncollateral meets the bank’s eligibility criteria and that all required documentation, such as title deeds or valuation reports, is in\norder.\nFor credit facilities below a specified threshold, such as USD 1 million, the credit officer’s assessment is reviewed and approved\nby their direct manager. For larger facilities or those involving complex or non-standard collateral, the application must be\nescalated to the CMU for additional scrutiny. The CMU evaluates the collateral’s compliance with the policy, the accuracy of the\nvaluation, and the appropriateness of the proposed haircuts or LTV ratios.\nThe final approval for collateral acceptance rests with the Credit Approval Committee (CAC), which is composed of senior\nrepresentatives from Credit Risk, Legal, and Compliance. The CAC reviews all high-value or high-risk credit applications,\nensuring that the collateral is adequate and that the transaction aligns with the bank’s risk appetite. The CAC’s decision is\ndocumented in the credit approval memo, which is retained for audit purposes.\nIn cases where the collateral does not fully meet the bank’s eligibility criteria, the credit officer may seek an exception through\nthe bank’s formal exception management process. Exceptions require detailed justification, including an assessment of the\nincremental risk and the mitigating factors. These are reviewed and approved by the CRC, with higher-risk exceptions requiring\nBoard approval. All exceptions are documented in the bank’s exception log and are subject to enhanced monitoring.\nThe approval process also includes a post-approval review, conducted by the CMU within 30 days of the credit facility’s\ninception. This review verifies that the collateral has been properly perfected, that all conditions precedent have been met, and\nthat the valuation remains accurate. Any discrepancies identified during this review must be rectified promptly, with escalation\nto the CAC if necessary."
+            }
+          ]
+        },
+        {
+          "id": "urn:cpi:rule:v49:clause252:r6",
+          "label": "Credit Risk Committee Exception Approval for Eligibility Non-Compliance",
+          "policy_id": 11,
+          "policy": "2.2 Eligible Collateral",
+          "version": "2.4",
+          "policy_version_id": 49,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "In cases where the collateral does not fully meet the bank’s eligibility criteria, the credit officer may seek an exception through\nthe bank’s formal exception management process. Exceptions require detailed justification, including an assessment of the\nincremental risk and the mitigating factors. These are reviewed and approved by the CRC, with higher-risk exceptions requiring\nBoard approval. All exceptions are documented in the bank’s exception log and are subject to enhanced monitoring.",
+          "conditions": null,
+          "thresholds": [],
+          "approvals": [
+            {
+              "triggered_by_breach": false,
+              "above_threshold": false,
+              "authorities": [
+                "CRC"
+              ],
+              "requirement": {
+                "decision_type": "APPROVAL",
+                "notes": "CRC"
+              }
+            }
+          ],
+          "evidence_requirements": [
+            {
+              "evidence": "detailed justification, including an assessment of the\nincremental risk and the mitigating factors",
+              "evidence_type": "Exception justification and risk assessment"
+            },
+            {
+              "evidence": "documented in the bank’s exception log",
+              "evidence_type": "Exception log record"
+            }
+          ],
+          "exception_ids": [
+            "urn:cpi:rule:v49:clause252:r7:exception"
+          ],
+          "policy_classes": [
+            "Exceptions",
+            "Approval authority"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:49:252",
+              "clause": "6",
+              "page": 6,
+              "quote": "6. 6. Approvals\nThe approval process for collateral eligibility and valuation is structured to ensure that all decisions are made by authorized\npersonnel with the appropriate expertise and authority. The process begins with the credit officer, who is responsible for initially\nassessing the collateral’s suitability and documenting the findings in the credit application. The credit officer must verify that the\ncollateral meets the bank’s eligibility criteria and that all required documentation, such as title deeds or valuation reports, is in\norder.\nFor credit facilities below a specified threshold, such as USD 1 million, the credit officer’s assessment is reviewed and approved\nby their direct manager. For larger facilities or those involving complex or non-standard collateral, the application must be\nescalated to the CMU for additional scrutiny. The CMU evaluates the collateral’s compliance with the policy, the accuracy of the\nvaluation, and the appropriateness of the proposed haircuts or LTV ratios.\nThe final approval for collateral acceptance rests with the Credit Approval Committee (CAC), which is composed of senior\nrepresentatives from Credit Risk, Legal, and Compliance. The CAC reviews all high-value or high-risk credit applications,\nensuring that the collateral is adequate and that the transaction aligns with the bank’s risk appetite. The CAC’s decision is\ndocumented in the credit approval memo, which is retained for audit purposes.\nIn cases where the collateral does not fully meet the bank’s eligibility criteria, the credit officer may seek an exception through\nthe bank’s formal exception management process. Exceptions require detailed justification, including an assessment of the\nincremental risk and the mitigating factors. These are reviewed and approved by the CRC, with higher-risk exceptions requiring\nBoard approval. All exceptions are documented in the bank’s exception log and are subject to enhanced monitoring.\nThe approval process also includes a post-approval review, conducted by the CMU within 30 days of the credit facility’s\ninception. This review verifies that the collateral has been properly perfected, that all conditions precedent have been met, and\nthat the valuation remains accurate. Any discrepancies identified during this review must be rectified promptly, with escalation\nto the CAC if necessary."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "question": "policy_class",
+      "results": [
+        {
+          "id": "urn:cpi:rule:v1:clause4:r1",
+          "label": "Wholesale Credit Exposure Threshold",
+          "policy_id": 1,
+          "policy": "4.1 Underwriting Standards",
+          "version": "4.2",
+          "policy_version_id": 1,
+          "source_rule_code": null,
+          "synthetic": true,
+          "source_quote": "Wholesale credit exposures are defined as those extended to corporate entities, financial institutions,\nsovereigns, and other non-retail counterparties with an aggregate exposure of USD 1,000,000 or more.",
+          "conditions": {
+            "logic": "AND",
+            "groups": [],
+            "conditions": [
+              {
+                "unit": null,
+                "field": "counterparty_type",
+                "value": [
+                  "corporate entities",
+                  "financial institutions",
+                  "sovereigns",
+                  "other non-retail counterparties"
+                ],
+                "evidence": "extended to corporate entities, financial institutions,\nsovereigns, and other non-retail counterparties",
+                "operator": "IN"
+              }
+            ]
+          },
+          "thresholds": [
+            {
+              "unit": "USD",
+              "value": 1000000.0,
+              "evidence": "USD 1,000,000 or more",
+              "operator": "GTE",
+              "metric_key": "aggregate_exposure"
+            }
+          ],
+          "approvals": [],
+          "evidence_requirements": [],
+          "exception_ids": [],
+          "policy_classes": [
+            "Scope and applicability",
+            "Exposure and concentration"
+          ],
+          "derived_from_classes": [],
+          "effective_periods": [
+            {
+              "start_date": "2026-09-10"
+            }
+          ],
+          "sources": [
+            {
+              "node_id": "urn:cpi:source:1:4",
+              "clause": "2",
+              "page": 2,
+              "quote": "2. 2. Scope\nThe scope of this clause, 4.1 Underwriting Standards, encompasses all wholesale credit exposures originated, renewed, or\namended by the bank. Wholesale credit exposures are defined as those extended to corporate entities, financial institutions,\nsovereigns, and other non-retail counterparties with an aggregate exposure of USD 1,000,000 or more. This threshold ensures\nthat the underwriting standards are applied consistently across the bank’s wholesale portfolio.\nThe clause applies to all business lines and geographic regions where the bank operates, unless explicitly exempted by the\nGlobal Credit Policy Committee. Exemptions must be documented and justified based on local regulatory requirements or\nunique market conditions. All personnel involved in the underwriting process, including relationship managers, credit analysts,\nand approval authorities, are required to comply with the standards outlined in this clause.\nThe underwriting standards cover the entire lifecycle of a credit exposure, from initial due diligence and approval to ongoing\nmonitoring and renewal. This includes the evaluation of new credit requests, amendments to existing facilities, and the annual\nor event-driven reviews of creditworthiness. The standards are also applicable to the underwriting of derivative transactions,\ntrade finance, and other non-traditional credit products offered to wholesale clients.\nFor the purposes of this clause, wholesale clients are categorized into three tiers based on their annual revenue: Tier 1 (USD 1\nbillion and above), Tier 2 (USD 250 million to USD 999 million), and Tier 3 (USD 1 million to USD 249 million). The underwriting\nrequirements, including the depth of analysis and approval thresholds, are tailored to the risk profile of each tier. Higher-risk\nindustries, such as commodities trading or highly leveraged sectors, may be subject to additional underwriting scrutiny.\nThis clause does not apply to retail or small business lending, which are governed by separate credit policies. However, it is\nacknowledged that certain wholesale clients may have retail or small business subsidiaries. In such cases, the underwriting of\nexposures to these subsidiaries must be evaluated in the context of the parent company’s overall creditworthiness and the\nbank’s aggregate exposure to the group."
+            }
+          ]
+        }
+      ],
+      "total": 1,
+      "next_offset": null,
+      "match_basis": "published_source_paths"
+    }
+  ],
+  "effective_date_check": {
+    "question": "effective",
+    "on_date": "2026-10-01",
+    "policy_id": 15,
+    "selected_version": {
+      "id": 53,
+      "version": "2.0",
+      "effective_date": "2026-09-10",
+      "checksum": "b80889a26cb577a996729bcf2be14b0134ee6688799b0a90edb704a5bd0b1958"
+    },
+    "versions": [
+      {
+        "id": 53,
+        "version": "2.0",
+        "effective_date": "2026-09-10",
+        "checksum": "b80889a26cb577a996729bcf2be14b0134ee6688799b0a90edb704a5bd0b1958"
+      }
+    ],
+    "results": [
+      {
+        "id": "urn:cpi:rule:v53:clause329:r1",
+        "label": "Minimum Debt Service Coverage Ratio for Most CRE Sub-sectors",
+        "policy_id": 15,
+        "policy": "2.1 CRE Sub-sector Limits",
+        "version": "2.0",
+        "policy_version_id": 53,
+        "source_rule_code": null,
+        "synthetic": true,
+        "source_quote": "Borrowers must\ndemonstrate the ability to service debt obligations under stress scenarios, with a minimum DSCR of 1.25x for most sub-sectors.",
+        "conditions": null,
+        "thresholds": [
+          {
+            "unit": "x",
+            "value": 1.25,
+            "evidence": "minimum DSCR of 1.25x",
+            "operator": "GTE",
+            "metric_key": "dscr"
+          }
+        ],
+        "approvals": [],
+        "evidence_requirements": [],
+        "exception_ids": [],
+        "policy_classes": [
+          "Eligibility",
+          "DSCR"
+        ],
+        "derived_from_classes": [],
+        "effective_periods": [
+          {
+            "start_date": "2026-09-10"
+          }
+        ],
+        "sources": [
+          {
+            "node_id": "urn:cpi:source:53:329",
+            "clause": "4",
+            "page": 4,
+            "quote": "4. 4. Underwriting Criteria\nThe underwriting criteria outlined in this synthetic policy are designed to ensure that all CRE loans adhere to the bank’s risk\nappetite and sub-sector limits. Underwriters must evaluate each loan application against a set of qualitative and quantitative\ncriteria, which include but are not limited to borrower creditworthiness, property cash flow, loan-to-value (LTV) ratios, debt\nservice coverage ratios (DSCR), and sub-sector exposure.\nFor borrower creditworthiness, underwriters must assess the financial strength, experience, and track record of the borrower or\nsponsoring entity. This includes a review of financial statements, credit history, and prior project performance. Borrowers must\ndemonstrate the ability to service debt obligations under stress scenarios, with a minimum DSCR of 1.25x for most sub-sectors.\nHigher DSCR thresholds may be required for higher-risk sub-sectors, such as hospitality, where a minimum of 1.40x may apply.\nProperty-level underwriting must include a thorough analysis of the property’s cash flow, occupancy rates, tenant quality, and\nmarket position. For office and retail properties, underwriters must evaluate lease rollover risk, tenant concentration, and the\nproperty’s ability to attract and retain tenants. Industrial properties require an assessment of location, accessibility, and demand\ndrivers, while multifamily properties must demonstrate stable occupancy and rental income.\nLTV ratios are capped at 70% for most sub-sectors, with stricter limits of 60% for higher-risk sub-sectors such as hospitality or\nspecialized real estate. Exceptions to these limits require approval from the CRE Risk Management Team and must be justified\nby compensating factors, such as strong borrower credit or exceptional property cash flow.\nUnderwriters are also responsible for ensuring that the loan complies with the sub-sector exposure limits defined in Section 5. If\na loan approval would cause the bank’s exposure to a sub-sector to exceed its limit, the underwriter must escalate the request\nto the CRE Risk Management Team for further review and potential exception processing."
+          }
+        ]
+      },
+      {
+        "id": "urn:cpi:rule:v53:clause329:r2",
+        "label": "Minimum Debt Service Coverage Ratio for Higher-Risk CRE Sub-sectors",
+        "policy_id": 15,
+        "policy": "2.1 CRE Sub-sector Limits",
+        "version": "2.0",
+        "policy_version_id": 53,
+        "source_rule_code": null,
+        "synthetic": true,
+        "source_quote": "Higher DSCR thresholds may be required for higher-risk sub-sectors, such as hospitality, where a minimum of 1.40x may apply.",
+        "conditions": null,
+        "thresholds": [
+          {
+            "unit": "x",
+            "value": 1.4,
+            "evidence": "minimum of 1.40x",
+            "operator": "GTE",
+            "metric_key": "dscr"
+          }
+        ],
+        "approvals": [],
+        "evidence_requirements": [],
+        "exception_ids": [],
+        "policy_classes": [
+          "Eligibility",
+          "DSCR"
+        ],
+        "derived_from_classes": [],
+        "effective_periods": [
+          {
+            "start_date": "2026-09-10"
+          }
+        ],
+        "sources": [
+          {
+            "node_id": "urn:cpi:source:53:329",
+            "clause": "4",
+            "page": 4,
+            "quote": "4. 4. Underwriting Criteria\nThe underwriting criteria outlined in this synthetic policy are designed to ensure that all CRE loans adhere to the bank’s risk\nappetite and sub-sector limits. Underwriters must evaluate each loan application against a set of qualitative and quantitative\ncriteria, which include but are not limited to borrower creditworthiness, property cash flow, loan-to-value (LTV) ratios, debt\nservice coverage ratios (DSCR), and sub-sector exposure.\nFor borrower creditworthiness, underwriters must assess the financial strength, experience, and track record of the borrower or\nsponsoring entity. This includes a review of financial statements, credit history, and prior project performance. Borrowers must\ndemonstrate the ability to service debt obligations under stress scenarios, with a minimum DSCR of 1.25x for most sub-sectors.\nHigher DSCR thresholds may be required for higher-risk sub-sectors, such as hospitality, where a minimum of 1.40x may apply.\nProperty-level underwriting must include a thorough analysis of the property’s cash flow, occupancy rates, tenant quality, and\nmarket position. For office and retail properties, underwriters must evaluate lease rollover risk, tenant concentration, and the\nproperty’s ability to attract and retain tenants. Industrial properties require an assessment of location, accessibility, and demand\ndrivers, while multifamily properties must demonstrate stable occupancy and rental income.\nLTV ratios are capped at 70% for most sub-sectors, with stricter limits of 60% for higher-risk sub-sectors such as hospitality or\nspecialized real estate. Exceptions to these limits require approval from the CRE Risk Management Team and must be justified\nby compensating factors, such as strong borrower credit or exceptional property cash flow.\nUnderwriters are also responsible for ensuring that the loan complies with the sub-sector exposure limits defined in Section 5. If\na loan approval would cause the bank’s exposure to a sub-sector to exceed its limit, the underwriter must escalate the request\nto the CRE Risk Management Team for further review and potential exception processing."
+          }
+        ]
+      }
+    ],
+    "total": 6,
+    "next_offset": 2,
+    "reason": null
+  },
+  "coverage": {
+    "policies": 35,
+    "source_passages": 1609,
+    "rules": 1078,
+    "published_rules": 863,
+    "scope_needs_review": [
+      "4.4 Covenant Package",
+      "3.5 Sector Concentration",
+      "2.3 Haircuts",
+      "2.2 Construction Guidance",
+      "3.1 Approval Authorities",
+      "3.2 Escalation Rules",
+      "A.2 Capital Floors",
+      "POL-73 Hardship & Forbearance Policy",
+      "POL-76 Watchlist & Special Mention Policy",
+      "POL-77 Special Assets Management Policy",
+      "POL-78 Recovery Policy",
+      "POL-79 Write-Off Policy",
+      "Credit Rating Standards",
+      "Industry Risk Assessment Policy",
+      "Foreign Currency Credit Risk Policy",
+      "Credit Duration Risk Policy"
+    ],
+    "scope_edge_counts": {
+      "APPLIES_IN": 9,
+      "APPLIES_TO_INDUSTRY": 0,
+      "APPLIES_TO_INDUSTRY_TIER": 2,
+      "APPLIES_TO_PRODUCT": 142,
+      "APPLIES_TO_SUBSECTOR": 6,
+      "DOCUMENTS_PRODUCT_SCOPE": 2
+    },
+    "relationship_candidates": [
+      {
+        "field": "asset_class",
+        "count": 6,
+        "policy": "4.1 Underwriting Standards",
+        "version": "4.2",
+        "clause_id": 8,
+        "quote": "accounts receivable"
+      },
+      {
+        "field": "transaction_type",
+        "count": 4,
+        "policy": "4.2 Leverage Limits",
+        "version": "4.2",
+        "clause_id": 30,
+        "quote": "leveraged finance transactions, including LBOs and acquisition financing"
+      },
+      {
+        "field": "credit_score",
+        "count": 4,
+        "policy": "3.1 DSCR Minimums",
+        "version": "3.1",
+        "clause_id": 100,
+        "quote": "credit score below 650"
+      },
+      {
+        "field": "collateral_liquidity",
+        "count": 3,
+        "policy": "4.1 Underwriting Standards",
+        "version": "4.2",
+        "clause_id": 16,
+        "quote": "liquid collateral"
+      },
+      {
+        "field": "collateral_complexity",
+        "count": 2,
+        "policy": "2.2 Eligible Collateral",
+        "version": "2.4",
+        "clause_id": 252,
+        "quote": "complex"
+      },
+      {
+        "field": "asset_liquidity",
+        "count": 2,
+        "policy": "2.2 Eligible Collateral",
+        "version": "2.4",
+        "clause_id": 254,
+        "quote": "liquid assets, such as cash or publicly traded\nsecurities"
+      },
+      {
+        "field": "strategic_consideration",
+        "count": 2,
+        "policy": "1.1 RAROC Floors",
+        "version": "1.7",
+        "clause_id": 293,
+        "quote": "relationship banking"
+      },
+      {
+        "field": "jurisdiction_risk",
+        "count": 2,
+        "policy": "3.2 Escalation Rules",
+        "version": "3.3",
+        "clause_id": 385,
+        "quote": "in a high-risk jurisdiction, as defined by the bank’s Anti-Money Laundering (AML) policy"
+      },
+      {
+        "field": "liquidity",
+        "count": 1,
+        "policy": "4.1 Underwriting Standards",
+        "version": "4.2",
+        "clause_id": 8,
+        "quote": "depending on its liquidity"
+      },
+      {
+        "field": "sovereign_credit_rating",
+        "count": 1,
+        "policy": "4.1 Underwriting Standards",
+        "version": "4.2",
+        "clause_id": 10,
+        "quote": "sovereign credit rating below\nBBB-"
+      },
+      {
+        "field": "country_status",
+        "count": 1,
+        "policy": "4.1 Underwriting Standards",
+        "version": "4.2",
+        "clause_id": 10,
+        "quote": "countries subject to international sanctions or with significant political instability"
+      },
+      {
+        "field": "credit_exposure",
+        "count": 1,
+        "policy": "4.1 Underwriting Standards",
+        "version": "4.2",
+        "clause_id": 12,
+        "quote": "exposures exceeding USD 200 million"
+      },
+      {
+        "field": "market_share",
+        "count": 1,
+        "policy": "4.1 Underwriting Standards",
+        "version": "4.2",
+        "clause_id": 16,
+        "quote": "dominant market share"
+      },
+      {
+        "field": "industry_stability",
+        "count": 1,
+        "policy": "4.1 Underwriting Standards",
+        "version": "4.2",
+        "clause_id": 16,
+        "quote": "stable industry"
+      },
+      {
+        "field": "haircut",
+        "count": 1,
+        "policy": "4.1 Underwriting Standards",
+        "version": "4.2",
+        "clause_id": 16,
+        "quote": "conservative haircut"
+      },
+      {
+        "field": "income_stability",
+        "count": 1,
+        "policy": "3.1 DSCR Minimums",
+        "version": "3.1",
+        "clause_id": 100,
+        "quote": "demonstrated history of stable income"
+      },
+      {
+        "field": "dti_ratio",
+        "count": 1,
+        "policy": "3.2 LTV Ceilings",
+        "version": "3.1",
+        "clause_id": 133,
+        "quote": "low DTI ratio (e.g., below 30%)"
+      },
+      {
+        "field": "exception_risk_level",
+        "count": 1,
+        "policy": "2.2 Eligible Collateral",
+        "version": "2.4",
+        "clause_id": 252,
+        "quote": "higher-risk exceptions"
+      },
+      {
+        "field": "exception_type",
+        "count": 1,
+        "policy": "1.1 RAROC Floors",
+        "version": "1.7",
+        "clause_id": 297,
+        "quote": "temporary exceptions"
+      },
+      {
+        "field": "development_type",
+        "count": 1,
+        "policy": "2.2 Construction Guidance",
+        "version": "2.0",
+        "clause_id": 353,
+        "quote": "speculative development"
+      },
+      {
+        "field": "market_experience",
+        "count": 1,
+        "policy": "2.2 Construction Guidance",
+        "version": "2.0",
+        "clause_id": 353,
+        "quote": "project located in a\nmarket where the bank has limited experience"
+      },
+      {
+        "field": "counterparty_status",
+        "count": 1,
+        "policy": "3.2 Escalation Rules",
+        "version": "3.3",
+        "clause_id": 385,
+        "quote": "new counterparty"
+      },
+      {
+        "field": "risk_classification",
+        "count": 1,
+        "policy": "3.2 Escalation Rules",
+        "version": "3.3",
+        "clause_id": 385,
+        "quote": "classified as low-risk\nunder the bank’s internal risk assessment framework"
+      },
+      {
+        "field": "compliance_status",
+        "count": 1,
+        "policy": "3.2 Escalation Rules",
+        "version": "3.3",
+        "clause_id": 387,
+        "quote": "comply with all standard underwriting criteria"
+      },
+      {
+        "field": "counterparty_risk",
+        "count": 1,
+        "policy": "3.2 Escalation Rules",
+        "version": "3.3",
+        "clause_id": 387,
+        "quote": "do not involve\nhigh-risk counterparties"
+      },
+      {
+        "field": "jurisdiction_status",
+        "count": 1,
+        "policy": "3.2 Escalation Rules",
+        "version": "3.3",
+        "clause_id": 387,
+        "quote": "domiciled in a\njurisdiction subject to sanctions or heightened AML scrutiny"
+      },
+      {
+        "field": "risk_rating_change",
+        "count": 1,
+        "policy": "3.2 Escalation Rules",
+        "version": "3.3",
+        "clause_id": 396,
+        "quote": "risk rating\ndowngrade by two or more notches within a 12-month period"
+      },
+      {
+        "field": "covenant_breach_status",
+        "count": 1,
+        "policy": "3.2 Escalation Rules",
+        "version": "3.3",
+        "clause_id": 396,
+        "quote": "breach of any financial or non-financial covenant that is not\ncured within the grace period"
+      },
+      {
+        "field": "material_adverse_change",
+        "count": 1,
+        "policy": "3.2 Escalation Rules",
+        "version": "3.3",
+        "clause_id": 396,
+        "quote": "material adverse change in the borrower’s business, such as a significant loss of market share,\nregulatory action, or litigation"
+      },
+      {
+        "field": "integrity_issue",
+        "count": 1,
+        "policy": "3.2 Escalation Rules",
+        "version": "3.3",
+        "clause_id": 396,
+        "quote": "identification of fraud, misrepresentation, or other integrity issues"
+      },
+      {
+        "field": "policy_breach_status",
+        "count": 1,
+        "policy": "3.2 Escalation Rules",
+        "version": "3.3",
+        "clause_id": 398,
+        "quote": "exceptions that involve\npolicy breaches, such as waivers of standard covenants or underwriting criteria"
+      },
+      {
+        "field": "agent_action",
+        "count": 1,
+        "policy": "POL-71 Delinquency Management Policy",
+        "version": "1.0",
+        "clause_id": 504,
+        "quote": "shall not threaten, misrepresent or autonomously classify default"
+      },
+      {
+        "field": "alternative_risk_controls",
+        "count": 1,
+        "policy": "Credit Rating Standards",
+        "version": "1.0",
+        "clause_id": 1549,
+        "quote": "provided they are\nsubject to alternative risk controls"
+      },
+      {
+        "field": "application_type",
+        "count": 1,
+        "policy": "Industry Risk Assessment Policy",
+        "version": "1.0",
+        "clause_id": 1581,
+        "quote": "new exposures"
+      },
+      {
+        "field": "borrower_duration",
+        "count": 1,
+        "policy": "Credit Duration Risk Policy",
+        "version": "1.0",
+        "clause_id": 1617,
+        "quote": "duration of greater than 7 years"
+      }
+    ],
+    "source_relationship_candidates": [
+      {
+        "label": "Policy review cadence",
+        "count": 19,
+        "policy": "4.2 Leverage Limits",
+        "version": "4.2",
+        "clause_id": 22,
+        "quote": "e varying risk profiles while\nmaintaining rigorous standards for leverage assessment. The policy is reviewed annually to ensure its continued relevance and\neffectiveness in addressing emerging risks."
+      },
+      {
+        "label": "Policy precedence",
+        "count": 8,
+        "policy": "4.4 Covenant Package",
+        "version": "4.2",
+        "clause_id": 75,
+        "quote": "tructured credit products. It covers all jurisdictions in which the Bank operates, unless\nsuperseded by local regulatory requirements or specific legal constraints.\nFor the purposes of this Policy, the term 'covenant' refer"
+      },
+      {
+        "label": "Named authority matrix reference",
+        "count": 2,
+        "policy": "1.1 Enterprise Limits",
+        "version": "1.0",
+        "clause_id": 152,
+        "quote": " the\ninstitution’s credit file system and approved by the designated credit authority, as defined in the Delegated Authority Matrix. The\ncredit file must be updated at least annually, or more frequently if there are mater"
+      }
+    ]
+  }
+}

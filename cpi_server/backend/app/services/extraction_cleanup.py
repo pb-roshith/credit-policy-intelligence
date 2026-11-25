@@ -4,11 +4,11 @@ import json
 from datetime import datetime,timezone
 from pathlib import Path
 from uuid import uuid4
-from ..config import BASE_DIR
+from ..config import BACKUP_DIR
 
 
 def remove_old_extracted_rules(connection_factory,backup_dir=None,old_rule_ids=None):
-    backup_dir=Path(backup_dir or BASE_DIR/'inventory_sources/risk_knowledge/backups').resolve()
+    backup_dir=Path(backup_dir or BACKUP_DIR).resolve()
     with connection_factory() as db:
         db.execute("SELECT pg_advisory_xact_lock(hashtext('rule-inventory-job'))")
         if db.execute("SELECT 1 FROM rule_inventory_jobs WHERE status IN ('Queued','Running')").fetchone():

@@ -9,11 +9,13 @@ from decimal import Decimal, InvalidOperation
 import re
 from ..risk_knowledge.semantic_extraction import assemble_graph, digest
 from ..risk_knowledge.policy_taxonomy import FACETS
+from ..risk_knowledge.competency_projection import ORDERED_RATING_FIELDS, RATINGS
 from .credit_data import ALIASES, GROUPS, DERIVATIONS, read_fact
 from .rule_engine import field_value, MISSING
 
-VERSION = 'semantic-graph-matching-v1'
+VERSION = 'semantic-graph-matching-v2'
 STATUS = {True: 'Applicable', False: 'Not Applicable', None: 'Unable to Determine'}
+RELATIVE_JURISDICTIONS = ('home jurisdiction', 'foreign jurisdiction')
 FIELD_ALIASES = {
     'product': ('product', 'facility', 'facility_type', 'facility.facility_type'),
     'customer_segment': ('customer_segment', 'segment', 'borrower.customer_segment'),
@@ -135,13 +137,25 @@ def comparison(actual, op, expected, facet=None):
     if actual is None: return None
     if op == 'EXISTS': return True
     if op in ('GT', 'GTE', 'LT', 'LTE'):
-        left, right = number(actual), number(expected)
+        if facet == 'ordered_rating' and isinstance(expected, str) and expected in RATINGS:
+            actual = str(actual).strip().upper()
+            if actual not in RATINGS:
+                return None
+            left, right = RATINGS.index(actual), RATINGS.index(expected)
+        else:
+            left, right = number(actual), number(expected)
         return {'GT': left > right, 'GTE': left >= right, 'LT': left < right, 'LTE': left <= right}[op]
     if op in ('EQ','NE') and isinstance(expected,(int,float,Decimal)) and not isinstance(expected,bool):
         match=number(actual)==number(expected)
         return match if op=='EQ' else not match
     values = expected if isinstance(expected, list) else [expected]
-    match = any(normalized(a, facet) == normalized(v, facet) for a in (actual if isinstance(actual, list) else [actual]) for v in values)
+    actual_values = {normalized(a, facet) for a in (actual if isinstance(actual, list) else [actual])}
+    expected_values = {normalized(v, facet) for v in values}
+    match = bool(actual_values & expected_values)
+    if facet == 'geography' and not match:
+        relative = set(RELATIVE_JURISDICTIONS)
+        if (expected_values & relative and not actual_values & relative) or (expected_values - relative and not actual_values - relative):
+            return None
     if op in ('EQ', 'IN'): return match
     if op in ('NE', 'NOT_IN'): return not match
     return None
@@ -158,19 +172,34 @@ class GraphMatcher:
         self.rows = {r['id']: (record, r) for record in records for r in record['rules']}
         self.clauses = {c['id']: c for c in clauses}
         self.scopes = {s['policy_id']: s for s in scopes if s.get('kind') == 'policy_scope'}
-        self.fingerprint = digest([[(r['policy_id'], r['content_digest']) for r in records], documents, list(scopes)])
+        self.fingerprint = digest([VERSION, [(r['policy_id'], r['content_digest']) for r in records], documents, list(scopes)])
 
     def targets(self, node, predicate):
         return [e['object'] for e in self.out[node] if e['predicate'] == predicate]
+
+    @staticmethod
+    def scope_fact(facts, field, expected):
+        values = expected if isinstance(expected, list) else [expected]
+        if field == 'geography' and any(normalized(value) in RELATIVE_JURISDICTIONS for value in values):
+            relative = facts.get('jurisdiction_relationship')
+            if relative[0] is not None:
+                if any(normalized(value) not in RELATIVE_JURISDICTIONS for value in values):
+                    geography = facts.get(field)
+                    if geography[0] is not None:
+                        return [geography[0], relative[0]], None, {'geography': geography[2], 'jurisdiction_relationship': relative[2]}
+                return relative
+        return facts.get(field)
 
     def expression(self, node, facts, trace):
         value = self.nodes[node]; p = value['properties']
         if value['type'] == 'ConditionGroup':
             return combined([self.expression(child, facts, trace) for child in self.targets(node, 'HAS_MEMBER')], p['logic'])
-        actual, unit, source = facts.get(p['field'])
+        actual, unit, source = self.scope_fact(facts, p['field'], p.get('value'))
         try:
             comparable = converted(actual, unit, p.get('unit')) if actual is not None else None
-            outcome = comparison(comparable, p['operator'], p.get('value'), {'product':'product','facility':'product','customer_segment':'customer_segment','geography':'geography'}.get(p['field']))
+            facet = 'ordered_rating' if p['field'] in ORDERED_RATING_FIELDS else {
+                'product':'product','facility':'product','customer_segment':'customer_segment','geography':'geography'}.get(p['field'])
+            outcome = comparison(comparable, p['operator'], p.get('value'), facet)
         except (ValueError, InvalidOperation, TypeError): outcome = None
         trace.append({'node_id': node, 'predicate': 'HAS_CONDITION', 'expected': p, 'fact': source, 'outcome': STATUS[outcome]})
         return outcome
@@ -212,8 +241,8 @@ class GraphMatcher:
                 ('APPLIES_IN','geography','geography_code','geography')]:
                 targets = self.targets(rid, predicate)
                 if not targets: continue
-                actual, _, source = facts.get(field)
                 expected = [self.nodes[n]['properties'][code] for n in targets]
+                actual, _, source = self.scope_fact(facts, field, expected)
                 outcome = comparison(actual, 'IN', expected, facet)
                 tests.append(outcome); trace.append({'predicate': predicate,'node_ids': targets,'expected': expected,'fact': source,'outcome': STATUS[outcome]})
             for group in self.targets(rid, 'HAS_CONDITION'): tests.append(self.expression(group, facts, trace))
@@ -233,6 +262,11 @@ class GraphMatcher:
             if not effective: outcome = False if outcome is False else None
             elif date.fromisoformat(str(effective)[:10]) > today: outcome = False
             if not effective: trace.append({'predicate':'EFFECTIVE_DATE_MISSING','outcome':STATUS[None]})
+            for period_id in self.targets(rid, 'HAS_EFFECTIVE_PERIOD'):
+                period = self.nodes[period_id]['properties']
+                if not period['start_date'] <= today.isoformat() <= period.get('end_date', '9999-12-31'):
+                    outcome = False
+                    trace.append({'predicate': 'HAS_EFFECTIVE_PERIOD', 'node_id': period_id, 'outcome': STATUS[False]})
             cache[rid] = outcome, trace
             return outcome, trace
 

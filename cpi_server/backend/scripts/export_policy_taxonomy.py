@@ -10,6 +10,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from app.config import SEED_OUTPUTS_DIR
 from app.database import shared_policy_connection
 from app.risk_knowledge.policy_taxonomy import current_taxonomy
 from app.risk_knowledge.repositories import PostgreSQLRepository
@@ -123,7 +124,7 @@ def write_markdown(data, path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parents[1] / 'outputs' / 'policy-taxonomy')
+    parser.add_argument('--output', type=Path, default=SEED_OUTPUTS_DIR / 'policy-taxonomy')
     args = parser.parse_args()
     schema = PostgreSQLRepository(shared_policy_connection, None).all('taxonomy_concepts')
     data = current_taxonomy(shared_policy_connection, schema)

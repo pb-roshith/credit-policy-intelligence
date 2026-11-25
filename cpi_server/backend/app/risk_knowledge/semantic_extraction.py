@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from .semantic_model import VERSION, validate_instance
 from .policy_taxonomy import CATEGORIES, TOPICS, FACETS,heading_for
+from .competency_projection import ORDERED_RATING_FIELDS, RATINGS
 
 PIPELINE_VERSION = 'policy-semantic-llm-v1'
 ACTOR = 'system:semantic-auto-approval'
@@ -127,6 +128,12 @@ lakh/crore is stated. Retain value 50 and unit lakh for 50 lakhs; normalization 
 by the application. Use <= semantics LTE for shall not exceed; exceeding means GT.
 Use conditions.field names with clear business meaning (loan_amount, customer_segment,
 rating, etc.). EXISTS has null value; IN/NOT_IN use lists. Numerical comparisons use numbers.
+Use industry for explicit borrower industry, subsector for a stated property or economic
+subsector, and industry_tier for a bank-defined risk tier. Keep product and borrower industry
+distinct. Name the actual country role when stated (country_of_incorporation,
+country_of_domicile, country_of_risk, booking_jurisdiction). Keep home/foreign jurisdiction
+scope distinct from a named country. Use an ordered rating code for explicit comparisons
+such as rating below BBB- when the quoted text states the code and direction.
 Use stable rule_sequence starting at 1 within each primary clause. taxonomy_ids must be
 supplied concept IDs only. Graph context can identify an antecedent but must never supply
 an unstated threshold or scope. For a new exception choose base_rule_ref ONLY from supplied
@@ -300,7 +307,19 @@ def validate_rule(rule, primary, context_sources, candidate_ids, taxonomy_ids):
             if f.operator not in ('IN','NOT_IN') and isinstance(f.value,list):return 'Scalar comparison cannot use a list'
             if f.operator == 'EXISTS' and f.value is not None: return 'EXISTS cannot invent a value'
             if f.operator != 'EXISTS' and f.value is None: return 'Comparison value is missing'
-            if f.operator in ('GT', 'GTE', 'LT', 'LTE') and (isinstance(f.value, bool) or not isinstance(f.value, (float, int))): return 'Ordered comparison requires a number'
+            if f.field in ('industry', 'subsector', 'industry_tier', 'borrower_type', 'jurisdiction',
+                           'country_of_incorporation', 'country_of_domicile', 'country_of_risk', 'booking_jurisdiction'):
+                values = f.value if isinstance(f.value, list) else [f.value]
+                if any(isinstance(value, str) and (not normalize(value)
+                       or f' {normalize(value)} ' not in f' {normalize(f.evidence)} ') for value in values):
+                    return 'Named scope value is absent from condition evidence'
+            if f.operator in ('GT', 'GTE', 'LT', 'LTE') and (isinstance(f.value, bool) or not isinstance(f.value, (float, int))):
+                if f.field not in ORDERED_RATING_FIELDS or f.value not in RATINGS or f.unit:
+                    return 'Ordered comparison requires a number or a recognized rating code'
+                if not re.search(r'(?<![\w+-])'+re.escape(f.value)+r'(?![\w+-])', f.evidence, re.I):
+                    return 'Rating code is absent from condition evidence'
+                if not re.search(OPERATORS[f.operator], f.evidence, re.I):
+                    return 'Rating condition operator lacks explicit source evidence'
             if isinstance(f.value, (int, float)) and not isinstance(f.value, bool):
                 if not quantity_supported(f.value,f.unit,f.evidence): return 'Condition number or amount scale is absent from its evidence'
                 if f.operator in OPERATORS and not re.search(OPERATORS[f.operator], f.evidence, re.I): return 'Condition operator lacks source evidence'
@@ -482,8 +501,13 @@ def retrieval_neighborhood(records, candidate_ids, limit=45):
 
 def assemble_graph(records):
     """Build a conformant SOURCE_BACKED instance from current approved knowledge."""
+    from .semantic_bindings import attribute_definition, term_definition, term_identifier, terms_for_comparison
+    from .competency_projection import (approval_trigger, concerns, effective_start, exception_approvers, explicit_policy_class, explicit_rule_scope,
+                                       explicit_rule_code, LIMIT_EXCEPTION, rule_effective_period, subsectors)
+
     nodes, relationships = {}, {}
     rules = approved_rules(records)
+    taxonomy = {entry['id']: entry['name'] for entry in taxonomy_context()}
     def add_node(identifier, kind, label, source_refs, synthetic, **properties):
         if identifier in nodes:
             nodes[identifier]['source_refs'] = sorted(set(nodes[identifier]['source_refs']) | set(source_refs))
@@ -499,8 +523,24 @@ def assemble_graph(records):
         else: relationships[key] = {'id': key, 'subject': a, 'predicate': p, 'object': b, 'status': 'APPROVED', 'source_refs': list(refs)}
     def term(kind, name, refs, synthetic, **props):
         # Stable canonical labels are explicit model outputs, not fuzzy entity merges.
-        tid = 'urn:cpi:' + kind.lower() + ':' + digest([name.casefold(), props])[:20]
+        tid = term_identifier(kind, name, props)
         return add_node(tid, kind, name, refs, synthetic, **props)
+    def scope_term(kind, value, refs, synthetic):
+        label, props = term_definition(kind, value)
+        return term(kind, label, refs, synthetic, **props)
+    def bind(subject, predicate, field, refs, synthetic):
+        definition = attribute_definition(field)
+        if definition:
+            name, props = definition
+            edge(subject, predicate, term('DataAttribute', name, refs, synthetic, **props), refs)
+    def positive_scope(owner, group, predicates, refs, synthetic):
+        # Direct links summarize simple positive scopes. The condition tree
+        # carries exclusions, alternatives across fields, and the full logic.
+        for compare in group['conditions'] if group['logic']=='AND' and not group['groups'] else ():
+            if compare['operator'] in ('EQ', 'IN'):
+                for kind, predicate, value in terms_for_comparison(compare):
+                    if predicate in predicates:
+                        edge(owner, predicate, scope_term(kind, value, refs, synthetic), refs)
     def condition(group, root, rid, refs, synthetic):
         gid = rid + ':logic:' + digest([root, group])[:16]
         add_node(gid, 'ConditionGroup', group['logic'] + ' conditions', refs, synthetic, logic=group['logic'])
@@ -511,6 +551,9 @@ def assemble_graph(records):
             if compare.get('unit'): props['unit'] = compare['unit']
             add_node(cid, 'Condition', f"{compare['field']} {compare['operator']} {compare['value']} {compare.get('unit') or ''}", refs, synthetic, **props)
             edge(gid, 'HAS_MEMBER', cid, refs)
+            bind(cid, 'TESTS_ATTRIBUTE', compare['field'], refs, synthetic)
+            for kind, _, value in terms_for_comparison(compare):
+                edge(cid, 'COMPARES_SCOPE_VALUE', scope_term(kind, value, refs, synthetic), refs)
         for i, child in enumerate(group['groups']): edge(gid, 'HAS_MEMBER', condition(child, root + ':' + str(i), rid, refs, synthetic), refs)
         return gid
     for record in records:
@@ -529,6 +572,18 @@ def assemble_graph(records):
         add_node(pid, 'CreditPolicy', record['policy_name'], all_refs[:1], record['synthetic'], policy_reference=str(record['policy_id']), risk_domain='Credit risk')
         add_node(vid, 'PolicyVersion', record['policy_name'] + ' v' + str(record['policy_version']), all_refs[:1], record['synthetic'], version=str(record['policy_version']), source_checksum=record['source_checksum'])
         edge(vid, 'VERSION_OF', pid, all_refs[:1])
+        edge(pid, 'HAS_VERSION', vid, all_refs[:1])
+        start, date_clause = effective_start(record)
+        if start:
+            date_refs = ['urn:cpi:source:' + str(record['policy_version_id']) + ':' + str(date_clause)] if date_clause else []
+            if not date_refs:
+                evidence = vid + ':effective-metadata'
+                add_node(evidence, 'OperationalEvidence', 'Registered effective date', [], record['synthetic'],
+                         source_type='POLICY_VERSION_METADATA', source_reference=vid, field_name='effective_date')
+                date_refs = [evidence]
+            period = vid + ':effective-period'
+            add_node(period, 'EffectivePeriod', 'Effective from ' + start, date_refs, record['synthetic'], start_date=start)
+            edge(vid, 'HAS_EFFECTIVE_PERIOD', period, date_refs)
         scope=record.get('policy_scope') or {}
         if scope.get('status')=='APPROVED':
             scope_refs=sorted({'urn:cpi:source:'+str(record['policy_version_id'])+':'+str(c['clause_id']) for c in scope['sources']})
@@ -539,6 +594,14 @@ def assemble_graph(records):
                 if group:
                     gid=condition(group,vid+':'+predicate,vid+':scope',scope_refs,record['synthetic'])
                     edge(vid,predicate,gid,scope_refs)
+                    if predicate == 'HAS_APPLICABILITY':
+                        positive_scope(vid, group, {'APPLIES_TO_PRODUCT', 'APPLIES_TO_SEGMENT', 'APPLIES_IN',
+                            'APPLIES_TO_INDUSTRY', 'APPLIES_TO_BORROWER_TYPE', 'APPLIES_TO_SUBSECTOR',
+                            'APPLIES_TO_INDUSTRY_TIER'}, scope_refs, record['synthetic'])
+            for clause_id in {item['clause_id'] for item in scope['sources']}:
+                clause_ref = ['urn:cpi:source:' + str(record['policy_version_id']) + ':' + str(clause_id)]
+                for label in subsectors(sources[clause_id]['source_excerpt'], policy_scope=True):
+                    edge(vid, 'APPLIES_TO_SUBSECTOR', scope_term('Subsector', label, clause_ref, record['synthetic']), clause_ref)
 
         for sid in all_refs: edge(sid, 'SOURCE_IN_VERSION', vid, [sid])
         for row in record.get('rules', []):
@@ -547,26 +610,34 @@ def assemble_graph(records):
             refs = ['urn:cpi:source:' + str(record['policy_version_id']) + ':' + str(rule['clause_id'])]
             refs += ['urn:cpi:source:' + str(record['policy_version_id']) + ':' + str(s['clause_id']) for s in rule.get('supporting_sources', [])]
             refs = sorted(set(refs))
-            add_node(rid, 'PolicyRule', rule['name'], refs, synthetic, rule_reference=rid, rule_kind=rule['rule_kind'],requirement_text=rule['source_quote'])
+            code = explicit_rule_code(rule['source_quote'])
+            add_node(rid, 'PolicyRule', rule['name'], refs, synthetic, rule_reference=rid, rule_kind=rule['rule_kind'],
+                     requirement_text=rule['source_quote'], **({'source_rule_code': code} if code else {}))
             edge(rid, 'PART_OF_VERSION', vid, refs)
+            if validity := rule_effective_period(rule['source_quote']):
+                period = rid + ':effective-period'
+                add_node(period, 'EffectivePeriod', 'Rule effective from ' + validity['start_date'], refs, synthetic, **validity)
+                edge(rid, 'HAS_EFFECTIVE_PERIOD', period, refs)
             for sid in refs: edge(rid, 'DERIVED_FROM', sid, [sid])
             source = sources[rule['clause_id']]
             section_name = source.get('section_heading') or ('Page ' + str(source.get('page_number')) if source.get('page_number') else 'Unsectioned source')
             section = 'urn:cpi:section:' + digest([vid, section_name])[:24]
             add_node(section, 'PolicySection', section_name, refs, synthetic, section_reference=section_name)
             edge(section, 'PART_OF_VERSION', vid, refs); edge(vid, 'CONTAINS_SECTION', section, refs); edge(section, 'CONTAINS_RULE', rid, refs)
-            for key, kind, predicate, code in [('products', 'Product', 'APPLIES_TO_PRODUCT', 'product_code'),
-                ('customer_segments', 'CustomerSegment', 'APPLIES_TO_SEGMENT', 'segment_code')]:
+            for key, kind, predicate in [('products', 'Product', 'APPLIES_TO_PRODUCT'),
+                ('customer_segments', 'CustomerSegment', 'APPLIES_TO_SEGMENT')]:
                 for value in rule[key]:
-                    tid = term(kind, value['name'], refs, synthetic, **{code: value['name']})
+                    tid = scope_term(kind, value['name'], refs, synthetic)
                     edge(rid, predicate, tid, refs)
             for value in rule['geographies']:
-                tid = term('Geography', value['name'], refs, synthetic, geography_code=value['name'], code_scheme='POLICY_LITERAL')
+                tid = scope_term('Geography', value['name'], refs, synthetic)
                 edge(rid, 'APPLIES_IN', tid, refs)
             metric_ids = {}
             for metric in rule['metrics']:
                 mid = term('RiskMetric', metric['name'], refs, synthetic, metric_key=metric['key'], allowed_units=[metric['unit']])
                 metric_ids[metric['key']] = mid; edge(rid, 'USES_METRIC', mid, refs)
+                edge(rid, 'EVALUATES_RISK_ATTRIBUTE', mid, refs)
+                bind(mid, 'BINDS_TO_ATTRIBUTE', metric['key'], refs, synthetic)
             for i, boundary in enumerate(rule['thresholds']):
                 bid = rid + ':threshold:' + str(i)
                 add_node(bid, 'Threshold', f"{boundary['operator']} {boundary['value']} {boundary['unit']}", refs, synthetic,
@@ -574,6 +645,13 @@ def assemble_graph(records):
                 edge(rid, 'HAS_THRESHOLD', bid, refs); edge(bid, 'MEASURED_BY', metric_ids[boundary['metric_key']], refs)
             if rule.get('conditions'):
                 edge(rid, 'HAS_CONDITION', condition(rule['conditions'], rid, rid, refs, synthetic), refs)
+                positive_scope(rid, rule['conditions'], {'APPLIES_TO_INDUSTRY', 'APPLIES_TO_BORROWER_TYPE',
+                    'APPLIES_TO_SUBSECTOR', 'APPLIES_TO_INDUSTRY_TIER'}, refs, synthetic)
+            for kind, predicate, label in explicit_rule_scope(rule['source_quote']):
+                edge(rid, predicate, scope_term(kind, label, refs, synthetic), refs)
+            for code, label in concerns(rule):
+                node = term('PolicyConcern', label, refs, synthetic, concern_code=code)
+                edge(rid, 'CONCERNS', node, refs)
             for i, evidence in enumerate(rule['evidence_requirements']):
                 eid = rid + ':evidence:' + str(i)
                 add_node(eid, 'EvidenceRequirement', evidence['evidence_type'], refs, synthetic, evidence_type=evidence['evidence_type'])
@@ -581,11 +659,40 @@ def assemble_graph(records):
             for i, authority in enumerate(rule['approvals']):
                 aid = term('ApprovalAuthority', authority['name'], refs, synthetic, authority_code=authority['name'], authority_kind=authority['kind'])
                 arid = rid + ':approval:' + str(i)
-                add_node(arid, 'ApprovalRequirement', authority.get('decision_type','APPROVAL')+' by ' + authority['name'], refs, synthetic, decision_type=authority.get('decision_type','APPROVAL'))
+                add_node(arid, 'ApprovalRequirement', authority.get('decision_type','APPROVAL')+' by ' + authority['name'], refs, synthetic,
+                         decision_type=authority.get('decision_type','APPROVAL'), notes=authority['evidence'])
                 edge(rid, 'REQUIRES_APPROVAL', arid, refs); edge(arid, 'REQUIRES_APPROVAL_FROM', aid, refs)
+                if trigger := approval_trigger(rule, authority):
+                    edge(rid, trigger, arid, refs)
+                    if LIMIT_EXCEPTION.search(' '.join(rule['source_quote'].split())) and not rule.get('base_rule_ref'):
+                        eid = rid + ':in-statement-exception'
+                        add_node(eid, 'Exception', 'Approval for a deviation from ' + rule['name'], refs, synthetic,
+                                 exception_reference=eid, rationale=rule['source_quote'])
+                        edge(rid, 'HAS_EXCEPTION', eid, refs)
+                        edge(eid, 'EXCEPTION_TO', rid, refs)
+                        edge(eid, 'REQUIRES_APPROVAL', arid, refs)
+            if not rule['approvals'] and not rule.get('base_rule_ref'):
+                for code, evidence in exception_approvers(rule):
+                    eid = rid + ':in-statement-exception'
+                    add_node(eid, 'Exception', 'Approval for a deviation from ' + rule['name'], refs, synthetic,
+                             exception_reference=eid, rationale=evidence)
+                    edge(rid, 'HAS_EXCEPTION', eid, refs)
+                    edge(eid, 'EXCEPTION_TO', rid, refs)
+                    approval_id = eid + ':approval:' + code
+                    # A literal policy acronym does not identify the entity's organizational type.
+                    authority_id = term('ApprovalAuthority', code, refs, synthetic, authority_code=code, authority_kind='UNSPECIFIED')
+                    add_node(approval_id, 'ApprovalRequirement', 'Exception approval by ' + code, refs, synthetic,
+                             decision_type='APPROVAL', notes=evidence)
+                    edge(eid, 'REQUIRES_APPROVAL', approval_id, refs)
+                    edge(rid, 'REQUIRES_APPROVAL_ON_BREACH', approval_id, refs)
+                    edge(approval_id, 'REQUIRES_APPROVAL_FROM', authority_id, refs)
+            derivation = explicit_policy_class(rule['source_quote'])
             for taxonomy_id in rule['taxonomy_ids']:
-                tid = term('TaxonomyConcept', taxonomy_id, refs, synthetic, taxonomy_id=taxonomy_id, taxonomy_version='policy-classification-v1')
+                tid = term('PolicyClass' if taxonomy_id in taxonomy else 'TaxonomyConcept', taxonomy.get(taxonomy_id, taxonomy_id),
+                    refs, synthetic, taxonomy_id=taxonomy_id, taxonomy_version='policy-classification-v1')
                 edge(rid, 'CLASSIFIED_AS', tid, refs)
+                if taxonomy_id in taxonomy and derivation in (taxonomy_id.casefold(), taxonomy[taxonomy_id].casefold()):
+                    edge(rid, 'DERIVED_FROM_POLICY_CLASS', tid, refs)
     for rid, (record, row) in rules.items():
         ref = row['extracted'].get('base_rule_ref')
         if not ref: continue

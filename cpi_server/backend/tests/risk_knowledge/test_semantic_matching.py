@@ -9,6 +9,8 @@ from app.risk_knowledge.semantic_pipeline import process_source,current_records
 from app.services.semantic_matching import GraphMatcher,converted,comparison
 from app.services.semantic_assessment import build_assessment
 from app.services.semantic_rag import explain_assessment
+from app.risk_knowledge.semantic_model import validate_instance
+from app.risk_knowledge.semantic_view import graph_view
 from risk_knowledge.test_semantic_extraction import fixture
 
 
@@ -74,6 +76,38 @@ class SemanticMatchingTests(unittest.TestCase):
         base=next(f for f in review['findings'] if f['clause_id']==1)
         self.assertEqual(base['result'],'Unable to Assess')
         self.assertIsNone(base['observed_value'])
+
+    def test_request_graph_connects_stored_facts_to_policy_and_outcomes(self):
+        records = copy.deepcopy(self.records)
+        records[0]['policy_scope'] = {'status': 'APPROVED', 'sources': [{'clause_id': self.clauses[0]['id']}],
+            'conditions': {'logic': 'AND', 'conditions': [{'field': 'industry', 'operator': 'EQ', 'value': 'Property services'}], 'groups': []},
+            'exclusions': {'logic': 'OR', 'conditions': [{'field': 'industry', 'operator': 'EQ', 'value': 'Construction'}], 'groups': []}}
+        matcher = self.matcher(records)
+        proposal = {**self.proposal, 'borrower_name': 'Example customer', 'industry': 'Property services',
+                    'geography': 'India', 'country_of_incorporation': 'Singapore', 'tenure': 60}
+        overlay = build_assessment('deal-1', proposal, matcher)['request_graph']
+        combined = {**matcher.graph, 'nodes': [*matcher.graph['nodes']], 'relationships': [
+            *matcher.graph['relationships'], *overlay['relationships']]}
+        nodes = {n['id']: copy.deepcopy(n) for n in combined['nodes']}
+        for node in overlay['nodes']:
+            prior = nodes.get(node['id'])
+            nodes[node['id']] = {**prior, 'source_refs': prior['source_refs'] + node['source_refs']} if prior else node
+        combined['nodes'] = list(nodes.values())
+        validation = validate_instance(combined)
+        self.assertTrue(validation['conforms'], validation['errors'])
+
+        policy_targets = matcher.targets('urn:cpi:version:7', 'APPLIES_TO_INDUSTRY')
+        self.assertEqual([nodes[key]['label'] for key in policy_targets], ['Property services'])
+        industry_edge = next(e for e in overlay['relationships'] if e['predicate'] == 'OPERATES_IN_INDUSTRY')
+        self.assertEqual(policy_targets, [industry_edge['object']])
+        country_edges = {e['predicate']: nodes[e['object']]['label'] for e in overlay['relationships']
+                         if e['predicate'] in ('INCORPORATED_IN', 'DOMICILED_IN', 'HAS_REPORTED_GEOGRAPHY')}
+        self.assertEqual(country_edges, {'INCORPORATED_IN': 'Singapore', 'HAS_REPORTED_GEOGRAPHY': 'India'})
+        self.assertEqual({n['properties']['outcome_code'] for n in overlay['nodes'] if n['type'] == 'DecisionOutcome'},
+                         {'PASS', 'REFERRAL'})
+        view = graph_view(records, instance=matcher.graph, overlay=overlay)
+        self.assertEqual(view['focus'], overlay['request_node_id'])
+        self.assertIn('REQUESTED_BY', {e['predicate'] for e in view['edges']})
 
     def test_conditions_preserve_nested_or_and_not(self):
         records=copy.deepcopy(self.records)

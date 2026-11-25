@@ -32,7 +32,12 @@ class SemanticModelTests(unittest.TestCase):
         Draft202012Validator.check_schema(instance_schema())
         report = validate_instance(example_instance())
         self.assertTrue(report['conforms'], report)
-        self.assertEqual(set(CLASSES) - {n['type'] for n in example_instance()['nodes']}, {'Customer'})
+        layers = semantic_contract()['layers']
+        self.assertEqual({key for layer in layers for key in layer['classes']}, set(CLASSES))
+        self.assertEqual({key for layer in layers for key in layer['relationships']}, set(RELATIONSHIPS))
+        sample_predicates = {e['predicate'] for e in example_instance()['relationships']}
+        for layer in layers:
+            self.assertTrue(sample_predicates.intersection(layer['relationships']), layer['name'])
 
     def test_invalid_endpoint_type_is_rejected_without_exception(self):
         data = example_instance()

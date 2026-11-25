@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
   FileText,
@@ -53,6 +53,8 @@ export default function Policy({ session }) {
     new URLSearchParams(location.search).get("view")==="controls" ? "controls" : ["controls", "rules", "knowledge"].includes(sessionStorage.getItem("policyExplorerTab")) ? sessionStorage.getItem("policyExplorerTab") : "library"
   ));
   const [policies, setPolicies] = useState([]);
+  const [catalogRevision, setCatalogRevision] = useState(0);
+  const refreshCatalog = useCallback(() => setCatalogRevision(value => value + 1), []);
   const [selectedPolicyId, setSelectedPolicyId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -83,7 +85,7 @@ export default function Policy({ session }) {
       })
       .catch((requestError) => setError(requestError.message))
       .finally(() => setLoading(false));
-  }, [session.token]);
+  }, [session.token, catalogRevision]);
 
   useEffect(() => {
     if (!selectedPolicyId) return;
@@ -294,7 +296,7 @@ export default function Policy({ session }) {
             />
           </>
         ) : (
-          explorerTab === "knowledge" ? <RiskKnowledge session={session} onOpenRules={() => { sessionStorage.setItem("policyExplorerTab", "rules"); setExplorerTab("rules"); }} /> : explorerTab === "rules" ? <RuleLibrary session={session} policies={policies} onOpenEvidence={openPolicyEvidence} /> : <ControlsWorkspace session={session} policies={policies} onOpenEvidence={openPolicyEvidence} />
+          explorerTab === "knowledge" ? <RiskKnowledge session={session} onCatalogChanged={refreshCatalog} onOpenRules={() => { sessionStorage.setItem("policyExplorerTab", "rules"); setExplorerTab("rules"); }} /> : explorerTab === "rules" ? <RuleLibrary session={session} policies={policies} onOpenEvidence={openPolicyEvidence} /> : <ControlsWorkspace session={session} policies={policies} onOpenEvidence={openPolicyEvidence} />
         )}
       </div>
     </>

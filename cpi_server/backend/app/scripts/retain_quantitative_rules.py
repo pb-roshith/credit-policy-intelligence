@@ -2,6 +2,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
+from ..config import BACKUP_DIR
 from ..database import shared_policy_connection
 from ..services.quantitative_rules import is_quantitative_rule
 
@@ -22,8 +23,10 @@ def main():
                 'rule_relationships','rule_reviews','rule_quality_reports','rule_extraction_batches',
                 'policy_extraction_reports','rule_inventory_jobs')
         backup={table:c.execute('SELECT * FROM '+table).fetchall() for table in tables}
-        path=Path('quantitative-inventory-backup-'+datetime.now().strftime('%Y%m%d-%H%M%S')+'.json')
-        path.write_text(json.dumps(backup,default=str,indent=2),encoding='utf-8')
+        path=BACKUP_DIR/('quantitative-inventory-backup-'+datetime.now().strftime('%Y%m%d-%H%M%S')+'.json')
+        path.parent.mkdir(parents=True,exist_ok=True)
+        with path.open('x',encoding='utf-8') as output:
+            json.dump(backup,output,default=str,indent=2)
         migration=Path(__file__).resolve().parents[1]/'migrations'/'005_quantitative_inventory.sql'
         c.execute(migration.read_text(encoding='utf-8'))
         # Old checkpoints contain removed IDs and cannot represent the new extraction scope.

@@ -1,7 +1,6 @@
 """The single selected-policy extraction pipeline used by Policy Rule Library jobs."""
 import hashlib
 import json
-import os
 import re
 import math
 from collections import Counter
@@ -11,7 +10,8 @@ from .catalog import project_catalog, read_catalog
 from .ingestion import uid
 from .models import Clause, Document, Provenance, Mappings
 from .repositories import PostgreSQLRepository
-from .service import IntelligenceService, ROOT
+from ..config import risk_schema_path
+from .service import IntelligenceService
 from ..services.automatic_approval import approve_knowledge,approve_rules
 
 PIPELINE_VERSION = 'policy-semantic-llm-v1'
@@ -87,7 +87,7 @@ class PolicyKnowledgePipeline:
 
     def bootstrap(self):
         self.stage('schema')
-        path=os.getenv('CPI_RISK_SCHEMA_PATH') or str(ROOT/'risk_schema/Risk Data Model_Oct 2026.xlsx')
+        path=risk_schema_path()
         self.service.bootstrap(path)
         self.stage('schema','Completed')
         self.stage('taxonomy')

@@ -1,10 +1,12 @@
 """Export the current real source-backed graph and a business review workbook."""
+import argparse
 import json
 import hashlib
 from zipfile import ZipFile,ZIP_DEFLATED
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from app.config import SEED_OUTPUTS_DIR
 from app.database import shared_policy_connection
 from app.risk_knowledge.repositories import PostgreSQLRepository
 from app.risk_knowledge.semantic_pipeline import current_records
@@ -17,12 +19,15 @@ from openpyxl.utils import get_column_letter
 
 
 def main():
-    records=current_records(PostgreSQLRepository(shared_policy_connection,None))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--records', type=Path, help='Rebuild from a previously exported policy-rule-knowledge.json snapshot.')
+    args = parser.parse_args()
+    records = json.loads(args.records.read_text(encoding='utf-8')) if args.records else current_records(PostgreSQLRepository(shared_policy_connection,None))
     graph=assemble_graph(records)
     validation=validate_instance(graph)
     if not validation['conforms']:raise ValueError(validation['errors'][:3])
     active=approved_rules(records)
-    out=Path(__file__).resolve().parents[1]/'outputs'/'extracted-knowledge'
+    out=SEED_OUTPUTS_DIR/'extracted-knowledge'
     out.mkdir(parents=True,exist_ok=True)
     summary={'policies':len(records),'source_passages':sum(len(r['source_clauses']) for r in records),
         'extracted_rules':sum(len(r['rules']) for r in records),'published_rules':len(active),
@@ -72,7 +77,8 @@ def main():
     sheet('Summary',['item','value'],[{'item':k,'value':v} for k,v in summary.items()])
     book.save(out/'extracted-policy-rules.xlsx')
     lines=['# Extracted policy rules and knowledge graph','',
-        'These files contain actual AI extraction results from the registered policy corpus. Synthetic source labels are retained.','',
+        'These files contain actual AI extraction results from the registered policy corpus. Synthetic source labels are retained.',
+        'The export uses the saved extraction snapshot.' if args.records else 'The export uses current extraction records from the application database.','',
         '[Review workbook](extracted-policy-rules.xlsx) · [Machine-readable graph](knowledge-graph.json) · [RDF graph](knowledge-graph.ttl) · [Validation](knowledge-validation.json)','',
         *[f'- {k}: {v}' for k,v in summary.items() if k!='validation'],'',
         'Validated rules receive auditable automatic initial approval. Proposed rules, ambiguous references and failed batches remain visible in the review queue. Human corrections/rejections are versioned in the audit history and survive extraction retries.','',

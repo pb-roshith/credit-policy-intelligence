@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from app.config import SEED_OUTPUTS_DIR
 from app.database import shared_policy_connection
 from app.risk_knowledge.repositories import PostgreSQLRepository
 from app.risk_knowledge.semantic_pipeline import current_records, save, resolve_record_references
@@ -85,7 +86,7 @@ def main():
     if not report['conforms']:raise ValueError(report['errors'][:3])
     for record in records:
         if record['policy_id'] not in active:save(repo,record,expected_digests[record['id']],ACTOR,'REVALIDATE_EXACT_SOURCE')
-    out=Path(__file__).resolve().parents[1]/'outputs'/'extracted-knowledge'
+    out=SEED_OUTPUTS_DIR/'extracted-knowledge'
     out.mkdir(parents=True,exist_ok=True)
     summary={'policies':len(records),'extracted_rules':sum(len(r['rules']) for r in records),
         'published_rules':len(approved_rules(records)),'proposed_rules':sum(x['status']=='PROPOSED' for r in records for x in r['rules']),

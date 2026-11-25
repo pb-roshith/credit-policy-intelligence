@@ -4,7 +4,7 @@ import {Panel,Badge} from '../components/ui';
 import Graph from './Graph';
 import {graphNodeLabel,relationshipLabel} from './labels';
 
-export default function SemanticGraphExplorer({policy='',inventory,onOpenRule}) {
+export default function SemanticGraphExplorer({policy='',focus='',inventory,onOpenRule}) {
  const [graph,setGraph]=useState(null),[history,setHistory]=useState([]),[error,setError]=useState(''),[loading,setLoading]=useState(false),[search,setSearch]=useState('');
  const request=useRef(0);
  async function load(focus='',offset=0,remember=true){
@@ -17,7 +17,7 @@ export default function SemanticGraphExplorer({policy='',inventory,onOpenRule}) 
   }catch(e){if(token===request.current)setError(e.message)}
   finally{if(token===request.current)setLoading(false)}
  }
- useEffect(()=>{load(policy?'urn:cpi:policy:'+policy:'',0,false);return()=>{request.current++}},[policy]);
+ useEffect(()=>{load(focus||(policy?'urn:cpi:policy:'+policy:''),0,false);return()=>{request.current++}},[policy,focus]);
  const focused=graph?.nodes.find(n=>n.id===graph.focus);
  const related=graph?.neighbors||[];
  const choices=related.filter(n=>[n.label,n.type,...n.relationships].join(' ').toLowerCase().includes(search.toLowerCase()));

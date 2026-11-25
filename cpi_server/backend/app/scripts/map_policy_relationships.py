@@ -58,8 +58,8 @@ def relationship_for(left: dict, right: dict) -> tuple[str, int, str] | None:
     return relationship_type, strength, "; ".join(reasons) + "."
 
 
-def map_policy_relationships() -> tuple[int, int, int]:
-    with db_connection() as connection:
+def map_policy_relationships(connection_factory=db_connection) -> tuple[int, int, int]:
+    with connection_factory() as connection:
         connection.execute(
             "SELECT pg_advisory_xact_lock(hashtext('policy_relationships'))"
         )

@@ -3,15 +3,18 @@ import {api,post} from '../services/api';
 import {API,apiRequest} from '../../../api/client';
 import {Panel,Badge,Source,Empty} from '../components/ui';
 import SemanticGraphExplorer from '../graph/SemanticGraphExplorer';
+import PolicyQuestions from './PolicyQuestions';
 import '../styles.css';
 import {filterByRuleCategory,policyRuleCategory} from '../../../api/policyRuleCategory';
 
 const names=values=>values?.map(v=>v.name).join(', ')||'Not stated in the cited source';
 function printLogic(group){if(!group)return 'No condition stated';return [...group.conditions.map(c=>`${c.field} ${c.operator} ${JSON.stringify(c.value)} ${c.unit||''}`),...group.groups.map(g=>'('+printLogic(g)+')')].join(' '+group.logic+' ')}
 
-export default function SemanticKnowledge({policies=[],state,canReview=false,canExtract=canReview,initialView='graph',initialPolicy='',initialCategory='ALL',publishedOnly=false,onOpenEvidence,title='AI policy rules and connected knowledge'}) {
+export default function SemanticKnowledge({policies=[],state,canReview=false,canExtract=canReview,initialView='graph',initialPolicy='',initialCategory='ALL',publishedOnly=false,onOpenEvidence,go,title='AI policy rules and connected knowledge'}) {
  const [view,setView]=useState(initialView),[data,setData]=useState({policies:[],rules:[]}),[jobs,setJobs]=useState([]),[policy,setPolicy]=useState(()=>String(initialPolicy||'')),[query,setQuery]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  const [selected,setSelected]=useState(null),[notes,setNotes]=useState(''),[edit,setEdit]=useState(null),[rulePage,setRulePage]=useState(1);
+ const [graphFocus,setGraphFocus]=useState('');
+ const [rebuildSummary,setRebuildSummary]=useState(null),[graphRevision,setGraphRevision]=useState(0);
  const detailsDialog=useRef(null);
  const detailsOpen=view==='rules'&&!!selected;
  function closeDetails(){setSelected(null);setEdit(null);setNotes('')}
@@ -29,6 +32,11 @@ export default function SemanticKnowledge({policies=[],state,canReview=false,can
  async function refresh(){const [knowledge,history]=await Promise.all([api('/semantic-knowledge'),apiRequest('/api/inventory/jobs')]);setData(knowledge);setJobs(history.filter(j=>j.pipeline==='policy-semantic-llm-v1'||j.report?.pipeline==='policy-semantic-llm-v1'))}
  useEffect(()=>{let active=true;async function load(){try{const [knowledge,history]=await Promise.all([api('/semantic-knowledge'),apiRequest('/api/inventory/jobs')]);if(active){setData(knowledge);setJobs(history.filter(j=>j.pipeline==='policy-semantic-llm-v1'||j.report?.pipeline==='policy-semantic-llm-v1'))}}catch(e){if(active)setError(e.message)}}load();const timer=setInterval(load,6000);return()=>{active=false;clearInterval(timer)}},[]);
  async function extract(all){setBusy(true);setError('');try{const ids=all?available.map(p=>p.policy_id):[Number(policy)];if(!ids.length||ids.some(i=>!i))throw new Error('Select a policy to extract.');await post('/extractions',{policy_ids:ids});await refresh()}catch(e){setError(e.message)}finally{setBusy(false)}}
+ async function rebuildReviewedGraph(){
+  setBusy(true);setError('');setRebuildSummary(null);
+  try{setRebuildSummary(await post('/semantic-graph/rebuild'));setGraphRevision(value=>value+1);await refresh()}
+  catch(e){setError(e.message)}finally{setBusy(false)}
+ }
  async function review(status){setBusy(true);setError('');try{if(notes.trim().length<3)throw new Error('Add the reason for your review.');await post('/semantic-rules/review',{rule_id:selected.id,expected_digest:selected.record_digest,status,notes,replacement:edit===null?null:JSON.parse(edit)});setSelected(null);setEdit(null);setNotes('');await refresh()}catch(e){setError(e.message)}finally{setBusy(false)}}
  const activeJob=jobs.find(j=>['Running','Queued'].includes(j.status));
  const rows=filterByRuleCategory(data.rules,ruleCategory).filter(r=>(!publishedOnly||r.published_in_graph)&&(!policy||String(r.policy_id)===policy)&&(!reviewStatus||r.status===reviewStatus)&&(!query||JSON.stringify({...r.extracted,id:r.id}).toLowerCase().includes(query.toLowerCase())));
@@ -45,12 +53,16 @@ export default function SemanticKnowledge({policies=[],state,canReview=false,can
    <div className="knowledge-counts"><span><b>{data.policies.length}</b> processed policies</span><span><b>{data.rules.length}</b> extracted rules</span><span><b>{data.rules.filter(r=>r.published_in_graph).length}</b> approved graph rules</span><span><b>{data.rules.filter(r=>r.status==='PROPOSED').length}</b> awaiting correction</span></div>
    {activeJob&&<div role="status" className="notice">{activeJob.status}: {(activeJob.progress||[]).filter(p=>!['Running','Queued'].includes(p.status)).length} / {activeJob.policy_ids.length} policies processed. Current policy: {(activeJob.progress||[]).find(p=>p.status==='Running')?.policy_name||'Preparing sources'}.</div>}
    {jobs[0]&&!activeJob&&<p>Latest extraction: {jobs[0].status} · {jobs[0].report?.rules_approved||0} initially approved rules · {jobs[0].report?.unresolved_spans||0} unresolved items.</p>}
-   <div className="tabs" role="tablist" aria-label="Connected policy knowledge">{[['graph','Expandable graph'],['rules','Extracted rules'],['coverage','Coverage and issues']].map(([key,label])=><button role="tab" aria-selected={view===key} className={view===key?'active':''} key={key} onClick={()=>setView(key)}>{label}</button>)}</div>
+   {go&&canExtract&&<button onClick={()=>go('Source Assets')}>Upload a policy or version</button>}
+   {go&&canExtract&&<button disabled={busy||!!activeJob} onClick={rebuildReviewedGraph}>Rebuild from reviewed sources</button>}
+   {rebuildSummary&&<p role="status">Graph rebuilt · {rebuildSummary.counts.nodes} nodes · {rebuildSummary.counts.relationships} relationships · {rebuildSummary.candidate_count} ontology gaps to review</p>}
+   <div className="tabs" role="tablist" aria-label="Connected policy knowledge">{[['graph','Expandable graph'],['questions','Policy questions'],['rules','Extracted rules'],['coverage','Coverage and issues']].map(([key,label])=><button role="tab" aria-selected={view===key} className={view===key?'active':''} key={key} onClick={()=>{setGraphFocus('');setView(key)}}>{label}</button>)}</div>
   </Panel>
   {error&&<div role="alert" className="notice error">{error}</div>}
   {view==='rules'&&<label>Review state<select value={reviewStatus} onChange={e=>setReviewStatus(e.target.value)}><option value="">{publishedOnly?'Published':'All states'}</option>{!publishedOnly&&<option value="PROPOSED">Awaiting correction</option>}<option value="APPROVED">Approved</option>{!publishedOnly&&<option value="REJECTED">Rejected</option>}</select></label>}
   {view==='coverage'&&unresolved.length>0&&<Panel title="Unresolved source passages" sub={unresolved.length+' passages need an interpretation or correction.'}>{unresolved.slice(0,coverageLimit).map(r=><details key={r.policy_id+'-'+r.clause_id}><summary>{r.policy_name} · clause {r.clause_id} · {r.reason}</summary><Source source={{document_name:r.policy_name,passage:r.source.source_excerpt,page:r.source.page_number,section:r.source.section_heading,clause:r.source.clause_number,origin:'POLICY_SOURCE'}}/></details>)}{unresolved.length>coverageLimit&&<button onClick={()=>setCoverageLimit(n=>n+30)}>Show 30 more unresolved passages</button>}</Panel>}
-  {view==='graph'&&<SemanticGraphExplorer policy={policy} inventory={data} onOpenRule={rule=>{setSelected(rule);setView('rules');setEdit(null);setNotes('')}}/>}
+  {view==='questions'&&<PolicyQuestions policies={available} relationships={state?.ontology} onFocus={id=>{setGraphFocus(id);setView('graph')}}/>}
+  {view==='graph'&&<SemanticGraphExplorer key={graphRevision} policy={policy} focus={graphFocus} inventory={data} onOpenRule={rule=>{setSelected(rule);setView('rules');setEdit(null);setNotes('')}}/>}
   {view==='rules'&&<Panel title="Current extracted policy rules" sub={`${data.rules.length.toLocaleString()} total current rules across ${data.policies.length} policies. Historical versions are excluded.`}>
    <div className="toolbar"><label>Rule category<select aria-label="Filter library by rule category" value={ruleCategory} onChange={e=>setRuleCategory(e.target.value)}>{!publishedOnly&&<option value="ALL">All rules</option>}<option value="QUALITATIVE">Qualitative</option>{!publishedOnly&&<option value="QUANTITATIVE">Quantitative</option>}</select></label><label>Search rules<input value={query} onChange={e=>setQuery(e.target.value)}/></label><button onClick={clearFilters}>Clear filters</button></div>
    <p role="status">{scopeLabel} · {rows.length.toLocaleString()} matching rules · Showing {rows.length?pageStart+1:0}–{Math.min(pageStart+pageSize,rows.length)} of {rows.length.toLocaleString()}</p>

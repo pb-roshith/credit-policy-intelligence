@@ -280,6 +280,8 @@ def _process_inventory_job(job_id,user,job):
               and p.get('pipeline')==PIPELINE_VERSION
               and p['status'] in ('Completed','Already processed') and not p.get('partial_result')
               and not p.get('failed_batches') and not p.get('error')}
+    rebuild = bool((job.get('report') or {}).get('rebuild_policy_graph'))
+    previous_version = (job.get('report') or {}).get('previous_policy_version')
     counts=('clauses_processed','rules_proposed','quantitative_rules','qualitative_rules','manual_review_rules','missing_thresholds','validation_failures','duplicate_candidates',
             'clauses_classified','taxonomy_proposals','ontology_proposals','rules_mapped','unresolved_mappings','rules_approved','unresolved_spans','llm_fallback_spans','llm_proposals')
     def persist_progress():
@@ -287,6 +289,8 @@ def _process_inventory_job(job_id,user,job):
         ordered=[progress[pid] for pid in job['policy_ids'] if pid in progress]
         report={key:sum(p.get(key,0) for p in ordered) for key in counts}
         report['pipeline']=PIPELINE_VERSION
+        if rebuild:
+            report.update(rebuild_policy_graph=True, previous_policy_version=previous_version)
         report['policies_processed']=sum(p['status'] in ('Completed','Already processed') for p in ordered)
         report['policies_failed']=sum(p['status'] in ('Failed','Completed with errors') for p in ordered)
         with shared_policy_connection() as c:
@@ -313,9 +317,25 @@ def _process_inventory_job(job_id,user,job):
     # quality-review pass over deterministic extraction results by default.
     quality={'quality_candidates':0,'quality_reviewed':0,'quality_failed':0,'quality_pending':0}
     report.update(quality)
+    rebuilt_matcher = None
+    if rebuild and any(p.get('rules_proposed') or p.get('status') == 'Completed' for p in progress.values()):
+        from .policy_graph_rebuild import rebuild_summary, store_snapshot
+        from .semantic_matching import load_matcher
+        rebuilt_matcher = load_matcher()
+        report['graph_rebuild'] = rebuild_summary(rebuilt_matcher)
     with shared_policy_connection() as c:
         counts=c.execute("SELECT COUNT(*) AS rules_in_inventory,COUNT(*) FILTER (WHERE status='Draft') AS draft_rules,COUNT(*) FILTER (WHERE status='Active') AS active_rules FROM policy_rule_versions WHERE credit_data.is_supported_policy_rule(definition) AND policy_id=ANY(%s)",(job['policy_ids'],)).fetchone()
         report.update(counts)
         status='Failed' if not report['rules_proposed'] and report['policies_failed'] else 'Completed with errors' if (
             report['policies_failed'] or report.get('quality_failed') or report.get('quality_pending')) else 'Completed'
+        if rebuilt_matcher:
+            from .policy_uploads import published_rule_changes
+            if previous_version:
+                old = c.execute("""SELECT payload FROM risk_knowledge_objects WHERE kind='metadata' AND owner_id=''
+                    AND payload->>'kind'='semantic_policy_history' AND payload->>'policy_id'=%s
+                    AND payload->>'policy_version'=%s ORDER BY position DESC LIMIT 1""", (str(job['policy_ids'][0]), previous_version)).fetchone()
+                current = next((r for r in rebuilt_matcher.records if r['policy_id'] == job['policy_ids'][0]), None)
+                if old and current:
+                    report['rule_changes'] = published_rule_changes(old['payload'], current)
+            store_snapshot(c, rebuilt_matcher, report['graph_rebuild'], job_id=job_id)
         c.execute('UPDATE rule_inventory_jobs SET status=%s,report=%s::jsonb,error=NULL,finished_at=CURRENT_TIMESTAMP WHERE id=%s',(status,json.dumps(report),job_id))

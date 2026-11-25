@@ -1,0 +1,1278 @@
+@prefix cpi: <urn:cpi:ontology:credit-policy:> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<urn:cpi:ontology:credit-policy> a owl:Ontology ;
+    rdfs:label "CPI credit policy business ontology" ;
+    rdfs:comment "Current semantic schema for source-backed policy knowledge. Business approval remains explicit. Closed-world validation is specified separately in SHACL." ;
+    owl:versionIRI cpi:1.4.0 ;
+    owl:versionInfo "1.4.0" .
+
+cpi:APPLIES_FOR a owl:ObjectProperty ;
+    rdfs:label "applies for" ;
+    rdfs:comment "A borrower submits a credit application." ;
+    rdfs:domain cpi:Borrower ;
+    rdfs:range cpi:LoanApplication ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:APPLIES_IN a owl:ObjectProperty ;
+    rdfs:label "applies in" ;
+    rdfs:comment "Explicit geographic scope, including jurisdiction when identified as such." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyVersion cpi:PolicyRule ) ] ;
+    rdfs:range cpi:Geography ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:APPLIES_TO_BORROWER_TYPE a owl:ObjectProperty ;
+    rdfs:label "applies to borrower type" ;
+    rdfs:comment "An explicit borrower type in policy or rule scope." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyVersion cpi:PolicyRule ) ] ;
+    rdfs:range cpi:BorrowerType ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:APPLIES_TO_INDUSTRY a owl:ObjectProperty ;
+    rdfs:label "applies to industry" ;
+    rdfs:comment "An industry explicitly required by policy or rule scope. Full scope follows the condition logic." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyVersion cpi:PolicyRule ) ] ;
+    rdfs:range cpi:Industry ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:APPLIES_TO_INDUSTRY_TIER a owl:ObjectProperty ;
+    rdfs:label "applies to industry tier" ;
+    rdfs:comment "An explicitly included industry risk tier." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyVersion cpi:PolicyRule ) ] ;
+    rdfs:range cpi:IndustryTier ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:APPLIES_TO_PRODUCT a owl:ObjectProperty ;
+    rdfs:label "applies to product" ;
+    rdfs:comment "Explicit applicability to a product." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyVersion cpi:PolicyRule ) ] ;
+    rdfs:range cpi:Product ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:APPLIES_TO_SEGMENT a owl:ObjectProperty ;
+    rdfs:label "applies to segment" ;
+    rdfs:comment "Explicit applicability to a customer segment." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyVersion cpi:PolicyRule ) ] ;
+    rdfs:range cpi:CustomerSegment ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:APPLIES_TO_SUBSECTOR a owl:ObjectProperty ;
+    rdfs:label "applies to subsector" ;
+    rdfs:comment "An expressly included economic or property subsector. Full scope follows the policy and rule conditions." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyVersion cpi:PolicyRule ) ] ;
+    rdfs:range cpi:Subsector ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:ASSESSES_RULE a owl:ObjectProperty ;
+    rdfs:label "assesses rule" ;
+    rdfs:comment "The exact rule checked in this evaluation." ;
+    rdfs:domain cpi:RuleAssessment ;
+    rdfs:range cpi:PolicyRule ;
+    cpi:ontologyLayer "Decision" .
+
+cpi:Assertion a owl:Class .
+
+cpi:BELONGS_TO_GROUP a owl:ObjectProperty ;
+    rdfs:label "belongs to group" ;
+    rdfs:comment "The party is a member of a corporate group." ;
+    rdfs:domain cpi:Party ;
+    rdfs:range cpi:CorporateGroup ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:BINDS_TO_ATTRIBUTE a owl:ObjectProperty ;
+    rdfs:label "binds to attribute" ;
+    rdfs:comment "An explicit proposed or reviewed metric-to-data binding; never inferred from similar labels." ;
+    rdfs:domain cpi:RiskMetric ;
+    rdfs:range cpi:DataAttribute ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:BOOKED_AT a owl:ObjectProperty ;
+    rdfs:label "booked at" ;
+    rdfs:comment "The booking office or location for the facility." ;
+    rdfs:domain cpi:Facility ;
+    rdfs:range cpi:BookingLocation ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:BOOKED_IN_JURISDICTION a owl:ObjectProperty ;
+    rdfs:label "booked in jurisdiction" ;
+    rdfs:comment "The jurisdiction in which the facility is booked." ;
+    rdfs:domain cpi:Facility ;
+    rdfs:range cpi:Jurisdiction ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:BORROWS a owl:ObjectProperty ;
+    rdfs:label "borrows" ;
+    rdfs:comment "A borrower is a party to an originated loan." ;
+    rdfs:domain cpi:Borrower ;
+    rdfs:range cpi:Loan ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:CLASSIFIED_AS a owl:ObjectProperty ;
+    rdfs:label "classified as" ;
+    rdfs:comment "A semantic entity is classified using an external controlled taxonomy." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyRule cpi:Product cpi:CustomerSegment cpi:RiskMetric cpi:Geography ) ] ;
+    rdfs:range cpi:TaxonomyConcept ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:COMPARES_SCOPE_VALUE a owl:ObjectProperty ;
+    rdfs:label "compares scope value" ;
+    rdfs:comment "A typed value tested by a condition. The operator and its parent group determine how the comparison is used." ;
+    rdfs:domain cpi:Condition ;
+    rdfs:range [ a owl:Class ;
+            owl:unionOf ( cpi:Industry cpi:Sector cpi:Subsector cpi:IndustryTier cpi:BorrowerType cpi:Product cpi:CustomerSegment cpi:Geography ) ] ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:CONCERNS a owl:ObjectProperty ;
+    rdfs:label "concerns" ;
+    rdfs:comment "A source-backed rule subject or dependency." ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range cpi:PolicyConcern ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:CONTAINS_RULE a owl:ObjectProperty ;
+    rdfs:label "contains rule" ;
+    rdfs:comment "A policy version or section contains a rule." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyVersion cpi:PolicySection ) ] ;
+    rdfs:range cpi:PolicyRule ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:CONTAINS_SECTION a owl:ObjectProperty ;
+    rdfs:label "contains section" ;
+    rdfs:comment "A version contains a section." ;
+    rdfs:domain cpi:PolicyVersion ;
+    rdfs:range cpi:PolicySection ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:DENOMINATED_IN a owl:ObjectProperty ;
+    rdfs:label "denominated in" ;
+    rdfs:comment "The recorded currency of the credit amount." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:CreditRequest cpi:Facility cpi:Exposure cpi:Limit ) ] ;
+    rdfs:range cpi:Currency ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:DERIVED_FROM a owl:ObjectProperty ;
+    rdfs:label "derived from" ;
+    rdfs:comment "A rule is grounded in one or more exact source passages from its own policy version." ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range cpi:SourcePassage ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:DERIVED_FROM_POLICY_CLASS a owl:ObjectProperty ;
+    rdfs:label "derived from policy class" ;
+    rdfs:comment "An explicit derivation from a policy class. Classification alone does not establish derivation." ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range cpi:PolicyClass ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:DOCUMENTS_PRODUCT_SCOPE a owl:ObjectProperty ;
+    rdfs:label "documents product scope" ;
+    rdfs:comment "A rule statement identifies this product. Other eligibility conditions remain in the source." ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range cpi:Product ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:DOMICILED_IN a owl:ObjectProperty ;
+    rdfs:label "domiciled in" ;
+    rdfs:comment "The country of domicile as reported by the source." ;
+    rdfs:domain cpi:Party ;
+    rdfs:range cpi:Country ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:EVALUATES_RISK_ATTRIBUTE a owl:ObjectProperty ;
+    rdfs:label "evaluates risk attribute" ;
+    rdfs:comment "The rule checks a quantitative measure or qualitative risk characteristic." ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range cpi:RiskAttribute ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:EVIDENCE_FOR a owl:ObjectProperty ;
+    rdfs:label "evidence for" ;
+    rdfs:comment "An evidence artifact supports an application, rule or exception." ;
+    rdfs:domain cpi:ControlEvidence ;
+    rdfs:range [ a owl:Class ;
+            owl:unionOf ( cpi:LoanApplication cpi:PolicyRule cpi:Exception ) ] ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:GOVERNED_BY a owl:ObjectProperty ;
+    rdfs:label "governed by" ;
+    rdfs:comment "The exact policy version governing a loan; not inferred merely from product mentions." ;
+    rdfs:domain cpi:Loan ;
+    rdfs:range cpi:PolicyVersion ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:HAS_APPLICABILITY a owl:ObjectProperty ;
+    rdfs:label "has applicability" ;
+    rdfs:comment "Source-backed scope inherited by rules of this policy version." ;
+    rdfs:domain cpi:PolicyVersion ;
+    rdfs:range cpi:ConditionGroup ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:HAS_BORROWER_TYPE a owl:ObjectProperty ;
+    rdfs:label "has borrower type" ;
+    rdfs:comment "The explicitly reported borrower classification." ;
+    rdfs:domain cpi:Borrower ;
+    rdfs:range cpi:BorrowerType ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_BUSINESS_ACTIVITY a owl:ObjectProperty ;
+    rdfs:label "has business activity" ;
+    rdfs:comment "The activity attributed to a party or financed by a facility." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Party cpi:Facility ) ] ;
+    rdfs:range cpi:BusinessActivity ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_COLLATERAL a owl:ObjectProperty ;
+    rdfs:label "has collateral" ;
+    rdfs:comment "Collateral pledged for the facility." ;
+    rdfs:domain cpi:Facility ;
+    rdfs:range cpi:Collateral ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_CONDITION a owl:ObjectProperty ;
+    rdfs:label "has condition" ;
+    rdfs:comment "The explicit logical condition for a rule, exception or approval requirement." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyRule cpi:Exception cpi:ApprovalRequirement ) ] ;
+    rdfs:range cpi:ConditionGroup ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:HAS_COUNTERPARTY a owl:ObjectProperty ;
+    rdfs:label "has counterparty" ;
+    rdfs:comment "A counterparty to the facility." ;
+    rdfs:domain cpi:Facility ;
+    rdfs:range cpi:Counterparty ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_COUNTRY_OF_RISK a owl:ObjectProperty ;
+    rdfs:label "has country of risk" ;
+    rdfs:comment "The country attributed to the party, facility, or exposure for credit-risk analysis." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Party cpi:Facility cpi:Exposure ) ] ;
+    rdfs:range cpi:Country ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_CREDIT_RATING a owl:ObjectProperty ;
+    rdfs:label "has credit rating" ;
+    rdfs:comment "A rating attributed to the party." ;
+    rdfs:domain cpi:Party ;
+    rdfs:range cpi:CreditRating ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_EFFECTIVE_PERIOD a owl:ObjectProperty ;
+    rdfs:label "has effective period" ;
+    rdfs:comment "An explicitly stated validity period; no period implies no known validity." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyVersion cpi:PolicyRule cpi:Exception ) ] ;
+    rdfs:range cpi:EffectivePeriod ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:HAS_EXCEPTION a owl:ObjectProperty ;
+    rdfs:label "has exception" ;
+    rdfs:comment "A rule permits an explicitly stated exception." ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range cpi:Exception ;
+    owl:inverseOf cpi:EXCEPTION_TO ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:HAS_EXCLUSION a owl:ObjectProperty ;
+    rdfs:label "has exclusion" ;
+    rdfs:comment "Source-backed exclusion from a policy version." ;
+    rdfs:domain cpi:PolicyVersion ;
+    rdfs:range cpi:ConditionGroup ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:HAS_EXPOSURE a owl:ObjectProperty ;
+    rdfs:label "has exposure" ;
+    rdfs:comment "An exposure attributed to the party or facility." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Party cpi:Facility ) ] ;
+    rdfs:range cpi:Exposure ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_GUARANTEE a owl:ObjectProperty ;
+    rdfs:label "has guarantee" ;
+    rdfs:comment "A guarantee supporting the facility." ;
+    rdfs:domain cpi:Facility ;
+    rdfs:range cpi:Guarantee ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_LENDER a owl:ObjectProperty ;
+    rdfs:label "has lender" ;
+    rdfs:comment "A lender providing the facility." ;
+    rdfs:domain cpi:Facility ;
+    rdfs:range cpi:Lender ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_MEMBER a owl:ObjectProperty ;
+    rdfs:label "has member" ;
+    rdfs:comment "A logical expression contains comparison terms or nested expressions." ;
+    rdfs:domain cpi:ConditionGroup ;
+    rdfs:range [ a owl:Class ;
+            owl:unionOf ( cpi:Condition cpi:ConditionGroup ) ] ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:HAS_OUTCOME a owl:ObjectProperty ;
+    rdfs:label "has outcome" ;
+    rdfs:comment "The result produced by this request-specific rule evaluation." ;
+    rdfs:domain cpi:RuleAssessment ;
+    rdfs:range cpi:DecisionOutcome ;
+    cpi:ontologyLayer "Decision" .
+
+cpi:HAS_PARENT_LEGAL_ENTITY a owl:ObjectProperty ;
+    rdfs:label "has parent legal entity" ;
+    rdfs:comment "The identified parent organization of a party." ;
+    rdfs:domain cpi:Party ;
+    rdfs:range cpi:LegalEntity ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_PRODUCT a owl:ObjectProperty ;
+    rdfs:label "has product" ;
+    rdfs:comment "The product used to structure a requested or originated facility." ;
+    rdfs:domain cpi:Facility ;
+    rdfs:range cpi:Product ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_PURPOSE a owl:ObjectProperty ;
+    rdfs:label "has purpose" ;
+    rdfs:comment "The stated purpose of the request or facility." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:CreditRequest cpi:Facility ) ] ;
+    rdfs:range cpi:Purpose ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_RECOMMENDED_TENOR a owl:ObjectProperty ;
+    rdfs:label "has recommended tenor" ;
+    rdfs:comment "A recommended facility duration recorded by the credit system." ;
+    rdfs:domain cpi:Facility ;
+    rdfs:range cpi:Tenor ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_REPORTED_GEOGRAPHY a owl:ObjectProperty ;
+    rdfs:label "has reported geography" ;
+    rdfs:comment "Geography reported without a specific legal, booking, or risk role." ;
+    rdfs:domain cpi:Party ;
+    rdfs:range cpi:Geography ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_RISK_ATTRIBUTE a owl:ObjectProperty ;
+    rdfs:label "has risk attribute" ;
+    rdfs:comment "A risk measure or characteristic, such as PD, LGD, LTV, concentration, country risk or industry risk." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Party cpi:Facility cpi:Exposure cpi:CreditRequest ) ] ;
+    rdfs:range cpi:RiskAttribute ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_RISK_GRADE a owl:ObjectProperty ;
+    rdfs:label "has risk grade" ;
+    rdfs:comment "A grade attributed to the party or facility." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Party cpi:Facility ) ] ;
+    rdfs:range cpi:RiskGrade ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_RISK_OBSERVATION a owl:ObjectProperty ;
+    rdfs:label "has risk observation" ;
+    rdfs:comment "A measured risk value recorded in the request context." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Party cpi:Facility cpi:Exposure cpi:CreditRequest ) ] ;
+    rdfs:range cpi:RiskObservation ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_RULE_ASSESSMENT a owl:ObjectProperty ;
+    rdfs:label "has rule assessment" ;
+    rdfs:comment "The credit request has a recorded rule evaluation." ;
+    rdfs:domain cpi:CreditRequest ;
+    rdfs:range cpi:RuleAssessment ;
+    cpi:ontologyLayer "Decision" .
+
+cpi:HAS_SPONSOR a owl:ObjectProperty ;
+    rdfs:label "has sponsor" ;
+    rdfs:comment "A sponsor for the request or the facility." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:CreditRequest cpi:Facility ) ] ;
+    rdfs:range cpi:Sponsor ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_TENANT a owl:ObjectProperty ;
+    rdfs:label "has tenant" ;
+    rdfs:comment "A tenant of property financed or pledged to the facility." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Facility cpi:Collateral ) ] ;
+    rdfs:range cpi:Tenant ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_TENOR a owl:ObjectProperty ;
+    rdfs:label "has tenor" ;
+    rdfs:comment "The requested or contractual facility duration." ;
+    rdfs:domain cpi:Facility ;
+    rdfs:range cpi:Tenor ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:HAS_THRESHOLD a owl:ObjectProperty ;
+    rdfs:label "has threshold" ;
+    rdfs:comment "A rule has a numerical boundary." ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range cpi:Threshold ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:HAS_VERSION a owl:ObjectProperty ;
+    rdfs:label "has version" ;
+    rdfs:comment "The stable policy identity has an explicitly identified version." ;
+    rdfs:domain cpi:CreditPolicy ;
+    rdfs:range cpi:PolicyVersion ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:IMPLEMENTED_BY_RULE a owl:ObjectProperty ;
+    rdfs:label "implemented by rule" ;
+    rdfs:comment "An optional alternative rule specifies the permitted deviation." ;
+    rdfs:domain cpi:Exception ;
+    rdfs:range cpi:PolicyRule ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:INCORPORATED_IN a owl:ObjectProperty ;
+    rdfs:label "incorporated in" ;
+    rdfs:comment "The country of legal incorporation." ;
+    rdfs:domain cpi:Party ;
+    rdfs:range cpi:Country ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:IN_REGION a owl:ObjectProperty ;
+    rdfs:label "in region" ;
+    rdfs:comment "The geography belongs to a geographic region." ;
+    rdfs:domain cpi:Geography ;
+    rdfs:range cpi:Region ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:IN_SECTOR a owl:ObjectProperty ;
+    rdfs:label "in sector" ;
+    rdfs:comment "The party or economic classification belongs to a sector." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Party cpi:Industry cpi:Subsector ) ] ;
+    rdfs:range cpi:Sector ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:IN_SUBSECTOR a owl:ObjectProperty ;
+    rdfs:label "in subsector" ;
+    rdfs:comment "The party or activity is classified in a subsector." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Party cpi:BusinessActivity ) ] ;
+    rdfs:range cpi:Subsector ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:LOCATED_IN_JURISDICTION a owl:ObjectProperty ;
+    rdfs:label "located in jurisdiction" ;
+    rdfs:comment "The jurisdiction of the booking location." ;
+    rdfs:domain cpi:BookingLocation ;
+    rdfs:range cpi:Jurisdiction ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:MEASURED_BY a owl:ObjectProperty ;
+    rdfs:label "measured by" ;
+    rdfs:comment "The metric against which a threshold is interpreted." ;
+    rdfs:domain cpi:Threshold ;
+    rdfs:range cpi:RiskMetric ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:MEMBER_OF_SEGMENT a owl:ObjectProperty ;
+    rdfs:label "member of segment" ;
+    rdfs:comment "Source-backed customer membership in a segment." ;
+    rdfs:domain cpi:Customer ;
+    rdfs:range cpi:CustomerSegment ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:OBSERVES_DATA_ATTRIBUTE a owl:ObjectProperty ;
+    rdfs:label "observes data attribute" ;
+    rdfs:comment "The observation is sourced from a registered deal attribute." ;
+    rdfs:domain cpi:RiskObservation ;
+    rdfs:range cpi:DataAttribute ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:OF_PRODUCT a owl:ObjectProperty ;
+    rdfs:label "of product" ;
+    rdfs:comment "The product type of an originated loan." ;
+    rdfs:domain cpi:Loan ;
+    rdfs:range cpi:Product ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:OPERATES_IN_GEOGRAPHY a owl:ObjectProperty ;
+    rdfs:label "operates in geography" ;
+    rdfs:comment "A geography explicitly identified as a location of operations." ;
+    rdfs:domain cpi:Party ;
+    rdfs:range cpi:Geography ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:OPERATES_IN_INDUSTRY a owl:ObjectProperty ;
+    rdfs:label "operates in industry" ;
+    rdfs:comment "The industry in which the party operates." ;
+    rdfs:domain cpi:Party ;
+    rdfs:range cpi:Industry ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:PARENT_SECTION a owl:ObjectProperty ;
+    rdfs:label "parent section" ;
+    rdfs:comment "Optional containing section within the same version." ;
+    rdfs:domain cpi:PolicySection ;
+    rdfs:range cpi:PolicySection ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:PART_OF_VERSION a owl:ObjectProperty ;
+    rdfs:label "part of version" ;
+    rdfs:comment "A section or rule belongs to exactly one policy version." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicySection cpi:PolicyRule ) ] ;
+    rdfs:range cpi:PolicyVersion ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:PROVIDED_BY_GUARANTOR a owl:ObjectProperty ;
+    rdfs:label "provided by guarantor" ;
+    rdfs:comment "The party providing the guarantee." ;
+    rdfs:domain cpi:Guarantee ;
+    rdfs:range cpi:Guarantor ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:REQUESTED_BY a owl:ObjectProperty ;
+    rdfs:label "requested by" ;
+    rdfs:comment "The borrower seeking credit." ;
+    rdfs:domain cpi:CreditRequest ;
+    rdfs:range cpi:Borrower ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:REQUESTS_FACILITY a owl:ObjectProperty ;
+    rdfs:label "requests facility" ;
+    rdfs:comment "A facility the borrower asks the lender to provide." ;
+    rdfs:domain cpi:CreditRequest ;
+    rdfs:range cpi:Facility ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:REQUESTS_PRODUCT a owl:ObjectProperty ;
+    rdfs:label "requests product" ;
+    rdfs:comment "The product requested by an application." ;
+    rdfs:domain cpi:LoanApplication ;
+    rdfs:range cpi:Product ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:REQUIRES_APPROVAL a owl:ObjectProperty ;
+    rdfs:label "requires approval" ;
+    rdfs:comment "A rule or exception requires a decision, not evidence that it has been granted." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyRule cpi:Exception ) ] ;
+    rdfs:range cpi:ApprovalRequirement ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:REQUIRES_APPROVAL_ABOVE_THRESHOLD a owl:ObjectProperty ;
+    rdfs:label "requires approval above threshold" ;
+    rdfs:comment "The cited approval or escalation applies above an authority or transaction threshold." ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range cpi:ApprovalRequirement ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:REQUIRES_APPROVAL_FROM a owl:ObjectProperty ;
+    rdfs:label "requires approval from" ;
+    rdfs:comment "The role or committee required for an approval decision." ;
+    rdfs:domain cpi:ApprovalRequirement ;
+    rdfs:range cpi:ApprovalAuthority ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:REQUIRES_APPROVAL_ON_BREACH a owl:ObjectProperty ;
+    rdfs:label "requires approval on breach" ;
+    rdfs:comment "The cited approval or escalation is explicitly triggered by a threshold breach." ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range cpi:ApprovalRequirement ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:REQUIRES_EVIDENCE a owl:ObjectProperty ;
+    rdfs:label "requires evidence" ;
+    rdfs:comment "A rule or approval requires an evidence type." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyRule cpi:ApprovalRequirement ) ] ;
+    rdfs:range cpi:EvidenceRequirement ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:RESULTS_IN a owl:ObjectProperty ;
+    rdfs:label "results in" ;
+    rdfs:comment "An application results in an originated loan; absence does not imply rejection." ;
+    rdfs:domain cpi:LoanApplication ;
+    rdfs:range cpi:Loan ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:SATISFIES_REQUIREMENT a owl:ObjectProperty ;
+    rdfs:label "satisfies requirement" ;
+    rdfs:comment "A recorded claim that an evidence artifact satisfies a requirement; verification remains explicit." ;
+    rdfs:domain cpi:ControlEvidence ;
+    rdfs:range cpi:EvidenceRequirement ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:SOURCE_IN_VERSION a owl:ObjectProperty ;
+    rdfs:label "source in version" ;
+    rdfs:comment "The policy version containing an exact source passage." ;
+    rdfs:domain cpi:SourcePassage ;
+    rdfs:range cpi:PolicyVersion ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:SUBJECT_TO_LIMIT a owl:ObjectProperty ;
+    rdfs:label "subject to limit" ;
+    rdfs:comment "A documented ceiling covering the exposure or facility." ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Exposure cpi:Facility ) ] ;
+    rdfs:range cpi:Limit ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:SemanticInstance a owl:Class .
+
+cpi:TESTS_ATTRIBUTE a owl:ObjectProperty ;
+    rdfs:label "tests attribute" ;
+    rdfs:comment "A condition names a field with an explicit binding in the deal fact registry." ;
+    rdfs:domain cpi:Condition ;
+    rdfs:range cpi:DataAttribute ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:USES_METRIC a owl:ObjectProperty ;
+    rdfs:label "uses metric" ;
+    rdfs:comment "A rule uses a defined risk measure." ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range cpi:RiskMetric ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:VERSION_OF a owl:ObjectProperty ;
+    rdfs:label "version of" ;
+    rdfs:comment "A policy version belongs to one stable policy identity." ;
+    rdfs:domain cpi:PolicyVersion ;
+    rdfs:range cpi:CreditPolicy ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:allowed_units a owl:DatatypeProperty ;
+    rdfs:domain cpi:RiskMetric ;
+    rdfs:range xsd:string .
+
+cpi:amount a owl:DatatypeProperty ;
+    rdfs:domain cpi:Exposure ;
+    rdfs:range xsd:decimal .
+
+cpi:application_reference a owl:DatatypeProperty ;
+    rdfs:domain cpi:LoanApplication ;
+    rdfs:range xsd:string .
+
+cpi:as_of a owl:DatatypeProperty ;
+    rdfs:domain cpi:Exposure ;
+    rdfs:range xsd:date .
+
+cpi:attribute_name a owl:DatatypeProperty ;
+    rdfs:domain cpi:DataAttribute ;
+    rdfs:range xsd:string .
+
+cpi:authority_code a owl:DatatypeProperty ;
+    rdfs:domain cpi:ApprovalAuthority ;
+    rdfs:range xsd:string .
+
+cpi:authority_kind a owl:DatatypeProperty ;
+    rdfs:domain cpi:ApprovalAuthority ;
+    rdfs:range xsd:string .
+
+cpi:clause_reference a owl:DatatypeProperty ;
+    rdfs:domain cpi:SourcePassage ;
+    rdfs:range xsd:string .
+
+cpi:code_scheme a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Geography cpi:Country cpi:Jurisdiction cpi:Region ) ] ;
+    rdfs:range xsd:string .
+
+cpi:collected_on a owl:DatatypeProperty ;
+    rdfs:domain cpi:ControlEvidence ;
+    rdfs:range xsd:date .
+
+cpi:concern_code a owl:DatatypeProperty ;
+    rdfs:domain cpi:PolicyConcern ;
+    rdfs:range xsd:string .
+
+cpi:currency a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:LoanApplication cpi:Loan ) ] ;
+    rdfs:range xsd:string .
+
+cpi:currency_code a owl:DatatypeProperty ;
+    rdfs:domain cpi:Currency ;
+    rdfs:range xsd:string .
+
+cpi:customer_kind a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Customer cpi:Borrower ) ] ;
+    rdfs:range xsd:string .
+
+cpi:customer_reference a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Customer cpi:Borrower ) ] ;
+    rdfs:range xsd:string .
+
+cpi:decision_type a owl:DatatypeProperty ;
+    rdfs:domain cpi:ApprovalRequirement ;
+    rdfs:range xsd:string .
+
+cpi:document_reference a owl:DatatypeProperty ;
+    rdfs:domain cpi:SourcePassage ;
+    rdfs:range xsd:string .
+
+cpi:end_date a owl:DatatypeProperty ;
+    rdfs:domain cpi:EffectivePeriod ;
+    rdfs:range xsd:date .
+
+cpi:entity_name a owl:DatatypeProperty ;
+    rdfs:domain cpi:DataAttribute ;
+    rdfs:range xsd:string .
+
+cpi:evaluated_on a owl:DatatypeProperty ;
+    rdfs:domain cpi:RuleAssessment ;
+    rdfs:range xsd:date .
+
+cpi:evidence_reference a owl:DatatypeProperty ;
+    rdfs:domain cpi:ControlEvidence ;
+    rdfs:range xsd:string .
+
+cpi:evidence_type a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:EvidenceRequirement cpi:ControlEvidence ) ] ;
+    rdfs:range xsd:string .
+
+cpi:exception_reference a owl:DatatypeProperty ;
+    rdfs:domain cpi:Exception ;
+    rdfs:range xsd:string .
+
+cpi:field a owl:DatatypeProperty ;
+    rdfs:domain cpi:Condition ;
+    rdfs:range xsd:string .
+
+cpi:field_name a owl:DatatypeProperty ;
+    rdfs:domain cpi:OperationalEvidence ;
+    rdfs:range xsd:string .
+
+cpi:formula a owl:DatatypeProperty ;
+    rdfs:domain cpi:RiskMetric ;
+    rdfs:range xsd:string .
+
+cpi:geography_code a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Geography cpi:Country cpi:Jurisdiction cpi:Region ) ] ;
+    rdfs:range xsd:string .
+
+cpi:loan_reference a owl:DatatypeProperty ;
+    rdfs:domain cpi:Loan ;
+    rdfs:range xsd:string .
+
+cpi:logic a owl:DatatypeProperty ;
+    rdfs:domain cpi:ConditionGroup ;
+    rdfs:range xsd:string .
+
+cpi:maximum_age_days a owl:DatatypeProperty ;
+    rdfs:domain cpi:EvidenceRequirement ;
+    rdfs:range xsd:integer .
+
+cpi:metric_key a owl:DatatypeProperty ;
+    rdfs:domain cpi:RiskMetric ;
+    rdfs:range xsd:string .
+
+cpi:mode a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+
+cpi:months a owl:DatatypeProperty ;
+    rdfs:domain cpi:Tenor ;
+    rdfs:range xsd:decimal .
+
+cpi:notes a owl:DatatypeProperty ;
+    rdfs:domain cpi:ApprovalRequirement ;
+    rdfs:range xsd:string .
+
+cpi:observed_value a owl:DatatypeProperty ;
+    rdfs:domain cpi:RiskObservation ;
+    rdfs:range xsd:decimal .
+
+cpi:ontologyLayer a owl:AnnotationProperty .
+
+cpi:ontologyVersion a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+
+cpi:operator a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Condition cpi:Threshold ) ] ;
+    rdfs:range xsd:string .
+
+cpi:origin a owl:DatatypeProperty ;
+    rdfs:domain cpi:SourcePassage ;
+    rdfs:range xsd:string .
+
+cpi:outcome_code a owl:DatatypeProperty ;
+    rdfs:domain cpi:DecisionOutcome ;
+    rdfs:range xsd:string .
+
+cpi:page a owl:DatatypeProperty ;
+    rdfs:domain cpi:SourcePassage ;
+    rdfs:range xsd:integer .
+
+cpi:policy_reference a owl:DatatypeProperty ;
+    rdfs:domain cpi:CreditPolicy ;
+    rdfs:range xsd:string .
+
+cpi:product_code a owl:DatatypeProperty ;
+    rdfs:domain cpi:Product ;
+    rdfs:range xsd:string .
+
+cpi:rating_code a owl:DatatypeProperty ;
+    rdfs:domain cpi:CreditRating ;
+    rdfs:range xsd:string .
+
+cpi:rating_type a owl:DatatypeProperty ;
+    rdfs:domain cpi:CreditRating ;
+    rdfs:range xsd:string .
+
+cpi:rationale a owl:DatatypeProperty ;
+    rdfs:domain cpi:Exception ;
+    rdfs:range xsd:string .
+
+cpi:registry_reference a owl:DatatypeProperty ;
+    rdfs:domain cpi:DataAttribute ;
+    rdfs:range xsd:string .
+
+cpi:request_reference a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:LoanApplication cpi:CreditRequest ) ] ;
+    rdfs:range xsd:string .
+
+cpi:requested_amount a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:LoanApplication cpi:CreditRequest ) ] ;
+    rdfs:range xsd:decimal .
+
+cpi:requirement_text a owl:DatatypeProperty ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range xsd:string .
+
+cpi:risk_domain a owl:DatatypeProperty ;
+    rdfs:domain cpi:CreditPolicy ;
+    rdfs:range xsd:string .
+
+cpi:risk_key a owl:DatatypeProperty ;
+    rdfs:domain cpi:RiskObservation ;
+    rdfs:range xsd:string .
+
+cpi:rule_kind a owl:DatatypeProperty ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range xsd:string .
+
+cpi:rule_reference a owl:DatatypeProperty ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range xsd:string .
+
+cpi:section_reference a owl:DatatypeProperty ;
+    rdfs:domain cpi:PolicySection ;
+    rdfs:range xsd:string .
+
+cpi:segment_code a owl:DatatypeProperty ;
+    rdfs:domain cpi:CustomerSegment ;
+    rdfs:range xsd:string .
+
+cpi:sourceRef a owl:ObjectProperty ;
+    rdfs:range [ a owl:Class ;
+            owl:unionOf ( cpi:SourcePassage cpi:OperationalEvidence ) ] .
+
+cpi:source_checksum a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyVersion cpi:SourcePassage ) ] ;
+    rdfs:range xsd:string .
+
+cpi:source_reference a owl:DatatypeProperty ;
+    rdfs:domain cpi:OperationalEvidence ;
+    rdfs:range xsd:string .
+
+cpi:source_rule_code a owl:DatatypeProperty ;
+    rdfs:domain cpi:PolicyRule ;
+    rdfs:range xsd:string .
+
+cpi:source_type a owl:DatatypeProperty ;
+    rdfs:domain cpi:OperationalEvidence ;
+    rdfs:range xsd:string .
+
+cpi:start_date a owl:DatatypeProperty ;
+    rdfs:domain cpi:EffectivePeriod ;
+    rdfs:range xsd:date .
+
+cpi:status a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+
+cpi:synthetic a owl:DatatypeProperty ;
+    rdfs:range xsd:boolean .
+
+cpi:taxonomy_id a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:TaxonomyConcept cpi:PolicyClass ) ] ;
+    rdfs:range xsd:string .
+
+cpi:taxonomy_version a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:TaxonomyConcept cpi:PolicyClass ) ] ;
+    rdfs:range xsd:string .
+
+cpi:text a owl:DatatypeProperty ;
+    rdfs:domain cpi:SourcePassage ;
+    rdfs:range xsd:string .
+
+cpi:unit a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Condition cpi:Threshold cpi:RiskObservation ) ] ;
+    rdfs:range xsd:string .
+
+cpi:value a rdf:Property ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:Condition cpi:Threshold ) ] .
+
+cpi:verification_state a owl:DatatypeProperty ;
+    rdfs:domain cpi:ControlEvidence ;
+    rdfs:range xsd:string .
+
+cpi:version a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:PolicyVersion cpi:SourcePassage ) ] ;
+    rdfs:range xsd:string .
+
+cpi:workflow_stage a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( cpi:LoanApplication cpi:CreditRequest ) ] ;
+    rdfs:range xsd:string .
+
+cpi:CorporateGroup a owl:Class ;
+    rdfs:label "Corporate group" ;
+    rdfs:comment "A group of affiliated parties." ;
+    rdfs:subClassOf cpi:Party ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Counterparty a owl:Class ;
+    rdfs:label "Counterparty" ;
+    rdfs:comment "A party on the other side of a credit transaction." ;
+    rdfs:subClassOf cpi:Party ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:EXCEPTION_TO a owl:ObjectProperty ;
+    rdfs:label "exception to" ;
+    rdfs:comment "The one base rule from which an exception permits deviation." ;
+    rdfs:domain cpi:Exception ;
+    rdfs:range cpi:PolicyRule ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:Guarantor a owl:Class ;
+    rdfs:label "Guarantor" ;
+    rdfs:comment "A party that provides a guarantee." ;
+    rdfs:subClassOf cpi:Party ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:LegalEntity a owl:Class ;
+    rdfs:label "Legal entity" ;
+    rdfs:comment "An independently constituted organization that can be a parent entity." ;
+    rdfs:subClassOf cpi:Party ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Lender a owl:Class ;
+    rdfs:label "Lender" ;
+    rdfs:comment "A party providing credit." ;
+    rdfs:subClassOf cpi:Party ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Purpose a owl:Class ;
+    rdfs:label "Purpose" ;
+    rdfs:comment "The stated intended use of funding." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:RiskGrade a owl:Class ;
+    rdfs:label "Risk grade" ;
+    rdfs:comment "A grade assigned under a risk classification scale." ;
+    rdfs:subClassOf cpi:RiskAttribute ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Sponsor a owl:Class ;
+    rdfs:label "Sponsor" ;
+    rdfs:comment "A party that supports a borrower or a financed transaction." ;
+    rdfs:subClassOf cpi:Party ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Tenant a owl:Class ;
+    rdfs:label "Tenant" ;
+    rdfs:comment "A party leasing financed or pledged property." ;
+    rdfs:subClassOf cpi:Party ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:BookingLocation a owl:Class ;
+    rdfs:label "Booking location" ;
+    rdfs:comment "The office or location where a facility is booked." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:BusinessActivity a owl:Class ;
+    rdfs:label "Business activity" ;
+    rdfs:comment "An economic activity conducted by a party or financed by a facility." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Collateral a owl:Class ;
+    rdfs:label "Collateral" ;
+    rdfs:comment "An asset or security pledged against credit." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Currency a owl:Class ;
+    rdfs:label "Currency" ;
+    rdfs:comment "The currency in which a credit amount is denominated." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:DecisionOutcome a owl:Class ;
+    rdfs:label "Decision outcome" ;
+    rdfs:comment "The recorded result of a rule assessment." ;
+    cpi:ontologyLayer "Decision" .
+
+cpi:Guarantee a owl:Class ;
+    rdfs:label "Guarantee" ;
+    rdfs:comment "A commitment by a guarantor to support an obligation." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:IndustryTier a owl:Class ;
+    rdfs:label "Industry tier" ;
+    rdfs:comment "A risk tier assigned to an industry under the relevant classification." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Limit a owl:Class ;
+    rdfs:label "Limit" ;
+    rdfs:comment "An authorized exposure ceiling." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:PolicyConcern a owl:Class ;
+    rdfs:label "Policy concern" ;
+    rdfs:comment "A source-backed subject or dependency used to navigate rules." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:Sector a owl:Class ;
+    rdfs:label "Sector" ;
+    rdfs:comment "A broad economic classification." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:ApprovalAuthority a owl:Class ;
+    rdfs:label "Approval authority" ;
+    rdfs:comment "An accountable role or committee empowered to make a specified decision." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:BorrowerType a owl:Class ;
+    rdfs:label "Borrower type" ;
+    rdfs:comment "A classification used for borrower eligibility." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:CreditRating a owl:Class ;
+    rdfs:label "Credit rating" ;
+    rdfs:comment "An observed credit rating under an identified rating type." ;
+    rdfs:subClassOf cpi:RiskAttribute ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:EffectivePeriod a owl:Class ;
+    rdfs:label "Effective period" ;
+    rdfs:comment "An inclusive start date and optional inclusive end date; absent period means unknown validity." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:PolicyClass a owl:Class ;
+    rdfs:label "Policy class" ;
+    rdfs:comment "A policy category or topic in the current policy taxonomy." ;
+    rdfs:subClassOf cpi:TaxonomyConcept ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:Region a owl:Class ;
+    rdfs:label "Region" ;
+    rdfs:comment "A geographic grouping of territories." ;
+    rdfs:subClassOf cpi:Geography ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Tenor a owl:Class ;
+    rdfs:label "Tenor" ;
+    rdfs:comment "The duration of a facility in months." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:CreditPolicy a owl:Class ;
+    rdfs:label "Credit policy" ;
+    rdfs:comment "A stable policy identity across separately identified versions." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:Customer a owl:Class ;
+    rdfs:label "Customer" ;
+    rdfs:comment "A person or organization with a banking relationship." ;
+    rdfs:subClassOf cpi:Party ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:EvidenceRequirement a owl:Class ;
+    rdfs:label "Evidence requirement" ;
+    rdfs:comment "A required evidence type and optional freshness condition." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:Industry a owl:Class ;
+    rdfs:label "Industry" ;
+    rdfs:comment "An economic classification of a party or financed activity." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Jurisdiction a owl:Class ;
+    rdfs:label "Jurisdiction" ;
+    rdfs:comment "A territory under a particular legal or regulatory authority." ;
+    rdfs:subClassOf cpi:Geography ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:OperationalEvidence a owl:Class ;
+    rdfs:label "Operational evidence" ;
+    rdfs:comment "A source reference for a deal fact or an assessment output." ;
+    cpi:ontologyLayer "Decision" .
+
+cpi:RuleAssessment a owl:Class ;
+    rdfs:label "Rule assessment" ;
+    rdfs:comment "An evaluation of a specific credit request against a specific policy rule." ;
+    cpi:ontologyLayer "Decision" .
+
+cpi:Subsector a owl:Class ;
+    rdfs:label "Subsector" ;
+    rdfs:comment "A finer economic classification within a sector." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:TaxonomyConcept a owl:Class ;
+    rdfs:label "Taxonomy concept" ;
+    rdfs:comment "A reference to a controlled classification concept; classification is distinct from executable applicability." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:Country a owl:Class ;
+    rdfs:label "Country" ;
+    rdfs:comment "A country identified under an explicit geographic code scheme." ;
+    rdfs:subClassOf cpi:Geography ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:CustomerSegment a owl:Class ;
+    rdfs:label "Customer segment" ;
+    rdfs:comment "A controlled grouping of customers, such as SME; no numerical SME definition is assumed." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:RiskAttribute a owl:Class ;
+    rdfs:label "Risk attribute" ;
+    rdfs:comment "A qualitative or quantitative characteristic used in credit-risk analysis." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:RiskObservation a owl:Class ;
+    rdfs:label "Risk observation" ;
+    rdfs:comment "An observed deal risk value with the unit supplied by its source." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Threshold a owl:Class ;
+    rdfs:label "Threshold" ;
+    rdfs:comment "A numerical boundary with an operator and unit, measured against exactly one metric." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:Borrower a owl:Class ;
+    rdfs:label "Borrower" ;
+    rdfs:comment "A customer seeking or receiving credit; a specialized Customer." ;
+    rdfs:subClassOf cpi:Customer ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:ConditionGroup a owl:Class ;
+    rdfs:label "Condition group" ;
+    rdfs:comment "An explicit AND, OR or NOT expression over conditions or nested groups." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:ControlEvidence a owl:Class ;
+    rdfs:label "Control evidence" ;
+    rdfs:comment "An actual evidence artifact with its recorded verification state." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:DataAttribute a owl:Class ;
+    rdfs:label "Data attribute" ;
+    rdfs:comment "An exact source-system or workbook attribute; bindings require separate governance." ;
+    cpi:ontologyLayer "Applicability" .
+
+cpi:Loan a owl:Class ;
+    rdfs:label "Loan" ;
+    rdfs:comment "An originated credit agreement or facility." ;
+    rdfs:subClassOf cpi:Facility ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:PolicySection a owl:Class ;
+    rdfs:label "Policy section" ;
+    rdfs:comment "A section of one policy version, optionally nested within another section." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:Condition a owl:Class ;
+    rdfs:label "Condition" ;
+    rdfs:comment "A typed comparison used in scope, eligibility or exception logic." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:RiskMetric a owl:Class ;
+    rdfs:label "Risk metric" ;
+    rdfs:comment "A defined quantitative measure with declared permitted units and optional formula." ;
+    rdfs:subClassOf cpi:RiskAttribute ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:ApprovalRequirement a owl:Class ;
+    rdfs:label "Approval requirement" ;
+    rdfs:comment "A required decision by an identified authority; this is not an approval already granted." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:Exposure a owl:Class ;
+    rdfs:label "Exposure" ;
+    rdfs:comment "A credit exposure measured at the applicable entity and reporting scope." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Product a owl:Class ;
+    rdfs:label "Product" ;
+    rdfs:comment "A controlled credit product or facility type." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Exception a owl:Class ;
+    rdfs:label "Exception" ;
+    rdfs:comment "A conditional deviation from one base rule. Approval and alternative rules are explicit links." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:LoanApplication a owl:Class ;
+    rdfs:label "Loan application" ;
+    rdfs:comment "A request for credit, distinct from an originated loan." ;
+    rdfs:subClassOf cpi:CreditRequest ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:SourcePassage a owl:Class ;
+    rdfs:label "Source passage" ;
+    rdfs:comment "Exact evidence text, source identity, version and checksum; never a generated policy summary." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:Geography a owl:Class ;
+    rdfs:label "Geography" ;
+    rdfs:comment "A jurisdiction or geographic grouping used in explicit policy scope." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:CreditRequest a owl:Class ;
+    rdfs:label "Credit request" ;
+    rdfs:comment "A request for one or more credit facilities." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:PolicyVersion a owl:Class ;
+    rdfs:label "Policy version" ;
+    rdfs:comment "An immutable, source-bound version of a credit policy." ;
+    cpi:ontologyLayer "Policy" .
+
+cpi:Facility a owl:Class ;
+    rdfs:label "Facility" ;
+    rdfs:comment "A requested or committed credit arrangement." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:Party a owl:Class ;
+    rdfs:label "Party" ;
+    rdfs:comment "A person, organization, or group with a role in a credit relationship." ;
+    cpi:ontologyLayer "Domain" .
+
+cpi:PolicyRule a owl:Class ;
+    rdfs:label "Policy rule" ;
+    rdfs:comment "A source-derived normative requirement within exactly one policy version." ;
+    cpi:ontologyLayer "Policy" .
+

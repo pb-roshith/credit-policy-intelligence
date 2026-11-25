@@ -4,7 +4,7 @@ The active workflow is **taxonomy -> ontology -> AI rule extraction -> semantic 
 
 - **Source Assets** lists the registered policy corpus and the spreadsheet reference dictionary.
 - **Taxonomy** displays the source-backed policy classification tree. The spreadsheet dictionary is read-only reference material.
-- **Ontology** exposes the current 1.2.0 semantic schema, JSON Schema, OWL and SHACL.
+- **Ontology Studio** exposes the 1.4.0 Domain, Policy, Applicability, and Decision layers with JSON Schema, OWL, and SHACL downloads.
 - **Policy Evidence** displays every current source passage, extracted requirements and scope review.
 - **Policy Rule Library** displays current semantic extractions with quantitative/qualitative and review-state filters. Proposed rules remain separate from published graph rules.
 - **Knowledge graph** starts small. Policy nodes reveal rules; rule nodes reveal source-backed products, segments, conditions, metrics, thresholds, exceptions and approvals. At most six neighbors are drawn at a time, with navigation for the complete neighborhood.
@@ -32,6 +32,6 @@ From `cpi_server/backend`:
 .venv/Scripts/python.exe scripts/validate_current_solution.py
 ```
 
-These commands read existing extraction results and do not call AI. The current deliverables live under `cpi_server/backend/outputs/policy-taxonomy`, `cpi_server/backend/outputs/ontology`, `cpi_server/backend/outputs/extracted-knowledge`, and `cpi_server/backend/outputs/finalization`. Superseded examples, checkpoints and schema packages are preserved under `cpi_server/backend/outputs/archive`.
+These commands read existing extraction results and do not call AI. The current deliverables live under `dm_server/seed_others/outputs/policy-taxonomy`, `dm_server/seed_others/outputs/ontology`, `dm_server/seed_others/outputs/extracted-knowledge`, and `dm_server/seed_others/outputs/finalization`. Superseded examples, checkpoints and schema packages are preserved under `dm_server/seed_others/outputs/archive`.
 
 Run the existing frontend on port 5173 and backend on port 8002 using the [workspace run guide](../../../../run.md#credit-policy-intelligence). No new frontend dependency was added.

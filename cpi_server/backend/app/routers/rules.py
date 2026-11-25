@@ -113,9 +113,8 @@ def reviewer(user):
 
 from fastapi import BackgroundTasks
 from fastapi.responses import FileResponse
-from pathlib import Path
 from ..database import db_connection
-from ..config import BASE_DIR, RULE_DEMO_AUTO_APPROVE
+from ..config import BASE_DIR, RULE_DEMO_AUTO_APPROVE, is_seed_policy_source, resolve_policy_source
 from ..services.inventory_schema import GovernedRuleInput
 from ..services.rule_governance import store_rule, change_status
 from ..services.rule_extraction import run_background_inventory_job
@@ -237,8 +236,8 @@ def source_document(document_id: int, request: Request, user=Depends(current_use
     with shared_policy_connection() as c:
         doc=c.execute('SELECT COALESCE(doc.source_path,p.local_pdf_path) AS local_pdf_path,doc.file_name,doc.checksum FROM inventory_documents doc JOIN policy_documents p ON p.policy_id=doc.source_document_id WHERE doc.id=%s',(document_id,)).fetchone()
     if not doc:raise HTTPException(404,'Source document not found')
-    path=Path(doc['local_pdf_path']).resolve()
-    if not path.is_relative_to(BASE_DIR.resolve()) or not path.is_file():raise HTTPException(404,'Source file is unavailable')
+    path=resolve_policy_source(doc['local_pdf_path'],doc['file_name'])
+    if not (path.is_relative_to(BASE_DIR.resolve()) or is_seed_policy_source(path)) or not path.is_file():raise HTTPException(404,'Source file is unavailable')
     import hashlib
     if hashlib.sha256(path.read_bytes()).hexdigest()!=doc['checksum']:
         raise HTTPException(409,'The source file changed; the original version is unavailable')
@@ -275,12 +274,18 @@ def action(rule_id: int,payload: Action,user=Depends(current_user)):
 class InventoryJobInput(BaseModel):
     policy_ids: list[int] | None = Field(default=None,max_length=1000)
 
-def enqueue_inventory(user,policy_ids=None):
+def enqueue_inventory(user,policy_ids=None,*,staged_upload=None):
     if not MISTRAL_API_KEY:raise HTTPException(503,'MISTRAL_API_KEY is not configured')
     from ..services.inventory_operations import discover_documents
-    documents=discover_documents(register=has_permission(user, "admin.manage"))
+    documents=[] if staged_upload else discover_documents(register=has_permission(user, "admin.manage"))
     with shared_policy_connection() as c:
         c.execute("SELECT pg_advisory_xact_lock(hashtext('rule-inventory-job'))")
+        if staged_upload:
+            from ..services.policy_uploads import activate_staged_policy
+            upload, prior_job = activate_staged_policy(c, staged_upload, user['user_id'])
+            if prior_job:
+                return prior_job
+            policy_ids = [upload['policy_id']]
         c.execute("UPDATE rule_inventory_jobs SET status='Failed',error='Worker interrupted; retry resumes completed batches',finished_at=CURRENT_TIMESTAMP WHERE status IN ('Queued','Running') AND COALESCE(heartbeat_at,created_at)<CURRENT_TIMESTAMP-INTERVAL '30 minutes'")
         c.execute("UPDATE agent_execution_logs SET status='Failed',error_code='Worker interrupted',finished_at=CURRENT_TIMESTAMP WHERE status='Running' AND job_id IN (SELECT id FROM rule_inventory_jobs WHERE status='Failed')")
         existing=c.execute("SELECT * FROM rule_inventory_jobs WHERE status IN ('Queued','Running')").fetchone()
@@ -288,7 +293,16 @@ def enqueue_inventory(user,policy_ids=None):
         policies=c.execute("SELECT policy_id FROM policy_documents WHERE lower(status) IN ('active','pending metadata') AND (%s::bigint[] IS NULL OR policy_id=ANY(%s)) ORDER BY policy_id",(policy_ids,policy_ids)).fetchall()
         if not policies:raise HTTPException(409,'No active policy documents were selected')
         from ..risk_knowledge.pipeline import PIPELINE_VERSION
-        return c.execute("INSERT INTO rule_inventory_jobs(id,status,policy_ids,created_by,discovered_documents,report) VALUES (%s,'Queued',%s::jsonb,%s,%s::jsonb,%s::jsonb) RETURNING *",(str(uuid4()),json.dumps([p['policy_id'] for p in policies]),user['user_id'],json.dumps(documents),json.dumps({'pipeline':PIPELINE_VERSION}))).fetchone()
+        job_id = str(uuid4())
+        config = {'pipeline': PIPELINE_VERSION}
+        if staged_upload:
+            config.update(rebuild_policy_graph=True, previous_policy_version=upload['previous_version'])
+        job = c.execute("INSERT INTO rule_inventory_jobs(id,status,policy_ids,created_by,discovered_documents,report) VALUES (%s,'Queued',%s::jsonb,%s,%s::jsonb,%s::jsonb) RETURNING *",(job_id,json.dumps([p['policy_id'] for p in policies]),user['user_id'],json.dumps(documents),json.dumps(config))).fetchone()
+        if staged_upload:
+            from psycopg.types.json import Jsonb
+            c.execute("UPDATE risk_knowledge_objects SET payload=%s WHERE kind='metadata' AND owner_id=%s AND id=%s",
+                      (Jsonb({**upload, 'job_id': job_id}), user['user_id'], staged_upload))
+        return job
 
 
 @router.get('/api/inventory/documents')

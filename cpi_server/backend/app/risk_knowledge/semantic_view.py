@@ -2,10 +2,17 @@
 from .semantic_extraction import assemble_graph, approved_rules
 
 
-def graph_view(records, *, focus='', policy_id=None, offset=0, limit=6):
-    instance = assemble_graph(records)
+def graph_view(records, *, focus='', policy_id=None, offset=0, limit=6, instance=None, overlay=None):
+    if instance is None:
+        instance = assemble_graph(records)
     nodes = {n['id']: n for n in instance['nodes']}
     edges = list(instance['relationships'])
+    if overlay:
+        for node in overlay['nodes']:
+            prior = nodes.get(node['id'])
+            nodes[node['id']] = {**prior, 'source_refs': sorted(set(prior['source_refs'] + node['source_refs'])),
+                                 'synthetic': prior['synthetic'] or node['synthetic']} if prior else node
+        edges.extend(overlay['relationships'])
     # A navigation shortcut over the authoritative version/section path. This
     # projection does not add assertions to the stored ontology instance.
     versions = {e['subject']: e['object'] for e in edges if e['predicate'] == 'VERSION_OF'}
@@ -18,7 +25,7 @@ def graph_view(records, *, focus='', policy_id=None, offset=0, limit=6):
                     'status': edge['status'], 'source_refs': edge['source_refs'],
                     'derived': True, 'via': [edge['object']]})
     selected = []
-    focus = focus or ('urn:cpi:policy:' + str(policy_id) if policy_id is not None else '')
+    focus = focus or (overlay['request_node_id'] if overlay else 'urn:cpi:policy:' + str(policy_id) if policy_id is not None else '')
     if focus and focus not in nodes: raise ValueError('Current graph node not found')
     limit = max(1, min(limit, 12)); offset = max(0, offset)
     if focus:
@@ -39,6 +46,9 @@ def graph_view(records, *, focus='', policy_id=None, offset=0, limit=6):
         source = nodes.get(refs[0]) if refs else None
         if not source: return None
         p = source['properties']
+        if source['type'] == 'OperationalEvidence':
+            return {'document_id': p['source_reference'], 'document_name': p['source_type'],
+                    'passage': p.get('field_name'), 'origin': 'OPERATIONAL_EVIDENCE'}
         record = next((r for r in records if str(r['policy_id']) == p['document_reference']), {})
         return {'document_id': 'CPI-POLICY-' + p['document_reference'], 'document_name': record.get('policy_name'),
             'passage': p['text'], 'page': p.get('page'), 'clause': p.get('clause_reference'),
@@ -53,7 +63,8 @@ def graph_view(records, *, focus='', policy_id=None, offset=0, limit=6):
         'relationships': sorted({e['predicate'] for e in edges if {e['subject'], e['object']} == {focus, i}})} for i in choices]
     return {'nodes': projected, 'edges': projected_edges, 'focus': focus,
         'neighbors': neighbors, 'offset': offset, 'limit': limit,
-        'total_nodes': len(nodes), 'total_relationships': len(instance['relationships']), 'available_neighbors': len(choices),
+        'total_nodes': len(nodes), 'total_relationships': len(instance['relationships']) + len((overlay or {}).get('relationships', [])),
+        'available_neighbors': len(choices),
         'next_offset': offset + limit if offset + limit < len(choices) else None, 'truncated': offset + limit < len(choices)}
 
 

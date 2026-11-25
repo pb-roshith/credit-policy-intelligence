@@ -26,8 +26,8 @@ dist/
 # Logs
 *.log
 # Ship the existing policy PDFs with Git-based deployments.
-cpi_server/backend/generated_policies/*
-!cpi_server/backend/generated_policies/*.pdf
+dm_server/seed_others/generated_policies/*
+!dm_server/seed_others/generated_policies/*.pdf
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -46,8 +46,11 @@ cpi_server/backend/inventory_sources/
 # Regenerable account-scoped demonstration coverage exports
 cpi_server/docs/credit-data-coverage/
 
-# Local inventory backups contain policy and assessment history.
-cpi_server/backend/quantitative-inventory-backup-*.json
+# Database dumps, recovery snapshots, and local provider state contain private data.
+/dm_server/seed_table/*
+!/dm_server/seed_table/README.md
+/dm_server/seed_others/gemini.sqlite3*
+/dm_server/seed_others/inventory_sources/
 
 # Local Gemini agents and document libraries
 .ai-data/

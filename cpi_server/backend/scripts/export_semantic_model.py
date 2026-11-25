@@ -12,6 +12,7 @@ import sys
 from zipfile import ZipFile, ZIP_DEFLATED
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from app.config import SEED_OUTPUTS_DIR
 from app.risk_knowledge.semantic_model import (VERSION, NAMESPACE, CLASSES, RELATIONSHIPS,
     RULES, semantic_contract, instance_schema, example_instance, validate_instance)
 from app.risk_knowledge.semantic_rdf import ontology_graph, shapes_graph, instance_graph
@@ -20,8 +21,8 @@ from app.risk_knowledge.semantic_rdf import ontology_graph, shapes_graph, instan
 def readme():
     lines = ['# Credit policy business semantic model', '',
         f'Version **{VERSION}**. Design status **CURRENT**. Namespace `{NAMESPACE}`.', '',
-        'This package defines the business ontology requested for credit policy knowledge. '
-        'It is a semantic schema, not a populated production knowledge graph. '
+        'This package defines the business ontology for credit policy knowledge. '
+        'The source-backed policy graph is available in the connected knowledge package. '
         'The supplied example is fictional and cannot establish a policy requirement or approval.', '',
         '## Machine-readable deliverables', '',
         '| File | Purpose |', '|---|---|',
@@ -33,11 +34,16 @@ def readme():
         '| [example.ttl](example.ttl) | The same illustrative instance as RDF, with evidence-bearing assertion reification |',
         '| [validation-report.json](validation-report.json) | Actual schema, Turtle and SHACL validation results |',
         '| [manifest.json](manifest.json) | SHA-256 checksums and package version |', '',
-        '## Reading the model', '', '```mermaid', 'flowchart LR',
-        '  Borrower -->|APPLIES_FOR| LoanApplication', '  LoanApplication -->|REQUESTS_PRODUCT| Product',
-        '  LoanApplication -->|RESULTS_IN| Loan', '  Loan -->|GOVERNED_BY| PolicyVersion',
-        '  PolicyVersion -->|VERSION_OF| CreditPolicy', '  PolicyVersion -->|CONTAINS_SECTION| PolicySection',
-        '  PolicySection -->|CONTAINS_RULE| PolicyRule', '  PolicyRule -->|APPLIES_TO_SEGMENT| CustomerSegment',
+        '## Reading the model', '',
+        *[f"- **{layer['name']}**. {layer['description']}" for layer in semantic_contract()['layers']], '',
+        '```mermaid', 'flowchart LR',
+        '  CreditRequest -->|REQUESTED_BY| Borrower', '  Borrower -->|OPERATES_IN_INDUSTRY| Industry',
+        '  Borrower -->|INCORPORATED_IN| Country', '  CreditRequest -->|REQUESTS_FACILITY| Facility',
+        '  Facility -->|HAS_PRODUCT| Product', '  CreditPolicy -->|HAS_VERSION| PolicyVersion',
+        '  PolicyVersion -->|CONTAINS_SECTION| PolicySection',
+        '  PolicySection -->|CONTAINS_RULE| PolicyRule', '  PolicyVersion -->|APPLIES_TO_PRODUCT| Product',
+        '  CreditRequest -->|HAS_RULE_ASSESSMENT| RuleAssessment', '  RuleAssessment -->|ASSESSES_RULE| PolicyRule',
+        '  RuleAssessment -->|HAS_OUTCOME| DecisionOutcome',
         '  PolicyRule -->|USES_METRIC| RiskMetric', '  PolicyRule -->|HAS_THRESHOLD| Threshold',
         '  Threshold -->|MEASURED_BY| RiskMetric', '  PolicyRule -->|HAS_EXCEPTION| Exception',
         '  Exception -->|REQUIRES_APPROVAL| ApprovalRequirement',
@@ -53,7 +59,7 @@ def readme():
     for name, spec in CLASSES.items():
         lines.append(f"| {name} | {spec['parent'] or '—'} | {spec['definition']} | {', '.join(spec['required_properties']) or '—'} |")
     lines.extend(['', 'Every entity also carries an IRI, label, status, synthetic flag and source references. '
-        'SourcePassage can have no source references because it is itself exact evidence.', '',
+        'SourcePassage and OperationalEvidence can be referenced directly as evidence.', '',
         '## Typed relationships', '', '| Relationship | Domain | Range | Per-subject count | Meaning |', '|---|---|---|---|---|'])
     for name, spec in RELATIONSHIPS.items():
         lines.append(f"| {name} | {' or '.join(spec['domain'])} | {' or '.join(spec['range'])} | {spec['min_per_subject']}..{spec['max_per_subject'] if spec['max_per_subject'] is not None else '*'} | {spec['definition']} |")
@@ -71,7 +77,7 @@ def readme():
         'uniqueness and JSON array structure are additionally enforced by the JSON validator.', '',
         '```powershell', '# From cpi_server/backend',
         '.venv/Scripts/python.exe scripts/export_semantic_model.py',
-        '.venv/Scripts/python.exe scripts/export_semantic_model.py --validate outputs/ontology/example.json',
+        '.venv/Scripts/python.exe scripts/export_semantic_model.py --validate ../../dm_server/seed_others/outputs/ontology/example.json',
         '```', '', '```python', 'from rdflib import Graph', 'from pyshacl import validate',
         'conforms, report, text = validate(',
         '    Graph().parse("example.ttl", format="turtle"),',
@@ -83,9 +89,9 @@ def readme():
         '`/ontology.ttl`, `/shapes.ttl`, `/example`, and POST `/validate` under that prefix.',
         '- `CLASSIFIED_AS` references the taxonomy concept ID and version; classification never establishes rule applicability.',
         '- `BINDS_TO_ATTRIBUTE` is an explicit binding assertion. Similar attribute names are not equivalent by default.',
-        '- The existing compiler contract `/policy-ontology` is a separate, narrower executable vocabulary. This package does not change compiler behavior.',
+        '- The executable policy compiler reads its vocabulary from `app/risk_knowledge/policy_ontology.py`. The API route `/policy-ontology` returns this business semantic contract.',
         '- Existing stored ontology relationship labels are not automatically converted, approved or declared equivalent to this contract.',
-        '- Validation establishes structural consistency, not factual correctness, authorization or source interpretation. This design remains proposed for business review.',
+        '- Validation checks structure and evidence references. Approvals require a recorded decision.',
         '- No existing policy, rule, ontology assertion or taxonomy approval is changed by generating these files.', '',
         '## Standards references', '',
         '- [JSON Schema 2020-12](https://json-schema.org/draft/2020-12/json-schema-core)',
@@ -146,7 +152,7 @@ def export(output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parents[1] / 'outputs' / 'ontology')
+    parser.add_argument('--output', type=Path, default=SEED_OUTPUTS_DIR / 'ontology')
     parser.add_argument('--validate', type=Path)
     args = parser.parse_args()
     if args.validate:

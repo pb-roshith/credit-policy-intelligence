@@ -1,0 +1,38 @@
+{
+  "ontology_version": "1.4.0",
+  "status": "CURRENT",
+  "files": {
+    "README.md": {
+      "sha256": "9cd1ae2cd40a032e47f41aa5dca16713fe0a944e7688d4cd2ddbb4f5a2be5aaf",
+      "bytes": 24971
+    },
+    "example.json": {
+      "sha256": "45092f6f3823245ebdbeaea6f677627f80e1bbae1e759df57215b614cd476a24",
+      "bytes": 29272
+    },
+    "example.ttl": {
+      "sha256": "ba6ac0c34039445b3285712b6bb9839edd1fbbe67301add19e063e1a41bd3929",
+      "bytes": 29191
+    },
+    "instances.schema.json": {
+      "sha256": "23baaa1e26befc6e3dee2d863e46feedbd020ebf1396a0ee63761de51ace6e2a",
+      "bytes": 107455
+    },
+    "ontology.ttl": {
+      "sha256": "fa8826a0fa2af1cb49ae4be3e2072e2a44fe7fd33979c3f0711a5d7e2306be04",
+      "bytes": 45522
+    },
+    "semantic-model.json": {
+      "sha256": "4b80e6d05383edd3cd18227dd3d6e3aef69620a4e7e2cfe5f1121158a4be926b",
+      "bytes": 64445
+    },
+    "shapes.ttl": {
+      "sha256": "56498731a61e1c02020f01d845629ba9d1f9d923f7e006c0aba1d32091845406",
+      "bytes": 201812
+    },
+    "validation-report.json": {
+      "sha256": "b41fe995f107900be205102ff02ae15a4527d70d328417f83d66cec9d06f38e8",
+      "bytes": 810
+    }
+  }
+}

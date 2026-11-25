@@ -1,0 +1,1055 @@
+{
+  "ontology_version": "1.4.0",
+  "mode": "EXAMPLE",
+  "nodes": [
+    {
+      "id": "urn:cpi:example:borrower",
+      "type": "Borrower",
+      "label": "Example Borrower",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "customer_reference": "EXAMPLE-CUSTOMER",
+        "customer_kind": "ORGANIZATION"
+      }
+    },
+    {
+      "id": "urn:cpi:example:application",
+      "type": "LoanApplication",
+      "label": "Example application",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "application_reference": "EXAMPLE-APP"
+      }
+    },
+    {
+      "id": "urn:cpi:example:loan",
+      "type": "Loan",
+      "label": "Example originated loan",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "loan_reference": "EXAMPLE-LOAN",
+        "currency": "INR"
+      }
+    },
+    {
+      "id": "urn:cpi:example:policy",
+      "type": "CreditPolicy",
+      "label": "Example Credit Policy",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "policy_reference": "EXAMPLE-POLICY",
+        "risk_domain": "Credit risk"
+      }
+    },
+    {
+      "id": "urn:cpi:example:version",
+      "type": "PolicyVersion",
+      "label": "Example policy v1.0",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "version": "1.0",
+        "source_checksum": "eefffa37bcdd143ee9fbb5ab1a5fe61fe12a2acb2423d0e12295714de6ad2d64"
+      }
+    },
+    {
+      "id": "urn:cpi:example:section",
+      "type": "PolicySection",
+      "label": "Eligibility",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "section_reference": "EXAMPLE-SECTION-1"
+      }
+    },
+    {
+      "id": "urn:cpi:example:rule",
+      "type": "PolicyRule",
+      "label": "LTV at most 80 percent",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "rule_reference": "R-LTV",
+        "rule_kind": "QUANTITATIVE"
+      }
+    },
+    {
+      "id": "urn:cpi:example:alternative",
+      "type": "PolicyRule",
+      "label": "Exception ceiling at most 85 percent",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "rule_reference": "R-LTV-EX",
+        "rule_kind": "EXCEPTION_RULE"
+      }
+    },
+    {
+      "id": "urn:cpi:example:condition",
+      "type": "Condition",
+      "label": "Compensating collateral is present",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "field": "additional_collateral_verified",
+        "operator": "EQ",
+        "value": true
+      }
+    },
+    {
+      "id": "urn:cpi:example:condition-group",
+      "type": "ConditionGroup",
+      "label": "Exception conditions",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "logic": "AND"
+      }
+    },
+    {
+      "id": "urn:cpi:example:threshold",
+      "type": "Threshold",
+      "label": "At most 80 percent",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "operator": "LTE",
+        "value": 80,
+        "unit": "%"
+      }
+    },
+    {
+      "id": "urn:cpi:example:exception-threshold",
+      "type": "Threshold",
+      "label": "At most 85 percent",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "operator": "LTE",
+        "value": 85,
+        "unit": "%"
+      }
+    },
+    {
+      "id": "urn:cpi:example:segment",
+      "type": "CustomerSegment",
+      "label": "SME",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "segment_code": "SME"
+      }
+    },
+    {
+      "id": "urn:cpi:example:product",
+      "type": "Product",
+      "label": "Home loan",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "product_code": "HOME_LOAN"
+      }
+    },
+    {
+      "id": "urn:cpi:example:geography",
+      "type": "Geography",
+      "label": "India",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "geography_code": "IN",
+        "code_scheme": "ISO-3166-1-alpha-2"
+      }
+    },
+    {
+      "id": "urn:cpi:example:ltv",
+      "type": "RiskMetric",
+      "label": "Loan to value",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "metric_key": "ltv",
+        "allowed_units": [
+          "%"
+        ],
+        "formula": "loan_amount / collateral_value * 100"
+      }
+    },
+    {
+      "id": "urn:cpi:example:dti",
+      "type": "RiskMetric",
+      "label": "Debt to income",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "metric_key": "dti",
+        "allowed_units": [
+          "%"
+        ],
+        "formula": "debt_obligations / income * 100"
+      }
+    },
+    {
+      "id": "urn:cpi:example:credit-score",
+      "type": "RiskMetric",
+      "label": "Credit score",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "metric_key": "credit_score",
+        "allowed_units": [
+          "score_points"
+        ]
+      }
+    },
+    {
+      "id": "urn:cpi:example:exception",
+      "type": "Exception",
+      "label": "Compensating collateral exception",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "exception_reference": "EX-LTV"
+      }
+    },
+    {
+      "id": "urn:cpi:example:approval",
+      "type": "ApprovalRequirement",
+      "label": "Credit manager decision required",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "decision_type": "APPROVAL"
+      }
+    },
+    {
+      "id": "urn:cpi:example:authority",
+      "type": "ApprovalAuthority",
+      "label": "Credit manager",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "authority_code": "CREDIT_MANAGER",
+        "authority_kind": "ROLE"
+      }
+    },
+    {
+      "id": "urn:cpi:example:evidence-required",
+      "type": "EvidenceRequirement",
+      "label": "Valuation report requirement",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "evidence_type": "COLLATERAL_VALUATION_REPORT"
+      }
+    },
+    {
+      "id": "urn:cpi:example:evidence",
+      "type": "ControlEvidence",
+      "label": "Example valuation report",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "evidence_reference": "EXAMPLE-REPORT",
+        "evidence_type": "COLLATERAL_VALUATION_REPORT",
+        "verification_state": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "urn:cpi:example:period",
+      "type": "EffectivePeriod",
+      "label": "Example 2026 validity",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31"
+      }
+    },
+    {
+      "id": "urn:cpi:example:passage",
+      "type": "SourcePassage",
+      "label": "Illustrative source passage",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [],
+      "properties": {
+        "document_reference": "EXAMPLE-POLICY",
+        "version": "1.0",
+        "source_checksum": "eefffa37bcdd143ee9fbb5ab1a5fe61fe12a2acb2423d0e12295714de6ad2d64",
+        "text": "ILLUSTRATIVE EXAMPLE ONLY. Example Borrower applies for an SME home loan. Example Policy version 1.0 contains section Eligibility and rule R-LTV: for SME home loans in India, LTV must be at most 80 percent. An exception permits at most 85 percent when a compensating collateral condition is satisfied and a credit manager approves. A valuation report is required. The example policy is effective from 2026-01-01 to 2026-12-31. DTI and credit score are metric definitions only; no thresholds for them are asserted. The policy and LTV rule apply to property services. The borrower operates in property services and is incorporated in India. It requests a 60-month facility. An illustrative assessment at 75 percent LTV records a pass for the base rule.",
+        "origin": "ILLUSTRATIVE_EXAMPLE"
+      }
+    },
+    {
+      "id": "urn:cpi:example:taxonomy",
+      "type": "PolicyClass",
+      "label": "Loan-to-value taxonomy reference",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "taxonomy_id": "PTX-TOPIC-ltv",
+        "taxonomy_version": "policy-classification-v1"
+      }
+    },
+    {
+      "id": "urn:cpi:example:attribute",
+      "type": "DataAttribute",
+      "label": "Illustrative data attribute",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "entity_name": "EXAMPLE_LOAN",
+        "attribute_name": "ltv_percentage",
+        "registry_reference": "EXAMPLE-REGISTRY"
+      }
+    },
+    {
+      "id": "urn:cpi:example:industry",
+      "type": "Industry",
+      "label": "Property services",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {}
+    },
+    {
+      "id": "urn:cpi:example:country",
+      "type": "Country",
+      "label": "India",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "geography_code": "IN",
+        "code_scheme": "ISO-3166-1-alpha-2"
+      }
+    },
+    {
+      "id": "urn:cpi:example:facility",
+      "type": "Facility",
+      "label": "Example requested facility",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {}
+    },
+    {
+      "id": "urn:cpi:example:tenor",
+      "type": "Tenor",
+      "label": "60 months",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "months": 60
+      }
+    },
+    {
+      "id": "urn:cpi:example:assessment",
+      "type": "RuleAssessment",
+      "label": "Illustrative LTV assessment",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "evaluated_on": "2026-01-02"
+      }
+    },
+    {
+      "id": "urn:cpi:example:pass",
+      "type": "DecisionOutcome",
+      "label": "Pass",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "outcome_code": "PASS"
+      }
+    },
+    {
+      "id": "urn:cpi:example:scope",
+      "type": "ConditionGroup",
+      "label": "Industry scope",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "logic": "AND"
+      }
+    },
+    {
+      "id": "urn:cpi:example:industry-condition",
+      "type": "Condition",
+      "label": "Industry is property services",
+      "status": "PROPOSED",
+      "synthetic": true,
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ],
+      "properties": {
+        "field": "industry",
+        "operator": "EQ",
+        "value": "Property services"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "urn:cpi:example:assertion-1",
+      "subject": "urn:cpi:example:borrower",
+      "predicate": "APPLIES_FOR",
+      "object": "urn:cpi:example:application",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-2",
+      "subject": "urn:cpi:example:borrower",
+      "predicate": "BORROWS",
+      "object": "urn:cpi:example:loan",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-3",
+      "subject": "urn:cpi:example:borrower",
+      "predicate": "MEMBER_OF_SEGMENT",
+      "object": "urn:cpi:example:segment",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-4",
+      "subject": "urn:cpi:example:application",
+      "predicate": "REQUESTS_PRODUCT",
+      "object": "urn:cpi:example:product",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-5",
+      "subject": "urn:cpi:example:application",
+      "predicate": "RESULTS_IN",
+      "object": "urn:cpi:example:loan",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-6",
+      "subject": "urn:cpi:example:loan",
+      "predicate": "OF_PRODUCT",
+      "object": "urn:cpi:example:product",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-7",
+      "subject": "urn:cpi:example:loan",
+      "predicate": "GOVERNED_BY",
+      "object": "urn:cpi:example:version",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-8",
+      "subject": "urn:cpi:example:version",
+      "predicate": "VERSION_OF",
+      "object": "urn:cpi:example:policy",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-9",
+      "subject": "urn:cpi:example:version",
+      "predicate": "CONTAINS_SECTION",
+      "object": "urn:cpi:example:section",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-10",
+      "subject": "urn:cpi:example:section",
+      "predicate": "PART_OF_VERSION",
+      "object": "urn:cpi:example:version",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-11",
+      "subject": "urn:cpi:example:section",
+      "predicate": "CONTAINS_RULE",
+      "object": "urn:cpi:example:rule",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-12",
+      "subject": "urn:cpi:example:section",
+      "predicate": "CONTAINS_RULE",
+      "object": "urn:cpi:example:alternative",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-13",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "PART_OF_VERSION",
+      "object": "urn:cpi:example:version",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-14",
+      "subject": "urn:cpi:example:alternative",
+      "predicate": "PART_OF_VERSION",
+      "object": "urn:cpi:example:version",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-15",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "APPLIES_TO_PRODUCT",
+      "object": "urn:cpi:example:product",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-16",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "APPLIES_TO_SEGMENT",
+      "object": "urn:cpi:example:segment",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-17",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "APPLIES_IN",
+      "object": "urn:cpi:example:geography",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-18",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "USES_METRIC",
+      "object": "urn:cpi:example:ltv",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-19",
+      "subject": "urn:cpi:example:alternative",
+      "predicate": "USES_METRIC",
+      "object": "urn:cpi:example:ltv",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-20",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "HAS_THRESHOLD",
+      "object": "urn:cpi:example:threshold",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-21",
+      "subject": "urn:cpi:example:alternative",
+      "predicate": "HAS_THRESHOLD",
+      "object": "urn:cpi:example:exception-threshold",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-22",
+      "subject": "urn:cpi:example:threshold",
+      "predicate": "MEASURED_BY",
+      "object": "urn:cpi:example:ltv",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-23",
+      "subject": "urn:cpi:example:exception-threshold",
+      "predicate": "MEASURED_BY",
+      "object": "urn:cpi:example:ltv",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-24",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "HAS_EXCEPTION",
+      "object": "urn:cpi:example:exception",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-25",
+      "subject": "urn:cpi:example:exception",
+      "predicate": "EXCEPTION_TO",
+      "object": "urn:cpi:example:rule",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-26",
+      "subject": "urn:cpi:example:exception",
+      "predicate": "IMPLEMENTED_BY_RULE",
+      "object": "urn:cpi:example:alternative",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-27",
+      "subject": "urn:cpi:example:exception",
+      "predicate": "HAS_CONDITION",
+      "object": "urn:cpi:example:condition-group",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-28",
+      "subject": "urn:cpi:example:condition-group",
+      "predicate": "HAS_MEMBER",
+      "object": "urn:cpi:example:condition",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-29",
+      "subject": "urn:cpi:example:exception",
+      "predicate": "REQUIRES_APPROVAL",
+      "object": "urn:cpi:example:approval",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-30",
+      "subject": "urn:cpi:example:approval",
+      "predicate": "REQUIRES_APPROVAL_FROM",
+      "object": "urn:cpi:example:authority",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-31",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "REQUIRES_EVIDENCE",
+      "object": "urn:cpi:example:evidence-required",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-32",
+      "subject": "urn:cpi:example:evidence",
+      "predicate": "EVIDENCE_FOR",
+      "object": "urn:cpi:example:application",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-33",
+      "subject": "urn:cpi:example:version",
+      "predicate": "HAS_EFFECTIVE_PERIOD",
+      "object": "urn:cpi:example:period",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-34",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "DERIVED_FROM",
+      "object": "urn:cpi:example:passage",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-35",
+      "subject": "urn:cpi:example:alternative",
+      "predicate": "DERIVED_FROM",
+      "object": "urn:cpi:example:passage",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-36",
+      "subject": "urn:cpi:example:passage",
+      "predicate": "SOURCE_IN_VERSION",
+      "object": "urn:cpi:example:version",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-37",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "CLASSIFIED_AS",
+      "object": "urn:cpi:example:taxonomy",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-38",
+      "subject": "urn:cpi:example:ltv",
+      "predicate": "BINDS_TO_ATTRIBUTE",
+      "object": "urn:cpi:example:attribute",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-39",
+      "subject": "urn:cpi:example:borrower",
+      "predicate": "OPERATES_IN_INDUSTRY",
+      "object": "urn:cpi:example:industry",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-40",
+      "subject": "urn:cpi:example:borrower",
+      "predicate": "INCORPORATED_IN",
+      "object": "urn:cpi:example:country",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-41",
+      "subject": "urn:cpi:example:application",
+      "predicate": "REQUESTED_BY",
+      "object": "urn:cpi:example:borrower",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-42",
+      "subject": "urn:cpi:example:application",
+      "predicate": "REQUESTS_FACILITY",
+      "object": "urn:cpi:example:facility",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-43",
+      "subject": "urn:cpi:example:facility",
+      "predicate": "HAS_PRODUCT",
+      "object": "urn:cpi:example:product",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-44",
+      "subject": "urn:cpi:example:facility",
+      "predicate": "HAS_TENOR",
+      "object": "urn:cpi:example:tenor",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-45",
+      "subject": "urn:cpi:example:policy",
+      "predicate": "HAS_VERSION",
+      "object": "urn:cpi:example:version",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-46",
+      "subject": "urn:cpi:example:version",
+      "predicate": "APPLIES_TO_PRODUCT",
+      "object": "urn:cpi:example:product",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-47",
+      "subject": "urn:cpi:example:version",
+      "predicate": "APPLIES_TO_INDUSTRY",
+      "object": "urn:cpi:example:industry",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-48",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "APPLIES_TO_INDUSTRY",
+      "object": "urn:cpi:example:industry",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-49",
+      "subject": "urn:cpi:example:version",
+      "predicate": "HAS_APPLICABILITY",
+      "object": "urn:cpi:example:scope",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-50",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "HAS_CONDITION",
+      "object": "urn:cpi:example:scope",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-51",
+      "subject": "urn:cpi:example:scope",
+      "predicate": "HAS_MEMBER",
+      "object": "urn:cpi:example:industry-condition",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-52",
+      "subject": "urn:cpi:example:industry-condition",
+      "predicate": "COMPARES_SCOPE_VALUE",
+      "object": "urn:cpi:example:industry",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-53",
+      "subject": "urn:cpi:example:rule",
+      "predicate": "EVALUATES_RISK_ATTRIBUTE",
+      "object": "urn:cpi:example:ltv",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-54",
+      "subject": "urn:cpi:example:application",
+      "predicate": "HAS_RULE_ASSESSMENT",
+      "object": "urn:cpi:example:assessment",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-55",
+      "subject": "urn:cpi:example:assessment",
+      "predicate": "ASSESSES_RULE",
+      "object": "urn:cpi:example:rule",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    },
+    {
+      "id": "urn:cpi:example:assertion-56",
+      "subject": "urn:cpi:example:assessment",
+      "predicate": "HAS_OUTCOME",
+      "object": "urn:cpi:example:pass",
+      "status": "PROPOSED",
+      "source_refs": [
+        "urn:cpi:example:passage"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ontology_version": "1.4.0",
+  "files": {
+    "README.md": "3645ad95836b1ba5977970985d01e0c019270c1cf539e4025d1a64fbd8dd844b",
+    "knowledge-graph.json": "b841a265dced25777bd82c4fb2ac7781947cc72bcb5f57ee843f8de6d1b2a162",
+    "knowledge-graph.ttl": "7ef605818b50b14305d7b606d644f2880bb1413d3ff67736d4d9073601112c2c",
+    "policy-rule-knowledge.json": "7aeb8226d4d195417d1a62ae68660079056bc6027da3a4e6d42d709029f993c3",
+    "knowledge-validation.json": "e5317406d6f3629dc41b75079e87b388fe4d544fad1ea3818003638856d8039d",
+    "extracted-policy-rules.xlsx": "a08b1b790b7e4d190fd1e6f2491aced763622b0ee8094dbd42c0790b6dd9ac1d",
+    "ontology/semantic-model.json": "9374cb80b46e946713c516023b3aaca79bd15a63c9e310a395bfe69a3ada92bd",
+    "ontology/instances.schema.json": "91a25aef21c31b3d29da0e51b15b7d93a5dd0193035a0ae793ca3805e3bbc8a3",
+    "ontology/ontology.ttl": "fa8826a0fa2af1cb49ae4be3e2072e2a44fe7fd33979c3f0711a5d7e2306be04",
+    "ontology/shapes.ttl": "61d090cd57a4cb6da53b2edf9323d9391f073176a8cf40f9029f89a1afe7799b"
+  }
+}

@@ -57,8 +57,8 @@ import UserProfile from "./pages/UserProfile";
 
 const NAV = [
   ["dashboard", "Executive Dashboard", LayoutDashboard],
-  ["requests", "Credit Requests", FileText],
   ["policy", "Policy Intelligence", BookOpen],
+  ["requests", "Credit Requests", FileText],
   ["compliance", "Compliance Review", ShieldCheck],
   ["exceptions", "Exception Management", AlertTriangle],
   ["simulator", "Decision Simulator", SlidersHorizontal],

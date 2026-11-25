@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from app.config import SEED_OUTPUTS_DIR
 from app.risk_knowledge.repositories import SQLiteRepository
 from app.risk_knowledge.semantic_pipeline import process_source,current_records
 from app.risk_knowledge.semantic_extraction import assemble_graph
@@ -33,7 +34,7 @@ def main():
         if node['type']=='SourcePassage':node['properties']['origin']='ILLUSTRATIVE_EXAMPLE'
     result={'illustrative_only':True,'input':[c['source_excerpt'] for c in clauses],'report':report,'rules':records[0]['rules'],
         'context_history':records[0]['context_history'],'graph':graph,'validation':validate_instance(graph)}
-    out=Path(__file__).resolve().parents[1]/'outputs'/'extracted-knowledge'
+    out=SEED_OUTPUTS_DIR/'extracted-knowledge'
     out.mkdir(parents=True,exist_ok=True)
     (out/('user-ltv-exception-cycle.json' if args.with_exception else 'user-ltv-example.json')).write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps({'report':report,'rules':[r['extracted'] for r in records[0]['rules']],'validation':result['validation']}),flush=True)

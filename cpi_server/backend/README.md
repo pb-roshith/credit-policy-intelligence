@@ -1,14 +1,13 @@
 # Backend
 
-For a fresh deployment without re-extraction, see
-[portable policy knowledge](policy_knowledge/README.md). CPI can automatically
-load the packaged policy catalog, rules and evidence into an empty database.
-This seed replaces the manual document-import step described below when present.
+To deploy with existing policies, extracted rules, requests, and related data,
+run the [static database restore](../../dm_server/seed_table/README.md) with the
+[matching deployment files](../../dm_server/seed_others/README.md).
 
 ## Reusing policy documents on a fresh deployment
 
-Include the 25 PDFs in `backend/generated_policies` and the 10 DOCX files in
-`backend/policy doc` in the deployment. From Data Manufacturing, run the existing
+Include the 25 PDFs in `dm_server/seed_others/generated_policies` and the 10 DOCX files in
+`dm_server/seed_others/policy_docs` in the deployment. From Data Manufacturing, run the existing
 Policy PDF action once to populate a fresh policy catalog. For each expected PDF,
 the workflow uses the existing file, counts its actual pages, uploads it if needed,
 and stores its catalog entry and summary. It generates a new PDF only when that
@@ -56,7 +55,7 @@ Credit request numbers are unique in `credit_requests`. Exposure history uses bo
 
 Set `MISTRAL_API_KEY` in `backend/.env` for server-side use. The environment file is ignored by Git.
 
-Policy PDF manufacturing runs as a sequential background job in the shared `credit_data` policy store. It creates or reuses one Mistral Library and one Mistral Agent, generates 25 synthetic PDFs, and imports the 10 DOCX files from `backend/policy doc`. All 35 files are uploaded, indexed, and summarized in the same library. Generated PDF filenames use the policy title without the clause-number prefix; clause numbers remain in the document and catalog metadata. Completed documents are reconciled and reused on later runs.
+Policy PDF manufacturing runs as a sequential background job in the shared `credit_data` policy store. It creates or reuses one Mistral Library and one Mistral Agent, generates 25 synthetic PDFs, and imports the 10 DOCX files from `dm_server/seed_others/policy_docs`. All 35 files are uploaded, indexed, and summarized in the same library. Generated PDF filenames use the policy title without the clause-number prefix; clause numbers remain in the document and catalog metadata. Completed documents are reconciled and reused on later runs.
 
 The 25 PDFs are organized by policy type and category. `Credit Policy` contains the wholesale, retail, and rating standards; the set also covers collateral, pricing, sector, delegation, regulatory capital, currency, duration, liquidity, and risk-appetite policies. The hierarchy is persisted with each document through `policy_category`, `parent_policy`, `clause_number`, and `display_order`.
 

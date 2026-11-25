@@ -6,16 +6,16 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from app.config import CPI_SEED_DIR, SEED_OUTPUTS_DIR
 from app.database import shared_policy_connection
-from app.risk_knowledge.semantic_model import validate_instance
+from app.risk_knowledge.semantic_model import VERSION, validate_instance
 from app.risk_knowledge.semantic_view import graph_view
 from app.services.current_knowledge import inventory, policy_controls
 from app.services.semantic_matching import load_matcher
 
 
 def main():
-    root=Path(__file__).resolve().parents[1]
-    out=root/'outputs'/'finalization'
+    out=SEED_OUTPUTS_DIR/'finalization'
     out.mkdir(parents=True,exist_ok=True)
     matcher=load_matcher()
     data=inventory(matcher)
@@ -49,10 +49,10 @@ def main():
         'scope':'Current shared source corpus only; no account identities or credit request facts exported.'}
     (out/'consistency-report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     files=['outputs/extracted-knowledge/connected-policy-knowledge.zip',
-        'outputs/ontology/credit-policy-ontology-v1.2.0.zip','outputs/policy-taxonomy/policy-taxonomy.json',
+        f'outputs/ontology/credit-policy-ontology-v{VERSION}.zip','outputs/policy-taxonomy/policy-taxonomy.json',
         'outputs/policy-taxonomy/policy-taxonomy.xlsx','outputs/finalization/consistency-report.json']
     if (out/'http-smoke.json').exists():files.append('outputs/finalization/http-smoke.json')
-    manifest={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in files}
+    manifest={name:hashlib.sha256((CPI_SEED_DIR/name).read_bytes()).hexdigest() for name in files}
     (out/'manifest.json').write_text(json.dumps({'knowledge_fingerprint':matcher.fingerprint,'sha256':manifest},indent=2),encoding='utf-8')
     print(json.dumps({'passed':report['passed'],'checks':len(checks),'counts':report['counts'],'review_queue':report['review_queue']}))
     if not report['passed']:raise SystemExit(1)

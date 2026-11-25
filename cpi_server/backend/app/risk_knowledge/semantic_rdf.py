@@ -7,8 +7,9 @@ from collections import defaultdict
 from rdflib import Graph, Namespace, URIRef, BNode, Literal
 from rdflib.collection import Collection
 from rdflib.namespace import RDF, RDFS, OWL, XSD, SH
-from .semantic_model import (NAMESPACE, VERSION, CLASSES, RELATIONSHIPS,
-                             class_lineage, class_properties)
+from .semantic_model import (NAMESPACE, VERSION, COMPATIBLE_VERSIONS, EVIDENCE_CLASSES, CLASSES, RELATIONSHIPS,
+                             class_lineage, class_properties, ontology_layers)
+from .competency_projection import ORDERED_RATING_FIELDS, RATINGS
 
 CPI = Namespace(NAMESPACE)
 PREFIXES = f'PREFIX cpi: <{NAMESPACE}>\nPREFIX rdf: <{RDF}>\nPREFIX xsd: <{XSD}>\n'
@@ -57,6 +58,10 @@ def ontology_graph():
     result.add((root, OWL.versionIRI, URIRef(NAMESPACE + VERSION)))
     result.add((root, RDFS.label, Literal('CPI credit policy business ontology')))
     result.add((root, RDFS.comment, Literal('Current semantic schema for source-backed policy knowledge. Business approval remains explicit. Closed-world validation is specified separately in SHACL.')))
+    result.add((CPI.ontologyLayer, RDF.type, OWL.AnnotationProperty))
+    for layer in ontology_layers():
+        for term in layer['classes'] + layer['relationships']:
+            result.add((CPI[term], CPI.ontologyLayer, Literal(layer['name'])))
     property_domains = defaultdict(list)
     for name, definition in CLASSES.items():
         subject = CPI[name]
@@ -88,7 +93,7 @@ def ontology_graph():
         result.add((CPI[name], RDF.type, OWL.Class))
     for key in ('sourceRef',):
         result.add((CPI[key], RDF.type, OWL.ObjectProperty))
-        result.add((CPI[key], RDFS.range, CPI.SourcePassage))
+        result.add((CPI[key], RDFS.range, union(result, EVIDENCE_CLASSES)))
     for key, dtype in [('status', XSD.string), ('synthetic', XSD.boolean), ('mode', XSD.string), ('ontologyVersion', XSD.string)]:
         result.add((CPI[key], RDF.type, OWL.DatatypeProperty))
         result.add((CPI[key], RDFS.range, dtype))
@@ -182,7 +187,7 @@ def shapes_graph():
         status = property_(subject, CPI.status, 1, 1, XSD.string)
         result.add((status, SH['in'], rdf_list(result, [Literal(s) for s in STATUSES])))
         property_(subject, CPI.synthetic, 1, 1, XSD.boolean)
-        property_(subject, CPI.sourceRef, 0 if name == 'SourcePassage' else 1, classes=['SourcePassage'])
+        property_(subject, CPI.sourceRef, 0 if name in EVIDENCE_CLASSES else 1, classes=EVIDENCE_CLASSES)
         props, required = class_properties(name)
         for key, spec in props.items():
             array = spec.get('type') == 'array'
@@ -205,6 +210,18 @@ def shapes_graph():
                 result.add((option, SH.node, CPI.ConditionValueListShape))
                 options.append(option)
                 result.add((p, SH['or'], rdf_list(result, options)))
+        descendant_fields = {}
+        for child, definition in CLASSES.items():
+            if child != name and name in class_lineage(child):
+                for key in definition['properties'].keys() - props.keys():
+                    descendant_fields.setdefault(key, []).append(child)
+        for key, owners in descendant_fields.items():
+            property_(subject, CPI[key])
+            allowed_classes = ', '.join('cpi:' + owner for owner in owners)
+            constraint(subject, 'PROPERTY_CLASS: ' + key, f'''SELECT $this WHERE {{
+                $this cpi:{key} ?v . FILTER NOT EXISTS {{
+                    $this a ?type . FILTER (?type IN ({allowed_classes}))
+                }} }}''')
         for key, relation in RELATIONSHIPS.items():
             if set(class_lineage(name)) & set(relation['domain']):
                 property_(subject, CPI[key], relation['min_per_subject'], relation['max_per_subject'], classes=relation['range'])
@@ -238,7 +255,7 @@ def shapes_graph():
             result.add((p, SH['in'], rdf_list(result, [CPI[k] for k in RELATIONSHIPS])))
     p = property_(subject, CPI.status, 1, 1, XSD.string)
     result.add((p, SH['in'], rdf_list(result, [Literal(s) for s in STATUSES])))
-    property_(subject, CPI.sourceRef, 1, classes=['SourcePassage'])
+    property_(subject, CPI.sourceRef, 1, classes=EVIDENCE_CLASSES)
     constraint(subject, 'ASSERTION_TRIPLE: reification must identify an asserted triple', '''SELECT $this WHERE {
         $this rdf:subject ?s; rdf:predicate ?p; rdf:object ?o . FILTER NOT EXISTS { ?s ?p ?o } }''')
     constraint(subject, 'DUPLICATE_RELATIONSHIP', '''SELECT $this WHERE {
@@ -251,7 +268,7 @@ def shapes_graph():
     p = property_(subject, CPI.mode, 1, 1, XSD.string)
     result.add((p, SH['in'], rdf_list(result, [Literal('EXAMPLE'), Literal('SOURCE_BACKED')])))
     p = property_(subject, CPI.ontologyVersion, 1, 1, XSD.string)
-    result.add((p, SH.hasValue, Literal(VERSION)))
+    result.add((p, SH['in'], rdf_list(result, [Literal(version) for version in COMPATIBLE_VERSIONS])))
 
     cross = {
         'SourcePassage': [
@@ -289,8 +306,12 @@ def shapes_graph():
                 FILTER (STR(?op) IN ("IN", "NOT_IN")) FILTER NOT EXISTS { ?v rdf:first ?item } }'''),
             ('CONDITIONS: scalar comparison', '''SELECT $this WHERE { $this cpi:operator ?op; cpi:value ?v .
                 FILTER (STR(?op) NOT IN ("IN", "NOT_IN", "EXISTS")) FILTER (!isLiteral(?v)) }'''),
-            ('CONDITIONS: numeric ordered comparison', '''SELECT $this WHERE { $this cpi:operator ?op; cpi:value ?v .
-                FILTER (STR(?op) IN ("GT", "GTE", "LT", "LTE")) FILTER (datatype(?v) != xsd:decimal) }'''),
+            ('CONDITIONS: ordered comparison value', f'''SELECT $this WHERE {{
+                $this cpi:operator ?op; cpi:value ?v; cpi:field ?field .
+                FILTER (STR(?op) IN ("GT", "GTE", "LT", "LTE") && datatype(?v) != xsd:decimal)
+                FILTER (!(STR(?field) IN ({', '.join(repr(field) for field in ORDERED_RATING_FIELDS)})
+                    && STR(?v) IN ({', '.join(repr(code) for code in RATINGS)})
+                    && NOT EXISTS {{ $this cpi:unit ?unit }})) }}'''),
         ],
         'EffectivePeriod': [('EFFECTIVE_DATES', '''SELECT $this WHERE { $this cpi:start_date ?s; cpi:end_date ?e . FILTER (?e < ?s) }''')],
         'PolicySection': [

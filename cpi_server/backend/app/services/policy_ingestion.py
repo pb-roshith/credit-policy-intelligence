@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from zipfile import ZipFile, BadZipFile
 from xml.etree import ElementTree as ET
-from ..config import BASE_DIR, RULE_MAX_FILE_BYTES, POLICY_OUTPUT_DIR, POLICY_SOURCE_DIR
+from ..config import BASE_DIR, RULE_MAX_FILE_BYTES, is_seed_policy_source, resolve_policy_source
 from ..database import shared_policy_connection
 
 NS={'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
@@ -74,13 +74,8 @@ def ingest_policy(policy_id):
     with shared_policy_connection() as c:
         policy=c.execute('SELECT * FROM policy_documents WHERE policy_id=%s',(policy_id,)).fetchone()
     if not policy: raise ValueError('Policy document not found')
-    path=Path(policy['local_pdf_path']).resolve()
-    if not path.is_file():
-        # Catalogs copied between workspaces retain obsolete absolute paths.
-        candidates=[directory / policy['file_name'] for directory in (POLICY_OUTPUT_DIR,POLICY_SOURCE_DIR)]
-        path=next((candidate.resolve() for candidate in candidates if candidate.is_file()),path)
-    # Only registered local files inside the application source tree are ingested.
-    invalid_path=not path.is_relative_to(BASE_DIR.resolve())
+    path=resolve_policy_source(policy['local_pdf_path'],policy['file_name'])
+    invalid_path=not (path.is_relative_to(BASE_DIR.resolve()) or is_seed_policy_source(path))
     source_bytes=path.read_bytes() if not invalid_path and path.is_file() and path.stat().st_size<=RULE_MAX_FILE_BYTES else None
     checksum=hashlib.sha256(source_bytes).hexdigest() if source_bytes is not None else 'unavailable'
     with shared_policy_connection() as c:
@@ -95,7 +90,7 @@ def ingest_policy(policy_id):
         version=c.execute("INSERT INTO policy_versions(policy_id,version,effective_date,effective_date_source,checksum) VALUES (%s,%s,%s,'catalog metadata',%s) ON CONFLICT(policy_id,version,checksum) DO UPDATE SET is_current=true RETURNING *",(policy_id,policy['version'],policy['effective_date'],checksum)).fetchone()
         doc=c.execute("INSERT INTO inventory_documents(policy_version_id,source_document_id,file_name,file_type,checksum,ingestion_status) VALUES (%s,%s,%s,%s,%s,'Pending') ON CONFLICT(policy_version_id) DO UPDATE SET ingestion_status='Pending',error=NULL RETURNING *",(version['id'],policy_id,path.name,path.suffix.lower(),checksum)).fetchone()
     try:
-        if invalid_path:raise ValueError('Registered source file is outside the backend document directory')
+        if invalid_path:raise ValueError('Registered source file is outside the backend and seed document directories')
         if source_bytes is None or not 0<len(source_bytes)<=RULE_MAX_FILE_BYTES:
             raise ValueError('Source file is unavailable, empty or exceeds the configured size limit')
         archive_dir=BASE_DIR / 'inventory_sources'
@@ -154,11 +149,9 @@ def reconcile_policy_sources():
     with shared_policy_connection() as c:
         rows=c.execute('SELECT pv.id,pv.checksum,pv.policy_id,p.local_pdf_path,p.file_name,p.version,pv.version AS source_version FROM policy_versions pv JOIN policy_documents p ON p.policy_id=pv.policy_id WHERE pv.is_current').fetchall()
     for row in rows:
-        path=Path(row['local_pdf_path']).resolve()
-        if not path.is_file():
-            path=next((candidate.resolve() for folder in (POLICY_OUTPUT_DIR,POLICY_SOURCE_DIR) if (candidate:=folder/row['file_name']).is_file()),path)
+        path=resolve_policy_source(row['local_pdf_path'],row['file_name'])
         same=False
-        if path.is_relative_to(BASE_DIR.resolve()) and path.is_file() and path.stat().st_size<=RULE_MAX_FILE_BYTES:
+        if (path.is_relative_to(BASE_DIR.resolve()) or is_seed_policy_source(path)) and path.is_file() and path.stat().st_size<=RULE_MAX_FILE_BYTES:
             same=hashlib.sha256(path.read_bytes()).hexdigest()==row['checksum'] and row['version']==row['source_version']
         if not same:
             with shared_policy_connection() as c:

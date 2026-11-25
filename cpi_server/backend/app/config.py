@@ -30,6 +30,7 @@ GEOGRAPHY_RISK = {
 }
 REQUEST_STATUSES = ["In Review", "Escalated", "Approved", "Pending", "Declined"]
 BASE_DIR = Path(__file__).resolve().parent.parent
+BACKUP_DIR = BASE_DIR.parent.parent / "dm_server" / "seed_table" / "history" / "cpi_server"
 SECRET_NAMES = {
     "ADMIN_PASSWORD", "DATABASE_URL", "MISTRAL_API_KEY", "GEMINI_API_KEY",
     "SHARED_DEAL_API_KEY", "DATA_ENCRYPTION_KEY", "DATA_ENCRYPTION_PREVIOUS_KEYS",
@@ -124,8 +125,52 @@ DATABASE_TRANSACTION_RETRIES = max(1, int(os.getenv("DATABASE_TRANSACTION_RETRIE
 DATABASE_RETRY_BASE_DELAY_MS = max(1, int(os.getenv("DATABASE_RETRY_BASE_DELAY_MS", "50")))
 POLICY_DOCUMENT_TIMEOUT_SECONDS = positive_timeout("POLICY_DOCUMENT_TIMEOUT_SECONDS", 1_500)
 POLICY_JOB_TIMEOUT_SECONDS = positive_timeout("POLICY_JOB_TIMEOUT_SECONDS", 36_000)
-POLICY_OUTPUT_DIR = BASE_DIR / "generated_policies"
-POLICY_SOURCE_DIR = BASE_DIR / "policy doc"
+CPI_SEED_DIR = Path(os.getenv("CPI_SEED_DIR") or BASE_DIR.parent.parent / "dm_server" / "seed_others").resolve()
+POLICY_OUTPUT_DIR = CPI_SEED_DIR / "generated_policies"
+POLICY_SOURCE_DIR = CPI_SEED_DIR / "policy_docs"
+RISK_SCHEMA_DIR = CPI_SEED_DIR / "risk_schema"
+SEED_OUTPUTS_DIR = CPI_SEED_DIR / "outputs"
+SEED_INVENTORY_DIR = CPI_SEED_DIR / "inventory_sources"
+
+
+def resolve_seed_source(path):
+    """Resolve registered paths written before the bundled sources moved."""
+    path = Path(path).resolve()
+    old_seed = BASE_DIR.parent.parent / "dm_server" / "seed"
+    for old_dir, current in (
+        (BASE_DIR / "generated_policies", POLICY_OUTPUT_DIR),
+        (BASE_DIR / "policy doc", POLICY_SOURCE_DIR),
+        (BASE_DIR / "risk_schema", RISK_SCHEMA_DIR),
+        (old_seed / "generated_policies", POLICY_OUTPUT_DIR),
+        (old_seed / "policy_docs", POLICY_SOURCE_DIR),
+        (old_seed / "risk_schema", RISK_SCHEMA_DIR),
+    ):
+        if path.is_relative_to(old_dir):
+            return (current / path.relative_to(old_dir)).resolve()
+    return path
+
+
+def is_seed_policy_source(path):
+    return path.is_relative_to(CPI_SEED_DIR) and any(
+        path.is_relative_to(folder.resolve()) for folder in (POLICY_OUTPUT_DIR, POLICY_SOURCE_DIR, SEED_INVENTORY_DIR)
+    )
+
+
+def resolve_policy_source(path, file_name):
+    path = resolve_seed_source(path)
+    if path.is_file() or not file_name or any(char in file_name for char in '/\\:'):
+        return path
+    for folder in (POLICY_OUTPUT_DIR, POLICY_SOURCE_DIR):
+        candidate = (folder / file_name).resolve()
+        if is_seed_policy_source(candidate) and candidate.is_file():
+            return candidate
+    return path
+
+
+def risk_schema_path():
+    return resolve_seed_source(os.getenv("CPI_RISK_SCHEMA_PATH") or RISK_SCHEMA_DIR / "Risk Data Model_Oct 2026.xlsx")
+
+
 POLICY_JOB_LOCK = threading.Lock()
 COMPLIANCE_AGENT_LOCK = threading.Lock()
 SECURITY_QUESTIONS = [

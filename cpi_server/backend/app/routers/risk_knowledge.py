@@ -1,20 +1,20 @@
 """Authenticated extension of the existing CPI API, not a second application."""
-import os
 from datetime import date
 from pathlib import Path
 from threading import RLock
 from typing import Literal
 from xml.etree.ElementTree import ParseError
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from pydantic import Field
 from fastapi.responses import FileResponse
 from pypdf.errors import PdfReadError
 from openpyxl.utils.exceptions import InvalidFileException
-from ..config import BASE_DIR
+from ..config import BASE_DIR, RISK_SCHEMA_DIR, is_seed_policy_source, resolve_policy_source, resolve_seed_source, risk_schema_path
 from ..database import shared_policy_connection
 from ..access_control import has_permission
 from ..security import audit_export, current_user
 from ..risk_knowledge.catalog import read_catalog, documents_from_catalog, project_catalog
+from ..risk_knowledge.competency_queries import Question
 from ..risk_knowledge.ingestion import MAX_BYTES
 from ..risk_knowledge.models import CreditRequest, Model, Review
 from ..risk_knowledge.repositories import PostgreSQLRepository
@@ -53,6 +53,90 @@ def semantic_graph(focus: str='', policy_id: int | None=None, offset: int=0, lim
     from ..risk_knowledge.semantic_pipeline import current_records
     from ..risk_knowledge.semantic_view import graph_view
     return invoke(lambda: graph_view(current_records(semantic_repository()), focus=focus, policy_id=policy_id, offset=offset, limit=limit))
+
+
+@router.post('/semantic-graph/rebuild')
+def rebuild_reviewed_graph(user=Depends(current_user)):
+    from ..services.policy_graph_rebuild import rebuild_summary, store_snapshot
+    from ..services.semantic_matching import load_matcher
+    if not has_permission(user, 'policy.extraction.execute'):
+        raise HTTPException(403, 'Policy graph rebuild is unavailable for this role')
+    with shared_policy_connection() as connection:
+        connection.execute("SELECT pg_advisory_xact_lock(hashtext('rule-inventory-job'))")
+        if connection.execute("SELECT 1 FROM rule_inventory_jobs WHERE status IN ('Queued','Running')").fetchone():
+            raise HTTPException(409, 'Wait for the current policy extraction to finish')
+        matcher = load_matcher()
+        summary = invoke(lambda: rebuild_summary(matcher))
+        store_snapshot(connection, matcher, summary)
+    return summary
+
+
+@router.get('/semantic-questions')
+def semantic_questions(question: Question, value: str = Query(default='', max_length=240),
+                       policy_id: int | None = Query(default=None, gt=0), on_date: date | None = None,
+                       request_id: str = Query(default='', max_length=120),
+                       offset: int = Query(default=0, ge=0), limit: int = Query(default=25, ge=1, le=50),
+                       user=Depends(current_user)):
+    from ..risk_knowledge.competency_queries import answer
+    from ..services.semantic_matching import load_matcher
+    from ..services.rule_assessment import assessment_request_context
+    value, request_id = value.strip(), request_id.strip()
+    if question == 'effective':
+        if on_date is None or policy_id is None:
+            raise HTTPException(422, 'Select a policy and effective date')
+        return effective_rule_edition(policy_id, on_date, value, offset, limit)
+    if question in ('industry', 'geography', 'product', 'policy_class') and not value:
+        raise HTTPException(422, 'Enter a scope value or rule ID')
+    if question == 'relationship':
+        from ..risk_knowledge.semantic_model import RELATIONSHIPS
+        if value not in RELATIONSHIPS:
+            raise HTTPException(422, 'Choose a relationship from the ontology')
+    if question == 'borrower' and not request_id:
+        raise HTTPException(422, 'Enter an authorized credit request ID to resolve borrower facts')
+    proposal = assessment_request_context(request_id, user)[1] if request_id else None
+    return answer(load_matcher(), question, value, request=proposal, policy_id=policy_id, limit=limit, offset=offset)
+
+
+def effective_rule_edition(policy_id, on_date, rule_id, offset, limit):
+    from ..risk_knowledge.competency_projection import explicit_rule_code
+    from ..risk_knowledge.competency_queries import rule_answer, version_on
+    from ..services.semantic_matching import GraphMatcher
+    with shared_policy_connection() as connection:
+        versions = connection.execute('''SELECT v.id,v.version,v.effective_date,v.checksum FROM policy_versions v
+            JOIN inventory_documents d ON v.id=d.policy_version_id WHERE v.policy_id=%s AND d.ingestion_status='Completed'
+            ORDER BY v.effective_date,v.id''', (policy_id,)).fetchall()
+        selected, reason = version_on(versions, on_date)
+        records = connection.execute("""SELECT k.payload FROM risk_knowledge_objects k
+            JOIN policy_versions v ON v.id=(k.payload->>'policy_version_id')::bigint
+            WHERE k.kind='metadata' AND k.owner_id='' AND k.payload->>'kind' IN ('semantic_policy','semantic_policy_history')
+            AND v.policy_id=%s AND v.checksum=k.payload->>'source_checksum'""", (policy_id,)).fetchall() if selected else []
+    result = {'question': 'effective', 'on_date': on_date, 'policy_id': policy_id, 'selected_version': selected,
+              'versions': versions, 'results': [], 'total': 0, 'next_offset': None, 'reason': reason}
+    if not selected:
+        return result
+    available = [r['payload'] for r in records]
+    record = next((r for r in available if r['policy_version_id'] == selected['id']), None)
+    if record is None:
+        return {**result, 'reason': 'The source version is registered. Its semantic rule extraction is unavailable.'}
+    record = {**record, 'effective_date': str(selected['effective_date'])}
+    matcher = GraphMatcher([record], [], [])
+    date_label = on_date.isoformat()
+    ids = [n['id'] for n in matcher.nodes.values() if n['type'] == 'PolicyRule' and all(
+        matcher.nodes[p]['properties']['start_date'] <= date_label <= matcher.nodes[p]['properties'].get('end_date', '9999-12-31')
+        for p in matcher.targets(n['id'], 'HAS_EFFECTIVE_PERIOD'))]
+    if rule_id and rule_id not in ids:
+        reference = next((r['extracted']['source_quote'] for version in available for r in version['rules'] if r['id'] == rule_id), None)
+        code = explicit_rule_code(reference) if reference else rule_id.upper()
+        matching = [rid for rid in ids if matcher.nodes[rid]['properties'].get('source_rule_code') == code] if code else []
+        if not matching and reference:
+            matching = [rid for rid in ids if ' '.join(matcher.rows[rid][1]['extracted']['source_quote'].split()) == ' '.join(reference.split())]
+        if len(matching) != 1:
+            return {**result, 'reason': 'Rule identity across these versions needs review. Query the whole policy edition to see its archived rules.'}
+        ids = matching
+    elif rule_id:
+        ids = [rule_id]
+    return {**result, 'total': len(ids), 'next_offset': offset + limit if offset + limit < len(ids) else None,
+            'results': [rule_answer(matcher, rid) for rid in ids[offset:offset + limit]]}
 
 
 @router.get('/semantic-policies/{policy_id}/representation')
@@ -174,13 +258,15 @@ def approve_policy_scope(policy_id: int, body: PolicyScopeInput, user=Depends(cu
 
 
 @router.get('/requests/{request_id}/graph')
-def request_graph(request_id: str, focus: str = '', user=Depends(current_user)):
+def request_graph(request_id: str, focus: str = '', offset: int = 0, limit: int = 6, user=Depends(current_user)):
     from ..services.rule_assessment import assessment_request_context
     from ..services.semantic_matching import load_matcher
+    from ..services.semantic_request_graph import request_overlay
     from ..risk_knowledge.semantic_view import graph_view
-    _,data=assessment_request_context(request_id,user)
+    request_id,data=assessment_request_context(request_id,user)
     matcher=load_matcher();report=matcher.match(data)
-    graph=invoke(lambda:graph_view(matcher.records,focus=focus))
+    graph=invoke(lambda:graph_view(matcher.records,focus=focus,offset=offset,limit=limit,
+                                  instance=matcher.graph,overlay=request_overlay(request_id,data)))
     decisions={d['candidate_id']:d for d in report['decisions'] if d['candidate_type']=='Rule'}
     graph['nodes']=[{**n,'applicability':decisions.get(n['id'],{}).get('applicability')} for n in graph['nodes']]
     return {**graph,'report':report,'knowledge_fingerprint':matcher.fingerprint}
@@ -207,8 +293,7 @@ def reviewer(user=Depends(current_user)):
 
 def get_service(user=Depends(current_user)):
     service = IntelligenceService(repository=PostgreSQLRepository(shared_policy_connection, user['user_id']))
-    path = os.getenv('CPI_RISK_SCHEMA_PATH') or str(BASE_DIR / 'risk_schema' / 'Risk Data Model_Oct 2026.xlsx')
-    invoke(lambda: service.bootstrap(path))
+    invoke(lambda: service.bootstrap(risk_schema_path()))
     return service
 
 
@@ -229,6 +314,35 @@ def project_source_representations(service):
 
 class PolicyExtractionInput(Model):
     policy_ids: list[int] = Field(min_length=1,max_length=1000)
+
+
+@router.post('/policy-uploads', status_code=201)
+def upload_policy_source(file: UploadFile = File(), version: str = Form(min_length=1, max_length=24),
+                         effective_date: date = Form(), policy_id: int | None = Form(default=None, gt=0),
+                         code: str = Form(default='', max_length=80), title: str = Form(default='', max_length=200),
+                         user=Depends(current_user)):
+    from ..services.policy_uploads import stage_policy_upload
+    if not has_permission(user, 'policy.update' if policy_id else 'policy.create'):
+        raise HTTPException(403, 'Policy upload is unavailable for this role')
+    return stage_policy_upload(file, owner=user['user_id'], policy_id=policy_id, code=code, title=title,
+                               version=version, effective_date=effective_date)
+
+
+@router.post('/policy-uploads/{upload_id}/rebuild', status_code=202)
+def rebuild_after_upload(upload_id: str, background: BackgroundTasks, user=Depends(current_user)):
+    from uuid import UUID
+    from .rules import enqueue_inventory
+    from ..services.rule_extraction import run_background_inventory_job
+    if not has_permission(user, 'policy.extraction.execute'):
+        raise HTTPException(403, 'Rule extraction is unavailable for this role')
+    try:
+        identifier = str(UUID(upload_id))
+    except ValueError:
+        raise HTTPException(422, 'Invalid staged upload') from None
+    job = enqueue_inventory(user, staged_upload=identifier)
+    if job['status'] == 'Queued':
+        background.add_task(run_background_inventory_job, str(job['id']), user)
+    return {'job_id': job['id'], 'policy_id': job['policy_ids'][0], 'status': job['status']}
 
 
 @router.post('/extractions')
@@ -350,11 +464,16 @@ def document(document_id: str, service=Depends(get_service)):
 def download(document_id: str, request: Request, service=Depends(get_service), user=Depends(current_user)):
     doc = lookup_document(document_id, service)
     registered = doc['metadata'].get('registered_path')
-    path = Path(registered).resolve() if registered else (service.upload_dir / Path(doc['metadata']['stored_file']).name).resolve()
-    if not path.is_relative_to(BASE_DIR.resolve()) or not path.is_file():
-        # Isolated dependency-overridden tests use their own upload directory.
-        if not path.is_relative_to(service.upload_dir.resolve()) or not path.is_file():
-            raise HTTPException(404, 'Original source file is unavailable')
+    if registered and doc['document_type'] == 'policy':
+        path = resolve_policy_source(registered, doc['metadata'].get('original_file_name'))
+    elif registered:
+        path = resolve_seed_source(registered)
+    else:
+        path = (service.upload_dir / Path(doc['metadata']['stored_file']).name).resolve()
+    if not path.is_file() or not (path.is_relative_to(BASE_DIR.resolve()) or
+            path.is_relative_to(service.upload_dir.resolve()) or is_seed_policy_source(path) or
+            (doc['document_type'] == 'schema' and path.parent == RISK_SCHEMA_DIR)):
+        raise HTTPException(404, 'Original source file is unavailable')
     audit_export(request, user, f"risk-knowledge-document:{document_id}")
     return FileResponse(path, filename=doc['metadata'].get('original_file_name') or doc['document_name'])
 

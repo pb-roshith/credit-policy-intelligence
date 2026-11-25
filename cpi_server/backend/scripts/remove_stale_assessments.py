@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import uuid4
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from app.config import BACKUP_DIR
 from app.database import shared_policy_connection
 
 
@@ -35,7 +36,7 @@ def main():
                 JOIN stale_assessment_keys s ON s.user_id=r.user_id AND s.review_id=r.review_id''').fetchall()
         backup['mapping_cache'] = connection.execute('''SELECT m.* FROM "user".request_policy_mapping_cache m
             JOIN stale_assessment_keys s ON s.user_id=m.user_id AND s.review_id::text=m.report->>'review_id' ''').fetchall()
-        path = Path(__file__).resolve().parents[1] / 'backups' / ('stale-assessments-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid4().hex[:8] + '.json')
+        path = BACKUP_DIR / ('stale-assessments-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid4().hex[:8] + '.json')
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open('x', encoding='utf-8') as output:
             json.dump(backup, output, default=str, indent=2)

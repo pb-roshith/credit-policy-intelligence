@@ -6,6 +6,7 @@ from unittest.mock import MagicMock,patch
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from app.routers import risk_knowledge as router_module
+from app.config import RISK_SCHEMA_DIR
 from app.risk_knowledge.catalog import documents_from_catalog, project_catalog
 from app.risk_knowledge.graph import InMemoryGraphRepository
 from app.risk_knowledge.repositories import PostgreSQLRepository
@@ -16,7 +17,7 @@ class IntegrationTests(unittest.TestCase):
     def test_normal_initialization_loads_no_manufactured_data(self):
         with tempfile.TemporaryDirectory() as directory:
             service=IntelligenceService(Path(directory)/'state.sqlite3',Path(directory)/'sources')
-            source=Path(__file__).resolve().parents[2]/'risk_schema/Risk Data Model_Oct 2026.xlsx'
+            source=RISK_SCHEMA_DIR / 'Risk Data Model_Oct 2026.xlsx'
             service.bootstrap(source)
             state=service.state()
             self.assertEqual(state['counts']['source_attributes'],4506)

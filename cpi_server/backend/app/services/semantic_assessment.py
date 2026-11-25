@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from ..database import run_db_transaction
 from .semantic_matching import load_matcher, Facts, converted, comparison, number
 from .rule_assessment import assessment_request_context
+from .semantic_request_graph import request_overlay
 
 ENGINE_VERSION = 'semantic-graph-assessment-v2'
 OPERATORS = {'LTE':'≤','GTE':'≥','LT':'<','GT':'>','EQ':'=','NE':'≠'}
@@ -92,14 +93,17 @@ def build_assessment(request_id,proposal,matcher,*,evaluation_date=None,manufact
     summary=(f"Graph traversal checked {report['graph_rule_count']} published rules across {len(matcher.documents)} policies. "
              f"{len(findings)} rules match; {report['excluded_rule_count']} do not match; {report['unresolved_rule_count']} need scope or request information. "
              'The LLM explains retrieved evidence; it does not select rules or determine outcomes.')
+    evaluated_at = datetime.now(timezone.utc).isoformat()
     return {'agent':'Knowledge Graph Compliance Assessment','engine_version':ENGINE_VERSION,'assessment_scope':'current-semantic-graph',
         'credit_request':{k:v for k,v in proposal.items() if k!='_canonical_record'},'findings':findings,'applicability':findings,
         'applicability_report':report,'knowledge_fingerprint':matcher.fingerprint,
+        'request_graph':request_overlay(request_id,proposal,evaluated_on=today.isoformat(),evaluation_reference=evaluated_at,
+                                        findings=findings,rule_nodes=matcher.nodes),
         'rule_snapshots':[{'id':d['candidate_id'],'policy_id':d['policy_id'],'semantic_rule':matcher.rows[d['candidate_id']][1],
                            'content_digest':matcher.rows[d['candidate_id']][0]['content_digest']} for d in decisions],
         'counts':counts,'outcome_counts':outcomes,'overall_score':None if incomplete or not findings else round(100*counts['PASS']/len(findings)),
         'compliance_status':'BREACH' if counts['BREACH'] else 'Incomplete assessment' if incomplete else 'PASS' if findings else 'Not Applicable',
-        'executive_summary':summary,'evaluated_at':datetime.now(timezone.utc).isoformat(),'cached':False,'recommendations':[],
+        'executive_summary':summary,'evaluated_at':evaluated_at,'cached':False,'recommendations':[],
         'heatmap':[],'demonstration_data_used':any(f['synthetic_inputs'] for f in findings),'manufactured_inputs':samples,
         'actual_generator_version':ACTUAL_GENERATOR_VERSION if manufacture_missing else None,
         'assessment_mode':'DEMONSTRATION' if any(f['synthetic_inputs'] for f in findings) else 'STORED_REQUEST_FACTS',

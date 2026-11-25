@@ -1,5 +1,6 @@
 """Idempotent PostgreSQL bootstrap for a new application installation."""
 
+from contextlib import nullcontext
 from datetime import datetime, timezone
 
 import psycopg
@@ -675,13 +676,16 @@ def _configure_account_security(connection) -> None:
 
 
 def initialize_database() -> None:
-    """Create every database object required by the backend if it is absent."""
+    """Create the backend schema and prepare the bundled policy catalog."""
+    from .scripts.map_policy_relationships import map_policy_relationships
+
     ensure_database_exists()
     try:
         with psycopg.connect(
             DATABASE_URL, row_factory=dict_row, **_connection_options()
         ) as connection:
             connection.execute("SELECT pg_advisory_xact_lock(hashtext('credit_policy_bootstrap'))")
+            connection.execute("SELECT pg_advisory_xact_lock(hashtext('policy_relationships'))")
             _create_public_tables(connection)
             _create_shared_tables(connection)
             from .rule_store import create_rule_tables
@@ -692,8 +696,14 @@ def initialize_database() -> None:
             from .services.credit_data import create_tables
             create_tables(connection)
             _configure_account_security(connection)
+            connection.execute("SET LOCAL search_path TO credit_data")
+
+            def bootstrap_connection():
+                return nullcontext(connection)
+
+            map_policy_relationships(connection_factory=bootstrap_connection)
     except psycopg.errors.InsufficientPrivilege as error:
         raise RuntimeError(
             "The PostgreSQL role in DATABASE_URL needs permission to create schemas, "
-            "tables, and the credit_user_runtime role during first startup"
+            "tables, and the credit_user_runtime role, and prepare the shared policy catalog"
         ) from error

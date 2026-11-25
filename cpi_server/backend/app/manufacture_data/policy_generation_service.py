@@ -15,7 +15,7 @@ from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
 
 from ..config import (
     MISTRAL_MANUFACTURING_TIMEOUT_MS, POLICY_DOCUMENT_TIMEOUT_SECONDS,
-    POLICY_JOB_TIMEOUT_SECONDS, POLICY_OUTPUT_DIR, POLICY_SOURCE_DIR,
+    POLICY_JOB_TIMEOUT_SECONDS, POLICY_OUTPUT_DIR, POLICY_SOURCE_DIR, resolve_policy_source,
 )
 from ..services.mistral_resources import resource_exists
 
@@ -250,7 +250,7 @@ def _locked_resources(client, db_connection, model, lock_connection):
     for document in documents:
         # Keep the lock transaction alive during a large library restoration.
         lock_connection.execute("SELECT 1")
-        candidates = [Path(document['local_pdf_path']),
+        candidates = [resolve_policy_source(document['local_pdf_path'], document['file_name']),
                       POLICY_OUTPUT_DIR / document['file_name'],
                       POLICY_SOURCE_DIR / document['file_name']]
         source = next((path for path in candidates if path.is_file()), None)
@@ -310,7 +310,7 @@ def run_policy_generation(job_id: str, db_connection, api_key: str, output_dir: 
                         WHERE job_id = %s
                     """, (display_title, f"Preparing policy {sequence} of {GENERATED_DOCUMENT_COUNT}", completed, job_id))
                 if existing:
-                    old_path = Path(existing["local_pdf_path"])
+                    old_path = resolve_policy_source(existing["local_pdf_path"], existing["file_name"])
                     new_path = output_dir / file_name
                     if old_path.is_file() and old_path != new_path and not new_path.exists():
                         old_path.rename(new_path)

@@ -9,7 +9,7 @@ from .repositories import PostgreSQLRepository
 from .semantic_extraction import (PIPELINE_VERSION, ACTOR, ExtractionBatch, ExtractedRule,
     llm_extract, digest, rule_id, validate_rule, taxonomy_context, sources_in_batches,
     relevant_rules, assemble_graph, restore_source_wrapping, retrieval_neighborhood,normative_clause)
-from .semantic_model import semantic_contract, validate_instance, VERSION
+from .semantic_model import semantic_contract, validate_instance, VERSION, COMPATIBLE_VERSIONS
 from .policy_taxonomy import structural_reason,heading_for
 
 
@@ -44,6 +44,14 @@ def save(repo, record, expected, actor, action):
             if expected is None:
                 result = c.execute("INSERT INTO risk_knowledge_objects(kind,owner_id,id,payload) VALUES ('metadata','',%s,%s) ON CONFLICT DO NOTHING", (record['id'], Jsonb(record)))
             else:
+                old = c.execute("""SELECT payload FROM risk_knowledge_objects WHERE kind='metadata' AND owner_id=''
+                    AND id=%s AND payload->>'content_digest'=%s FOR UPDATE""", (record['id'], expected)).fetchone()
+                if old and old['payload']['policy_version_id'] != record['policy_version_id']:
+                    previous = old['payload']
+                    archive_id = record['id'] + '-VERSION-' + str(previous['policy_version_id'])
+                    c.execute("""INSERT INTO risk_knowledge_objects(kind,owner_id,id,payload) VALUES ('metadata','',%s,%s)
+                        ON CONFLICT(kind,owner_id,id) DO NOTHING""",
+                        (archive_id, Jsonb({**previous, 'id': archive_id, 'kind': 'semantic_policy_history'})))
                 result = c.execute("UPDATE risk_knowledge_objects SET payload=%s WHERE kind='metadata' AND owner_id='' AND id=%s AND payload->>'content_digest'=%s", (Jsonb(record), record['id'], expected))
             if result.rowcount != 1: raise ValueError('Knowledge was edited concurrently; reload before retrying')
             c.execute("INSERT INTO audit_events(entity_type,entity_id,new_value,action,actor,reason) VALUES ('SemanticPolicy',%s,%s,%s,%s,%s)", (record['id'], Jsonb({'content_digest': record['content_digest'], 'rules': len(record['rules'])}), action, actor, 'Source-validated AI extraction; automatic initial approval is overridable'))
@@ -83,7 +91,7 @@ def process_source(policy, version, clauses, repo, *, provider=llm_extract, prog
     previous = repo.get('metadata', identifier)
     expected = previous['content_digest'] if previous else None
     source_digest = digest([(c['id'], c['source_excerpt']) for c in clauses])
-    reusable = previous and previous['policy_version_id'] == version['id'] and previous['source_digest'] == source_digest and previous.get('pipeline') == PIPELINE_VERSION and previous.get('ontology_version') == VERSION
+    reusable = previous and previous['policy_version_id'] == version['id'] and previous['source_digest'] == source_digest and previous.get('pipeline') == PIPELINE_VERSION and previous.get('ontology_version') in COMPATIBLE_VERSIONS
     record = deepcopy(previous) if reusable else {
         'id': identifier, 'kind': 'semantic_policy', 'pipeline': PIPELINE_VERSION,
         'ontology_version': VERSION, 'policy_id': policy['policy_id'], 'policy_name': policy['title'],
@@ -93,6 +101,8 @@ def process_source(policy, version, clauses, repo, *, provider=llm_extract, prog
         'source_clauses': [{k: c.get(k) for k in ('id', 'sequence', 'source_excerpt', 'section_heading', 'clause_number', 'page_number')} for c in clauses],
         'rules': [], 'coverage': [], 'completed_batches': [], 'failed_batches': [], 'context_history': [],
     }
+    if version.get('effective_date'):
+        record['effective_date'] = str(version['effective_date'])
     known = [r for r in current_records(repo) if r['policy_id'] != policy['policy_id']]
     taxonomy = taxonomy_context()
     taxonomy_ids = {c['id'] for c in taxonomy}
@@ -112,10 +122,12 @@ def process_source(policy, version, clauses, repo, *, provider=llm_extract, prog
     batches = list((batcher or sources_in_batches)(primary_clauses))
     failed = []
     for index, batch in enumerate(batches):
-        batch_key = digest([VERSION, PIPELINE_VERSION, [(c['id'], c['source_excerpt']) for c in batch]])
+        batch_sources = [(c['id'], c['source_excerpt']) for c in batch]
+        batch_key = digest([VERSION, PIPELINE_VERSION, batch_sources])
+        compatible_keys = {digest([known_version, PIPELINE_VERSION, batch_sources]) for known_version in COMPATIBLE_VERSIONS}
         batch_ids={c['id'] for c in batch}
-        if batch_key in record['completed_batches'] and not any(c['disposition']=='UNRESOLVED' for c in record['coverage'] if c['clause_id'] in batch_ids) and not any(r['status']=='PROPOSED' for r in record['rules'] if r['extracted']['clause_id'] in batch_ids): continue
-        record['completed_batches']=[k for k in record['completed_batches'] if k!=batch_key]
+        if compatible_keys.intersection(record['completed_batches']) and not any(c['disposition']=='UNRESOLVED' for c in record['coverage'] if c['clause_id'] in batch_ids) and not any(r['status']=='PROPOSED' for r in record['rules'] if r['extracted']['clause_id'] in batch_ids): continue
+        record['completed_batches']=[k for k in record['completed_batches'] if k not in compatible_keys]
         if progress: progress(index, stage='extraction', details={'pipeline': PIPELINE_VERSION, 'policy_name': policy['title'], 'total_batches': len(batches)})
         candidates = relevant_rules([*known, record], '\n'.join(c['source_excerpt'] for c in batch))
         neighborhood=retrieval_neighborhood([*known,record],[c['id'] for c in candidates])

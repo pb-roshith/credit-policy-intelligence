@@ -31,10 +31,9 @@ def process_policy(policy_id,user,job_id=None,progress=None,*,fallback_provider=
         previous_digest=rep['content_digest'] if rep else None
         concepts=repo.all('taxonomy_concepts')
         if not concepts:
-            from pathlib import Path
-            from ..config import BASE_DIR
+            from ..config import risk_schema_path
             from .ingestion import parse_schema
-            workbook=BASE_DIR/'risk_schema'/'Risk Data Model_Oct 2026.xlsx'
+            workbook=risk_schema_path()
             if workbook.is_file():
                 schema,parsed=parse_schema(workbook.name,workbook.read_bytes())
                 repo.put('documents',schema.document_id,schema.model_dump(mode='json'))

@@ -139,47 +139,12 @@ PDF generation, Mistral uploads, PostgreSQL table seeding, and the final result.
 Both Python requirements files must be installed in the backend environment because
 the backend uses that interpreter to launch the manufacturing process.
 
-### Copy original Credit_Dossier data
+### Restore the static deployment snapshot
 
-From `backend`, inspect the original and CPI databases:
-
-```powershell
-.\.venv\Scripts\python.exe copy_original_databases.py
-```
-
-To replace CPI data with verified copies of the original backend and MCP data:
-
-```powershell
-.\.venv\Scripts\python.exe copy_original_databases.py --copy
-```
-
-This reads the original databases without changing them, restores PostgreSQL
-snapshots into staging databases, and verifies every table's contents and sequence
-values before activating the copies. Previous CPI databases are retained with
-`_before_<timestamp>` names. Dumps and verification reports are stored under
-`backend/.data/database_copies/`. CPI connections are briefly
-disconnected during activation. User accounts and passwords come from the original
-database after copying. Mistral library references retain their existing remote IDs.
-
-The CPI backend uses `cpi_credit_dossier_backend`, and CPI MCP uses
-`cpi_credit_dossier_mcp` on the local PostgreSQL server. These databases are
-separate from the original Credit_Dossier databases. The backend `DATABASE_URL`
-is stored in the copied backend's encrypted `.data` secret store; MCP's
-`POSTGRES_DB` is configured in `mcp/.env`. Mistral credentials
-remain shared. Restart both CPI Python services after changing database settings.
-Protected secrets must be used under the original Windows user or configured again
-using the copied backend's secret-management scripts. The Python PostgreSQL driver
-also requires the system PostgreSQL `libpq` library to be available.
-
-These copies use frontend `8081`, backend `8003`, and MCP `8004`. The original
-Credit_Dossier and Credit Policy Intelligence application files are unchanged.
-### Loading the company list and documents on a fresh deployment
-
-The MCP automatically imports the company list and original documents from
-[`backend/dossier_data`](cd_cpi_server/backend/dossier_data/README.md).
-Include that entire folder on the MCP service. It contains only company catalog
-metadata and original document files. Company access retains its existing owner
-username. See its README for Neon configuration and import behavior.
+Use the [database restore step](dm_server/seed_table/README.md) before starting
+Credit Dossier, MCP, CPI, or Data Manufacturing. It restores the three databases
+and connects saved document records to the files in
+[`dm_server/seed_others`](dm_server/seed_others/README.md).
 
 ## Credit Policy Intelligence
 
@@ -233,9 +198,9 @@ local to each backend process.
 
 See the [Error code book](cpi_server/docs/error-code-book.md) for logged codes and operator actions.
 
-Optional AI graph fallback and automatic knowledge export are off by default.
-Enable them explicitly with `POLICY_GRAPH_LLM_FALLBACK=true` or
-`POLICY_KNOWLEDGE_AUTO_EXPORT=true` when needed.
+Enable optional AI graph fallback with `POLICY_GRAPH_LLM_FALLBACK=true`.
+For a separately mounted deployment file bundle, set `CPI_SEED_DIR` to the absolute
+path of `seed_others`.
 
 Inject `DATA_ENCRYPTION_KEY` from the production secret store, or inject
 `DATA_ENCRYPTION_KEY_FILE` with the path to a read-only mounted secret outside
@@ -283,9 +248,13 @@ service under a dedicated OS identity. Production startup rejects root on
 Unix and an elevated administrator token on Windows. Use `backend/.env` for local
 development credentials. An administrator password must be configured.
 
-In production, run `python -c "from app.database import initialize_database; initialize_database()"`
-from the backend directory as a separate deployment step with database
-bootstrap credentials. Provision the database and roles first when the
+Configure the production deployment's database setup step to run
+`python -c "from app.database import initialize_database; initialize_database()"`
+from `cpi_server/backend` with database bootstrap credentials. This command
+creates or updates the schema and builds the policy relationships before the API
+starts. On a fresh snapshot-based deployment, run the database restore before
+this setup command.
+Provision the database and roles first when the
 database platform handles those resources. Then grant the service database
 role only the application object access it needs, including membership in
 `credit_user_runtime` for account-scoped operations, and inject that role's
@@ -293,14 +262,8 @@ connection string into the running service. Production startup skips
 bootstrap and rejects PostgreSQL administration privileges. Repeat the
 separate bootstrap step when deploying schema changes.
 
-After production database bootstrap, import bundled policy knowledge and
-build policy relationships before starting the API. Run this again when the
-policy catalog changes. Local development still prepares the policy catalog
-at startup.
-
-```powershell
-python -c "from app.services.policy_knowledge_package import autoload_package; from app.scripts.map_policy_relationships import map_policy_relationships; autoload_package(); map_policy_relationships()"
-```
+For a standalone relationship rebuild after direct catalog edits, run
+`python -m app.scripts.map_policy_relationships` from the backend directory.
 
 #### Component and operation privileges
 

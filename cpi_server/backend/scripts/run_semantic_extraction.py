@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from app.config import SEED_OUTPUTS_DIR
 from app.database import shared_policy_connection
 from app.routers.rules import enqueue_inventory
 from app.services.rule_extraction import run_inventory_job
@@ -30,7 +31,7 @@ def main():
     run_inventory_job(str(job['id']), user)
     repo = PostgreSQLRepository(shared_policy_connection, None)
     records = current_records(repo)
-    out = Path(__file__).resolve().parents[1] / 'outputs' / 'extracted-knowledge'
+    out = SEED_OUTPUTS_DIR / 'extracted-knowledge'
     out.mkdir(parents=True, exist_ok=True)
     with shared_policy_connection() as c:
         result = c.execute('SELECT * FROM rule_inventory_jobs WHERE id=%s', (job['id'],)).fetchone()

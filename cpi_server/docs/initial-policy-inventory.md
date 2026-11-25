@@ -21,7 +21,7 @@ counters and quality-review progress, and refresh while running.
 From the backend directory:
 
 ```powershell
-.\.venv\Scripts\python.exe -m app.scripts.generate_rule_inventory --report initial-inventory-report.json
+.\.venv\Scripts\python.exe -m app.scripts.generate_rule_inventory --report ../../dm_server/seed_others/outputs/inventory-reports/initial-inventory-report.json
 ```
 
 This performs discovery/registration, source ingestion, clause-group Mistral

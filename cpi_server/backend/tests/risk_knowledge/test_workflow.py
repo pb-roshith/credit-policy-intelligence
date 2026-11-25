@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 import openpyxl
+from app.config import RISK_SCHEMA_DIR
 from app.risk_knowledge.demo import POLICY_TEXT, TEMPLATES, SAMPLE_REQUEST
 from app.risk_knowledge.graph import InMemoryGraphRepository
 from app.risk_knowledge.ingestion import LABEL, parse_document, parse_schema
@@ -123,7 +124,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('Not a relationship',d.raw_text)
 
     def test_real_workbook_record_count(self):
-        path=Path(__file__).resolve().parents[2]/'risk_schema/Risk Data Model_Oct 2026.xlsx'
+        path=RISK_SCHEMA_DIR / 'Risk Data Model_Oct 2026.xlsx'
         if not path.is_file():
             self.skipTest('User workbook not bundled in this checkout')
         d,concepts=parse_schema(path.name,path.read_bytes())
