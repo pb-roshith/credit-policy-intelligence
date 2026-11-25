@@ -141,10 +141,10 @@ the backend uses that interpreter to launch the manufacturing process.
 
 ### Restore the static deployment snapshot
 
-Use the [database restore step](dm_server/seed_table/README.md) before starting
-Credit Dossier, MCP, CPI, or Data Manufacturing. It restores the three databases
-and connects saved document records to the files in
-[`dm_server/seed_others`](dm_server/seed_others/README.md).
+Fill in the three PostgreSQL URLs in `dm_server/backend/.env` and start the services
+normally. Each service [restores its database automatically](dm_server/backend/seed_table/README.md)
+when the target is empty and connects the saved document records to the
+[deployment files](dm_server/backend/seed_others/README.md).
 
 ## Credit Policy Intelligence
 
@@ -248,19 +248,16 @@ service under a dedicated OS identity. Production startup rejects root on
 Unix and an elevated administrator token on Windows. Use `backend/.env` for local
 development credentials. An administrator password must be configured.
 
-Configure the production deployment's database setup step to run
+When using automatic restore, CPI runs database setup with the seed connection
+and uses the runtime connection to serve requests. For an independently
+provisioned database, run
 `python -c "from app.database import initialize_database; initialize_database()"`
-from `cpi_server/backend` with database bootstrap credentials. This command
-creates or updates the schema and builds the policy relationships before the API
-starts. On a fresh snapshot-based deployment, run the database restore before
-this setup command.
-Provision the database and roles first when the
-database platform handles those resources. Then grant the service database
-role only the application object access it needs, including membership in
-`credit_user_runtime` for account-scoped operations, and inject that role's
-connection string into the running service. Production startup skips
-bootstrap and rejects PostgreSQL administration privileges. Repeat the
-separate bootstrap step when deploying schema changes.
+from `cpi_server/backend` with database bootstrap credentials when installing
+or upgrading the schema. Provision any server-level roles required by the
+database platform first. Grant a separate runtime role only the application
+access it needs, including membership in `credit_user_runtime` for account-scoped
+operations. Production startup rejects runtime credentials with PostgreSQL
+administration privileges.
 
 For a standalone relationship rebuild after direct catalog edits, run
 `python -m app.scripts.map_policy_relationships` from the backend directory.

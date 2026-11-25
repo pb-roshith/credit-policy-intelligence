@@ -9,7 +9,7 @@ API; it is not another policy store. Existing user authentication, CSRF handling
 shared policy connections and account RLS are reused.
 
 Policy metadata is in `credit_data.policy_documents`. Generated sources are in
-`dm_server/seed_others/generated_policies`; imported DOCX sources are in `dm_server/seed_others/policy_docs`.
+`dm_server/backend/seed_others/generated_policies`; imported DOCX sources are in `dm_server/backend/seed_others/policy_docs`.
 Existing absolute source paths can refer to an older workspace. Ingestion resolves
 registered filenames in these configured directories, without accepting browser
 paths. The current database contains 25 PDFs and 10 DOCX policies.
@@ -155,7 +155,7 @@ CLI from backend:
 Use repeatable `--policy-id` arguments to restrict an administrative run. Report
 fields include processed/failed policies, clauses, proposed/quantitative/qualitative
 rules, manual-review rules, missing thresholds, validation failures and duplicate
-candidates. `dm_server/seed_others/outputs/inventory-reports/inventory-extraction-report.json` is the actual generation
+candidates. `dm_server/backend/seed_others/outputs/inventory-reports/inventory-extraction-report.json` is the actual generation
 report; the generation screen also provides downloadable reports.
 
 ## API overview

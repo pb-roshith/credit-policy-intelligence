@@ -77,7 +77,7 @@ def readme():
         'uniqueness and JSON array structure are additionally enforced by the JSON validator.', '',
         '```powershell', '# From cpi_server/backend',
         '.venv/Scripts/python.exe scripts/export_semantic_model.py',
-        '.venv/Scripts/python.exe scripts/export_semantic_model.py --validate ../../dm_server/seed_others/outputs/ontology/example.json',
+        '.venv/Scripts/python.exe scripts/export_semantic_model.py --validate ../../dm_server/backend/seed_others/outputs/ontology/example.json',
         '```', '', '```python', 'from rdflib import Graph', 'from pyshacl import validate',
         'conforms, report, text = validate(',
         '    Graph().parse("example.ttl", format="turtle"),',

@@ -7,16 +7,38 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 from uuid import uuid4
 
 import psycopg
+from dotenv import dotenv_values
 from psycopg import sql
 from psycopg.pq import Conninfo
 
 
-DM = Path(__file__).resolve().parents[1]
+DM_BACKEND = Path(__file__).resolve().parent
+SEED_TABLE_DIR = DM_BACKEND / 'seed_table'
+SEED_OTHERS_DIR = DM_BACKEND / 'seed_others'
 DATABASES = {'cpi': 'CPI_SEED_DATABASE_URL', 'dossier': 'DOSSIER_SEED_DATABASE_URL',
              'mcp': 'MCP_SEED_DATABASE_URL'}
+CATALOGS = {'cpi': 'credit_data.policy_documents', 'dossier': 'public.deals',
+            'mcp': 'public.mcp_companies'}
+
+
+def seed_url(database):
+    key = DATABASES[database]
+    configured = os.getenv(key)
+    if configured is None:
+        configured = dotenv_values(DM_BACKEND / '.env', interpolate=False).get(key)
+    return (configured or '').strip()
+
+
+def relocated_seed_path(path, root=SEED_OTHERS_DIR):
+    path = Path(path)
+    old_root = DM_BACKEND.parent / 'seed_others'
+    if path.is_relative_to(old_root):
+        return root / path.relative_to(old_root)
+    return path
 
 
 def postgres_command(tool, dsn, *args):
@@ -132,7 +154,7 @@ def binding_sql(database, root, assets):
     return '\n'.join([*statements, require_empty(validation, 'Snapshot document references do not match the seed files'), update])
 
 
-def preflight(database, dsn, archive):
+def preflight(database, dsn, archive, *, startup=False):
     if not archive.is_file():
         raise ValueError(f'Missing database snapshot: {archive}')
     digest = checksum(archive)
@@ -142,6 +164,8 @@ def preflight(database, dsn, archive):
             if marker == (digest,):
                 return False
         if connection.execute(EMPTY_DATABASE).fetchone():
+            if startup and connection.execute('SELECT to_regclass(%s)', (CATALOGS[database],)).fetchone()[0]:
+                return False
             raise ValueError(f'{database} restore target must be an empty database')
         if database == 'cpi' and not connection.execute("SELECT 1 FROM pg_roles WHERE rolname='credit_user_runtime'").fetchone():
             raise ValueError('Create the credit_user_runtime role on the PostgreSQL server before restoring CPI')
@@ -176,7 +200,7 @@ def restore(database, dsn, archive, root, assets):
                 raise RuntimeError(f'{database} restore rejected by PostgreSQL') from error
         if target.wait() != 0:
             raise RuntimeError(f'{database} restore failed')
-    print(f'Restored {database}', flush=True)
+    print(f'Restored {database}', file=sys.stderr, flush=True)
 
 
 def restore_gemini_store(root, destination):
@@ -196,23 +220,48 @@ def restore_gemini_store(root, destination):
             return
     finally:
         temporary.unlink(missing_ok=True)
-    print('Initialized the Gemini store', flush=True)
+    print('Initialized the Gemini store', file=sys.stderr, flush=True)
+
+
+def restore_on_startup(database, *, gemini=False, prepare=None):
+    dsn = seed_url(database)
+    if not dsn:
+        return False
+    archive = SEED_TABLE_DIR / f'{database}.dump'
+    files = SEED_OTHERS_DIR
+    # CPI and Data Manufacturing can start together against the same database.
+    # Serialize the startup check and restore while psql uses its own transaction.
+    with psycopg.connect(dsn) as lock:
+        lock.execute("SELECT pg_advisory_xact_lock(hashtext('deployment_seed_startup'))")
+        needs_restore = preflight(database, dsn, archive, startup=True)
+        if needs_restore:
+            assets = mcp_assets(files) if database == 'mcp' else {}
+            restore(database, dsn, archive, files, assets)
+        if prepare and (needs_restore or (
+                lock.execute("SELECT to_regclass('public.deployment_seed_snapshot')").fetchone()[0]
+                and lock.execute('SELECT 1 FROM public.deployment_seed_snapshot WHERE service=%s', (database,)).fetchone())):
+            prepare(dsn)
+            return True
+        if gemini:
+            store = Path(os.getenv('GEMINI_STORE_PATH') or DM_BACKEND.parents[1] / '.ai-data' / 'gemini.sqlite3')
+            restore_gemini_store(files, store)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('snapshot', 'restore'))
     parser.add_argument('--database', choices=DATABASES, action='append')
-    parser.add_argument('--tables', type=Path, default=DM / 'seed_table')
-    parser.add_argument('--files', type=Path, default=DM / 'seed_others')
+    parser.add_argument('--tables', type=Path, default=SEED_TABLE_DIR)
+    parser.add_argument('--files', type=Path, default=SEED_OTHERS_DIR)
     parser.add_argument('--gemini-store', type=Path, default=os.getenv('GEMINI_STORE_PATH'))
     args = parser.parse_args()
     targets = {}
     for database in dict.fromkeys(args.database or DATABASES):
         key = DATABASES[database]
-        if not os.getenv(key):
+        dsn = seed_url(database)
+        if not dsn:
             parser.error(f'Set {key} to the database connection string')
-        targets[database] = os.environ[key]
+        targets[database] = dsn
     if args.action == 'snapshot':
         for database, dsn in targets.items():
             snapshot(database, dsn, args.tables)

@@ -5,6 +5,7 @@ PostgreSQL is the only supported application database.
 
 from pathlib import Path
 import os
+import sys
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,7 +13,13 @@ from app.secret_provider import is_production, load_runtime_secrets
 from app.transport import is_https_url
 
 
+WORKSPACE_DIR = Path(__file__).resolve().parents[3]
+if str(WORKSPACE_DIR) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE_DIR))
+from dm_server.backend.deployment_seed import seed_url
+
 # Service .env values are the runtime configuration source.
+_injected_database_url = os.getenv('DATABASE_URL')
 load_runtime_secrets("backend")
 
 
@@ -179,7 +186,12 @@ class Settings(BaseSettings):
     def cors_allowed_origins(self) -> list[str]:
         return [origin.strip().rstrip("/") for origin in self.CORS_ALLOWED_ORIGINS.split("|") if origin.strip()]
 
-settings = Settings()
+_seed_database_url = seed_url('dossier')
+if _seed_database_url:
+    _database_url = (_injected_database_url or _seed_database_url).replace('postgresql://', 'postgresql+psycopg://', 1)
+    settings = Settings(DATABASE_URL=_database_url)
+else:
+    settings = Settings()
 settings.AI_PROVIDER = settings.AI_PROVIDER.strip().lower()
 if settings.AI_PROVIDER not in {"gemini", "mistral"}:
     raise ValueError("AI_PROVIDER must be mistral or gemini")

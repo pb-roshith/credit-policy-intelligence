@@ -26,8 +26,8 @@ dist/
 # Logs
 *.log
 # Ship the existing policy PDFs with Git-based deployments.
-dm_server/seed_others/generated_policies/*
-!dm_server/seed_others/generated_policies/*.pdf
+dm_server/backend/seed_others/generated_policies/*
+!dm_server/backend/seed_others/generated_policies/*.pdf
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -47,10 +47,10 @@ cpi_server/backend/inventory_sources/
 cpi_server/docs/credit-data-coverage/
 
 # Database dumps, recovery snapshots, and local provider state contain private data.
-/dm_server/seed_table/*
-!/dm_server/seed_table/README.md
-/dm_server/seed_others/gemini.sqlite3*
-/dm_server/seed_others/inventory_sources/
+/dm_server/backend/seed_table/*
+!/dm_server/backend/seed_table/README.md
+/dm_server/backend/seed_others/gemini.sqlite3*
+/dm_server/backend/seed_others/inventory_sources/
 
 # Local Gemini agents and document libraries
 .ai-data/

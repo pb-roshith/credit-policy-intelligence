@@ -41,7 +41,7 @@ To reproduce the deliverables from the current database, run from `backend`:
 .venv/Scripts/python.exe scripts/export_policy_taxonomy.py
 ```
 
-Default output is `dm_server/seed_others/outputs/policy-taxonomy/`:
+Default output is `dm_server/backend/seed_others/outputs/policy-taxonomy/`:
 
 - `policy-taxonomy.xlsx`: dictionary, tree, assignments, dimensions and evidence,
   complete coverage, unclassified passages and source inventory.

@@ -8,6 +8,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 MCP_DIR = Path(__file__).resolve().parent
+WORKSPACE_DIR = MCP_DIR.parent.parent
+if str(WORKSPACE_DIR) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE_DIR))
+from dm_server.backend.deployment_seed import seed_url
 
 BACKEND_DIR = MCP_DIR.parent / "backend"
 if str(BACKEND_DIR) not in sys.path:
@@ -15,13 +19,15 @@ if str(BACKEND_DIR) not in sys.path:
 from app.secret_provider import is_production, load_runtime_secrets  # noqa: E402
 from app.transport import POSTGRES_TLS_OPTIONS  # noqa: E402
 
+_injected_database_url = os.getenv('MCP_DATABASE_URL')
 load_runtime_secrets("mcp")
+_seed_database_url = seed_url('mcp')
 
 
 @dataclass(frozen=True)
 class Settings:
     production: bool = is_production(os.getenv("APP_ENV"))
-    database_url: str = os.getenv('MCP_DATABASE_URL', '')
+    database_url: str = _injected_database_url or _seed_database_url or os.getenv('MCP_DATABASE_URL', '')
     postgres_host: str = os.getenv("POSTGRES_HOST", "127.0.0.1")
     postgres_port: int = int(os.getenv("POSTGRES_PORT", "5432"))
     postgres_database: str = os.getenv("POSTGRES_DB", "cpi_credit_dossier_mcp")

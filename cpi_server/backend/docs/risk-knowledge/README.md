@@ -32,6 +32,6 @@ From `cpi_server/backend`:
 .venv/Scripts/python.exe scripts/validate_current_solution.py
 ```
 
-These commands read existing extraction results and do not call AI. The current deliverables live under `dm_server/seed_others/outputs/policy-taxonomy`, `dm_server/seed_others/outputs/ontology`, `dm_server/seed_others/outputs/extracted-knowledge`, and `dm_server/seed_others/outputs/finalization`. Superseded examples, checkpoints and schema packages are preserved under `dm_server/seed_others/outputs/archive`.
+These commands read existing extraction results and do not call AI. The current deliverables live under `dm_server/backend/seed_others/outputs/policy-taxonomy`, `dm_server/backend/seed_others/outputs/ontology`, `dm_server/backend/seed_others/outputs/extracted-knowledge`, and `dm_server/backend/seed_others/outputs/finalization`. Superseded examples, checkpoints and schema packages are preserved under `dm_server/backend/seed_others/outputs/archive`.
 
 Run the existing frontend on port 5173 and backend on port 8002 using the [workspace run guide](../../../../run.md#credit-policy-intelligence). No new frontend dependency was added.

@@ -10,10 +10,11 @@ from psycopg import sql
 from psycopg.rows import dict_row
 
 from .config import (
-    DATABASE_CONNECT_TIMEOUT_SECONDS, DATABASE_RETRY_BASE_DELAY_MS,
+    APP_ENV, DATABASE_CONNECT_TIMEOUT_SECONDS, DATABASE_RETRY_BASE_DELAY_MS,
     DATABASE_STATEMENT_TIMEOUT_MS, DATABASE_TRANSACTION_RETRIES, DATABASE_URL,
 )
 from .bootstrap import initialize_database
+from dm_server.backend.deployment_seed import restore_on_startup
 
 
 account_user_id = ContextVar("account_user_id", default=None)
@@ -102,6 +103,14 @@ def verify_runtime_database_role():
         """).fetchone()["permitted"]
     if privileged:
         raise RuntimeError("Production requires a database runtime role without PostgreSQL administration privileges")
+
+
+def prepare_startup_database():
+    if APP_ENV != 'development':
+        verify_runtime_database_role()
+    prepared = restore_on_startup('cpi', prepare=initialize_database)
+    if APP_ENV == 'development' and not prepared:
+        initialize_database()
 
 
 def _connect():

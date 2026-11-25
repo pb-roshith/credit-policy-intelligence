@@ -80,7 +80,7 @@ Generate the portable, validated package from `backend`:
 .venv/Scripts/python.exe scripts/export_semantic_model.py
 ```
 
-The files are written to `dm_server/seed_others/outputs/ontology/`. The package
+The files are written to `dm_server/backend/seed_others/outputs/ontology/`. The package
 includes the semantic contract JSON, JSON Schema 2020-12, ontology Turtle,
 SHACL Turtle, illustrative JSON/RDF instances, a full dictionary/guide,
 validation results and checksum manifest, bundled in a ZIP archive.
@@ -113,11 +113,11 @@ example isolation. RDF consumers use SHACL-SPARQL with inference disabled as
 explained in the generated guide. OWL declarations alone are not validation.
 
 Source-backed population is provided by `semantic_pipeline.py` and exported separately
-under `dm_server/seed_others/outputs/extracted-knowledge`. Schema validation and business review
+under `dm_server/backend/seed_others/outputs/extracted-knowledge`. Schema validation and business review
 remain separate operations. Schema validity does not grant business approval,
 prove correct interpretation of a source, or make an assertion executable.
 To regenerate the connected graph from the saved policy snapshot, run
-`.venv/Scripts/python.exe scripts/export_connected_knowledge.py --records ../../dm_server/seed_others/outputs/extracted-knowledge/policy-rule-knowledge.json`
+`.venv/Scripts/python.exe scripts/export_connected_knowledge.py --records ../../dm_server/backend/seed_others/outputs/extracted-knowledge/policy-rule-knowledge.json`
 from the backend directory.
 
 `.venv/Scripts/python.exe scripts/verify_policy_competency.py --store` verifies

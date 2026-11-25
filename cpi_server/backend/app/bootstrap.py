@@ -604,23 +604,24 @@ def _create_account_tables(connection) -> None:
 
 
 def _configure_account_security(connection) -> None:
-    connection.execute("""
-        DO $$ BEGIN
-            CREATE ROLE credit_user_runtime NOLOGIN NOSUPERUSER NOBYPASSRLS;
-        EXCEPTION WHEN duplicate_object THEN NULL;
-        END $$
-    """)
     role = connection.execute(
         "SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname='credit_user_runtime'"
     ).fetchone()
+    if role is None:
+        connection.execute("""
+            DO $$ BEGIN
+                CREATE ROLE credit_user_runtime NOLOGIN NOSUPERUSER NOBYPASSRLS;
+            EXCEPTION WHEN duplicate_object THEN NULL;
+            END $$
+        """)
+        role = connection.execute(
+            "SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname='credit_user_runtime'"
+        ).fetchone()
     if role["rolsuper"] or role["rolbypassrls"]:
         raise RuntimeError("credit_user_runtime must not bypass row-level security")
-    current_role = connection.execute(
-        "SELECT current_user AS role_name"
-    ).fetchone()["role_name"]
-    connection.execute(
-        sql.SQL("GRANT credit_user_runtime TO {}").format(sql.Identifier(current_role))
-    )
+    actor = connection.execute("SELECT current_user AS role_name, pg_has_role(current_user, 'credit_user_runtime', 'MEMBER') AS is_member").fetchone()
+    if not actor['is_member']:
+        connection.execute(sql.SQL("GRANT credit_user_runtime TO {}").format(sql.Identifier(actor['role_name'])))
     connection.execute('GRANT USAGE ON SCHEMA "user" TO credit_user_runtime')
     connection.execute("""
         CREATE OR REPLACE FUNCTION public.analyst_can_read_account(owner_id text)
@@ -675,14 +676,15 @@ def _configure_account_security(connection) -> None:
     create_current_views(connection)
 
 
-def initialize_database() -> None:
+def initialize_database(database_url=None) -> None:
     """Create the backend schema and prepare the bundled policy catalog."""
     from .scripts.map_policy_relationships import map_policy_relationships
 
-    ensure_database_exists()
+    if database_url is None:
+        ensure_database_exists()
     try:
         with psycopg.connect(
-            DATABASE_URL, row_factory=dict_row, **_connection_options()
+            database_url or DATABASE_URL, row_factory=dict_row, **_connection_options()
         ) as connection:
             connection.execute("SELECT pg_advisory_xact_lock(hashtext('credit_policy_bootstrap'))")
             connection.execute("SELECT pg_advisory_xact_lock(hashtext('policy_relationships'))")

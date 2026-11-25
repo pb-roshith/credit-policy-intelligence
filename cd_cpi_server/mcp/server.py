@@ -21,6 +21,7 @@ from database import (
 )
 from manufacture import manufacture_company_data as manufacture
 from settings import settings
+from dm_server.backend.deployment_seed import relocated_seed_path, restore_on_startup
 
 
 logging.basicConfig(
@@ -110,6 +111,9 @@ def retrieve_company_documents(owner_user_id: str, company_name: str) -> str:
     """List the company's 17 Mistral Library documents and summaries."""
     documents = []
     for doc in list_documents(owner_user_id, company_name):
+        local_path = doc["local_path"]
+        if local_path:
+            local_path = str(relocated_seed_path(local_path))
         documents.append(
             {
                 "document_name": doc["document_name"],
@@ -117,7 +121,7 @@ def retrieve_company_documents(owner_user_id: str, company_name: str) -> str:
                     f"mistral://{doc['mistral_library_id']}/"
                     f"{doc['mistral_document_id']}"
                     if doc["mistral_document_id"]
-                    else doc["local_path"]
+                    else local_path
                 ),
                 "summary": doc["summary"],
                 "status": doc["processing_status"],
@@ -334,6 +338,7 @@ for pdf_filename in PDF_FILES:
 
 
 def main() -> None:
+    restore_on_startup('mcp', gemini=settings.ai_provider == 'gemini')
     logger.info("Initialising local PostgreSQL MCP database")
     init_db()
     logger.info(

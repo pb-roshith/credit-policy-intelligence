@@ -30,7 +30,12 @@ GEOGRAPHY_RISK = {
 }
 REQUEST_STATUSES = ["In Review", "Escalated", "Approved", "Pending", "Declined"]
 BASE_DIR = Path(__file__).resolve().parent.parent
-BACKUP_DIR = BASE_DIR.parent.parent / "dm_server" / "seed_table" / "history" / "cpi_server"
+WORKSPACE_DIR = BASE_DIR.parent.parent
+if str(WORKSPACE_DIR) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE_DIR))
+from dm_server.backend.deployment_seed import SEED_OTHERS_DIR, SEED_TABLE_DIR, relocated_seed_path, seed_url
+
+BACKUP_DIR = SEED_TABLE_DIR / "history" / "cpi_server"
 SECRET_NAMES = {
     "ADMIN_PASSWORD", "DATABASE_URL", "MISTRAL_API_KEY", "GEMINI_API_KEY",
     "SHARED_DEAL_API_KEY", "DATA_ENCRYPTION_KEY", "DATA_ENCRYPTION_PREVIOUS_KEYS",
@@ -102,7 +107,11 @@ CORS_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
-DATABASE_URL = read_deployment_secret("DATABASE_URL", "postgresql://postgres:root@localhost:5432/credit_policy_intelligence")
+if os.getenv("DATABASE_URL") or os.getenv("DATABASE_URL_FILE"):
+    DATABASE_URL = read_deployment_secret("DATABASE_URL")
+else:
+    DATABASE_URL = seed_url('cpi') or read_deployment_secret(
+        "DATABASE_URL", "postgresql://postgres:root@localhost:5432/credit_policy_intelligence")
 MISTRAL_API_KEY = read_deployment_secret("MISTRAL_API_KEY")
 MISTRAL_POLICY_MODEL = os.getenv("MISTRAL_POLICY_MODEL", "mistral-medium-latest")
 AI_PROVIDER = os.getenv("AI_PROVIDER", "mistral").strip().lower()
@@ -125,7 +134,7 @@ DATABASE_TRANSACTION_RETRIES = max(1, int(os.getenv("DATABASE_TRANSACTION_RETRIE
 DATABASE_RETRY_BASE_DELAY_MS = max(1, int(os.getenv("DATABASE_RETRY_BASE_DELAY_MS", "50")))
 POLICY_DOCUMENT_TIMEOUT_SECONDS = positive_timeout("POLICY_DOCUMENT_TIMEOUT_SECONDS", 1_500)
 POLICY_JOB_TIMEOUT_SECONDS = positive_timeout("POLICY_JOB_TIMEOUT_SECONDS", 36_000)
-CPI_SEED_DIR = Path(os.getenv("CPI_SEED_DIR") or BASE_DIR.parent.parent / "dm_server" / "seed_others").resolve()
+CPI_SEED_DIR = Path(os.getenv("CPI_SEED_DIR") or SEED_OTHERS_DIR).resolve()
 POLICY_OUTPUT_DIR = CPI_SEED_DIR / "generated_policies"
 POLICY_SOURCE_DIR = CPI_SEED_DIR / "policy_docs"
 RISK_SCHEMA_DIR = CPI_SEED_DIR / "risk_schema"
@@ -135,7 +144,7 @@ SEED_INVENTORY_DIR = CPI_SEED_DIR / "inventory_sources"
 
 def resolve_seed_source(path):
     """Resolve registered paths written before the bundled sources moved."""
-    path = Path(path).resolve()
+    path = relocated_seed_path(Path(path).resolve(), CPI_SEED_DIR).resolve()
     old_seed = BASE_DIR.parent.parent / "dm_server" / "seed"
     for old_dir, current in (
         (BASE_DIR / "generated_policies", POLICY_OUTPUT_DIR),

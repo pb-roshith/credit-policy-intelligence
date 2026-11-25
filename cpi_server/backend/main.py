@@ -1,15 +1,12 @@
 from fastapi import FastAPI
 from app.config import APP_ENV, validate_operational_config
-from app.database import initialize_database, verify_runtime_database_role
+from app.database import prepare_startup_database
 from app.http_server import configure_http
 from app.routers import auth,compliance,controls,dashboard,decision,exceptions,observability,policies,requests,rules,credit_data,risk_knowledge
 
 validate_operational_config()
 development = APP_ENV == "development"
-if development:
-    initialize_database()
-else:
-    verify_runtime_database_role()
+prepare_startup_database()
 
 app = FastAPI(
     title="TCS Credit Policy Intelligence API", version="2.0.0",

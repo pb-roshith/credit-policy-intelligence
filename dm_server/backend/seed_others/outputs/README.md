@@ -14,4 +14,4 @@
 
 The current corpus contains 35 policies, 1,078 extracted rules and 863 published graph rules. Review remains open for 215 proposed rules, 16 policy scopes and 159 unresolved passages. The published graph excludes unapproved rules. Historical/demo files and superseded packages are preserved under `archive` and are excluded from current release bundles.
 
-See [solution finalization](../../../cpi_server/backend/docs/finalization.md) for the data contract and validation scope.
+See [solution finalization](../../../../cpi_server/backend/docs/finalization.md) for the data contract and validation scope.

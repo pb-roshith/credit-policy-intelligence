@@ -11,6 +11,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from dm_server.backend.deployment_seed import restore_on_startup
 
 # Set this before modules that initialize the provider SDKs are imported.
 os.environ["OTEL_SDK_DISABLED"] = "true" if settings.production else "false"
@@ -57,6 +58,7 @@ async def lifespan(app: FastAPI):
 
     # Step 1: Database
     t_step = time.time()
+    restore_on_startup('dossier', gemini=settings.AI_PROVIDER == 'gemini')
     logger.info("[startup] Creating database tables…")
     from app.migrations import prepare_database_schemas
     prepare_database_schemas(engine)

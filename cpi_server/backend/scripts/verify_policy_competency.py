@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from app.config import SEED_OUTPUTS_DIR
+from app.config import BASE_DIR, SEED_INVENTORY_DIR, SEED_OUTPUTS_DIR
 from app.database import shared_policy_connection
 from app.risk_knowledge.competency_queries import answer
 from app.routers.risk_knowledge import effective_rule_edition
@@ -18,7 +18,10 @@ from app.services.semantic_matching import load_matcher
 
 
 def verify(matcher):
-    archived = {path.stem: path for path in (BASE_DIR / 'inventory_sources').iterdir() if path.is_file()}
+    archived = {}
+    for folder in (SEED_INVENTORY_DIR, BASE_DIR / 'inventory_sources'):
+        if folder.is_dir():
+            archived.update({path.stem: path for path in folder.iterdir() if path.is_file()})
     verified = []
     for record in matcher.records:
         checksum = record['source_checksum']
