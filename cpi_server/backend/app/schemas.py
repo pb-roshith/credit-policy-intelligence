@@ -68,6 +68,7 @@ class ScenarioRunRequest(StrictRequestModel):
     pricing_bps: float = Field(ge=0, le=10000)
     tenor_years: float = Field(gt=0, le=50)
     covenants: Literal["Full", "Partial", "None"]
+    policy_assumptions: dict[str, float] | None = None
 
     @field_validator("scenario_name")
     @classmethod

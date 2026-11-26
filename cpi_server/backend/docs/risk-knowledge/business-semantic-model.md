@@ -42,10 +42,11 @@ unbound fields with exact source examples for review.
 
 In **Source Assets**, upload a PDF, DOCX, or UTF-8 text policy. Choose an existing
 policy for a revision, enter its version and effective date, then select
-**Upload and compare**. The comparison shows added, removed, and unchanged
-passages against the preceding source. The upload is staged for the signed-in
-user. **Revisit ontology and rebuild graph** registers the version and queues
-semantic extraction. During extraction the replacing version may have no
+**Upload and extract rules**. CPI compares passages against the preceding
+source, registers the version, and queues the same semantic extraction used
+in the Policy Rule Library. If an extraction is already running, the upload
+stays staged and **Start extraction for this upload** starts it once the
+worker is available. During extraction the replacing version may have no
 published graph rules. The worker archives the prior extraction, validates the
 rebuilt graph, stores a shared snapshot, and reports reviewed rule changes and
 ontology candidates. Unresolved rule or scope proposals remain available for

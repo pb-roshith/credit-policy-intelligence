@@ -1,0 +1,261 @@
+{
+  "request": "Sample request",
+  "borrower": "ABC Steel Limited",
+  "sample": true,
+  "nodes": [
+    {
+      "id": "borrower",
+      "kind": "borrower",
+      "label": "ABC Steel Limited",
+      "detail": "Sample request"
+    },
+    {
+      "id": "fact:country:India:",
+      "kind": "attribute",
+      "label": "Country: India",
+      "detail": "Country recorded for this assessment."
+    },
+    {
+      "id": "fact:industry:Steel:",
+      "kind": "attribute",
+      "label": "Industry: Steel",
+      "detail": "Industry recorded for this assessment."
+    },
+    {
+      "id": "fact:rating:BBB:",
+      "kind": "attribute",
+      "label": "Rating: BBB",
+      "detail": "Rating recorded for this assessment."
+    },
+    {
+      "id": "policy:India Lending Policy",
+      "kind": "policy",
+      "label": "India Lending Policy",
+      "detail": "At least one rule matched this request."
+    },
+    {
+      "id": "rule:rating",
+      "kind": "rule",
+      "label": "Minimum rating rule",
+      "detail": "Country matches this policy's scope.",
+      "finding": {
+        "description": "Borrowers in India must have a BBB rating or better.",
+        "policy": "India Lending Policy",
+        "clause": "2.1",
+        "page": null,
+        "version": "Illustrative",
+        "threshold": "BBB or better",
+        "observed": "BBB",
+        "result": "Pass",
+        "reason": "Country matches this policy's scope.",
+        "rationale": "BBB meets the minimum rating.",
+        "synthetic": false,
+        "scope": [
+          "Country matches: India."
+        ]
+      }
+    },
+    {
+      "id": "result:rating",
+      "kind": "pass",
+      "label": "Pass",
+      "detail": "BBB"
+    },
+    {
+      "id": "policy:Metal Sector Policy",
+      "kind": "policy",
+      "label": "Metal Sector Policy",
+      "detail": "At least one rule matched this request."
+    },
+    {
+      "id": "rule:leverage",
+      "kind": "rule",
+      "label": "Maximum leverage rule",
+      "detail": "Industry matches this policy's scope.",
+      "finding": {
+        "description": "Steel borrowers must have leverage of 3.5x or less.",
+        "policy": "Metal Sector Policy",
+        "clause": "4.2",
+        "page": null,
+        "version": "Illustrative",
+        "threshold": "Leverage <= 3.5x",
+        "observed": "4.2x",
+        "result": "Breach",
+        "reason": "Industry matches this policy's scope.",
+        "rationale": "Leverage exceeds the limit by 0.7x.",
+        "synthetic": false,
+        "scope": [
+          "Industry matches: Steel."
+        ]
+      }
+    },
+    {
+      "id": "result:leverage",
+      "kind": "breach",
+      "label": "Breach",
+      "detail": "4.2x"
+    },
+    {
+      "id": "metric:leverage:4.2:x",
+      "kind": "metric",
+      "label": "Leverage: 4.2x",
+      "detail": "Leverage recorded for this assessment."
+    },
+    {
+      "id": "exception:EX-STEEL-01",
+      "kind": "exception",
+      "label": "EX-STEEL-01",
+      "detail": "Registered exception \u00b7 Pending Approval"
+    }
+  ],
+  "edges": [
+    {
+      "source": "borrower",
+      "target": "fact:country:India:",
+      "id": "borrower>fact:country:India:",
+      "label": "Has country"
+    },
+    {
+      "source": "borrower",
+      "target": "fact:industry:Steel:",
+      "id": "borrower>fact:industry:Steel:",
+      "label": "Has industry"
+    },
+    {
+      "source": "borrower",
+      "target": "fact:rating:BBB:",
+      "id": "borrower>fact:rating:BBB:",
+      "label": "Has rating"
+    },
+    {
+      "source": "borrower",
+      "target": "metric:leverage:4.2:x",
+      "id": "borrower>metric:leverage:4.2:x",
+      "label": "Has metric"
+    },
+    {
+      "source": "fact:country:India:",
+      "target": "policy:India Lending Policy",
+      "id": "fact:country:India:>policy:India Lending Policy",
+      "label": "Applicable policy"
+    },
+    {
+      "source": "fact:industry:Steel:",
+      "target": "policy:Metal Sector Policy",
+      "id": "fact:industry:Steel:>policy:Metal Sector Policy",
+      "label": "Applicable policy"
+    },
+    {
+      "source": "fact:rating:BBB:",
+      "target": "rule:rating",
+      "id": "fact:rating:BBB:>rule:rating",
+      "label": "Tested against"
+    },
+    {
+      "source": "policy:India Lending Policy",
+      "target": "rule:rating",
+      "id": "policy:India Lending Policy>rule:rating",
+      "label": "Contains rule"
+    },
+    {
+      "source": "rule:rating",
+      "target": "result:rating",
+      "id": "rule:rating>result:rating",
+      "label": "Result"
+    },
+    {
+      "source": "policy:Metal Sector Policy",
+      "target": "rule:leverage",
+      "id": "policy:Metal Sector Policy>rule:leverage",
+      "label": "Contains rule"
+    },
+    {
+      "source": "rule:leverage",
+      "target": "result:leverage",
+      "id": "rule:leverage>result:leverage",
+      "label": "Result"
+    },
+    {
+      "source": "result:leverage",
+      "target": "exception:EX-STEEL-01",
+      "id": "result:leverage>exception:EX-STEEL-01",
+      "label": "Raises exception"
+    },
+    {
+      "source": "metric:leverage:4.2:x",
+      "target": "rule:leverage",
+      "id": "metric:leverage:4.2:x>rule:leverage",
+      "label": "Tested against"
+    }
+  ],
+  "paths": [
+    {
+      "rule": "rule:rating",
+      "policy": "policy:India Lending Policy",
+      "outcome": "Pass",
+      "exceptions": 0,
+      "nodes": [
+        "borrower",
+        "fact:country:India:",
+        "fact:rating:BBB:",
+        "policy:India Lending Policy",
+        "result:rating",
+        "rule:rating"
+      ],
+      "edges": [
+        "borrower>fact:country:India:",
+        "borrower>fact:rating:BBB:",
+        "fact:country:India:>policy:India Lending Policy",
+        "fact:rating:BBB:>rule:rating",
+        "policy:India Lending Policy>rule:rating",
+        "rule:rating>result:rating"
+      ]
+    },
+    {
+      "rule": "rule:leverage",
+      "policy": "policy:Metal Sector Policy",
+      "outcome": "Breach",
+      "exceptions": 1,
+      "nodes": [
+        "borrower",
+        "exception:EX-STEEL-01",
+        "fact:industry:Steel:",
+        "metric:leverage:4.2:x",
+        "policy:Metal Sector Policy",
+        "result:leverage",
+        "rule:leverage"
+      ],
+      "edges": [
+        "borrower>fact:industry:Steel:",
+        "borrower>metric:leverage:4.2:x",
+        "fact:industry:Steel:>policy:Metal Sector Policy",
+        "metric:leverage:4.2:x>rule:leverage",
+        "policy:Metal Sector Policy>rule:leverage",
+        "result:leverage>exception:EX-STEEL-01",
+        "rule:leverage>result:leverage"
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "id": "policy:India Lending Policy",
+      "name": "India Lending Policy",
+      "reasons": [
+        "Country matches: India."
+      ],
+      "rules": 1
+    },
+    {
+      "id": "policy:Metal Sector Policy",
+      "name": "Metal Sector Policy",
+      "reasons": [
+        "Industry matches: Steel."
+      ],
+      "rules": 1
+    }
+  ],
+  "counts": {
+    "Pass": 1,
+    "Breach": 1
+  }
+}

@@ -25,7 +25,13 @@ export default defineConfig(({ command, isPreview }) => {
 
   return {
     cacheDir: "node_modules/.vite-cpi-dev",
-    build: { minify: false, cssMinify: false },
+    build: {
+      minify: false, cssMinify: false,
+      rolldownOptions: { input: {
+        app: fileURLToPath(new URL("./index.html", import.meta.url)),
+        assessmentGraph: fileURLToPath(new URL("./assessment-graph.html", import.meta.url)),
+      } },
+    },
     plugins: [
       react(),
       {

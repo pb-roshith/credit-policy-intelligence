@@ -7,12 +7,15 @@ import { Card, Heading } from "../components/ui";
 const EMPTY_INPUTS={facility_amount:'',collateral_coverage:'',risk_rating:'',pricing_bps:'',tenor_years:'',covenants:'Partial'};
 const displayNumber=value=>Number(value).toLocaleString(undefined,{maximumFractionDigits:6});
 const money=(value,currency='USD')=>`${currency} ${displayNumber(value)}M`;
+const operators={GTE:'≥',LTE:'≤',GT:'>',LT:'<',EQ:'=',NE:'≠'};
+const fieldLabel=field=>field.replaceAll('_',' ');
 
 export default function Simulator({ notify, session }) {
  const [requests,setRequests]=useState([]),[requestId,setRequestId]=useState(''),[loadingRequests,setLoadingRequests]=useState(true),[requestError,setRequestError]=useState('');
  const [requestNotice,setRequestNotice]=useState(''),[requestRefresh,setRequestRefresh]=useState(0);
  const [baseline,setBaseline]=useState(null),[loadingContext,setLoadingContext]=useState(false);
  const [scenarioName,setScenarioName]=useState(''),[inputs,setInputs]=useState(EMPTY_INPUTS),[scenario,setScenario]=useState(null);
+ const [policyAssumptions,setPolicyAssumptions]=useState({});
  const [savedScenarios,setSavedScenarios]=useState([]),[selectedScenario,setSelectedScenario]=useState('');
  const [running,setRunning]=useState(false),[loadingScenario,setLoadingScenario]=useState(false),[error,setError]=useState(''),[loadError,setLoadError]=useState('');
  const activeSelection=useRef('');activeSelection.current=session.user.user_id+':'+requestId;
@@ -27,7 +30,7 @@ export default function Simulator({ notify, session }) {
   return()=>{active=false};
  },[session.token,session.user.user_id,requestRefresh]);
  useEffect(()=>{
-  let active=true;setBaseline(null);setInputs(EMPTY_INPUTS);setScenario(null);setScenarioName('');setSavedScenarios([]);setSelectedScenario('');setError('');setLoadError('');
+  let active=true;setBaseline(null);setInputs(EMPTY_INPUTS);setPolicyAssumptions({});setScenario(null);setScenarioName('');setSavedScenarios([]);setSelectedScenario('');setError('');setLoadError('');
   if(!requestId){setLoadingContext(false);return()=>{active=false}}
   setLoadingContext(true);sessionStorage.setItem('simulatorRequestSelection:'+session.user.user_id,requestId);
   Promise.all([apiRequest(scenarioContextPath(requestId),{},session.token),apiRequest(scenarioListPath(requestId),{},session.token)]).then(([context,items])=>{
@@ -48,14 +51,16 @@ export default function Simulator({ notify, session }) {
   }catch(e){if(isActive()&&selection===activeSelection.current)setRequestError(e.message)}
  }
  function setInput(field,value){setInputs(current=>({...current,[field]:value}));setScenario(null);setSelectedScenario('')}
- function resetInputs(){if(baseline){setInputs(scenarioInputs(baseline));setScenario(null);setSelectedScenario('');setScenarioName('');setError('')}}
+ function resetInputs(){if(baseline){setInputs(scenarioInputs(baseline));setPolicyAssumptions({});setScenario(null);setSelectedScenario('');setScenarioName('');setError('')}}
  async function run(){
   if(!requestId||!baseline){setError('Select a credit request first.');return}
   if(!scenarioName.trim()){setError('Enter a scenario name before running the scenario.');return}
   if(!inputs.risk_rating||!inputs.facility_amount){setError('Provide a facility amount and supported scenario risk rating.');return}
   const selection=activeSelection.current;setRunning(true);setError('');setScenario(null);
   try{
-   const result=await apiRequest('/api/decision-scenarios',{method:'POST',body:JSON.stringify(scenarioPayload(requestId,scenarioName,inputs))},session.token);
+   const payload=scenarioPayload(requestId,scenarioName,inputs);
+   if(baseline.policy_playpen)payload.policy_assumptions=Object.fromEntries(Object.entries(policyAssumptions).filter(([,value])=>value!==''));
+   const result=await apiRequest('/api/decision-scenarios',{method:'POST',body:JSON.stringify(payload)},session.token);
    if(selection!==activeSelection.current)return;
    if(result.credit_request_number!==scenarioRequestNumber(requestId))throw new Error('The saved scenario did not match the selected request.');
    setScenario(result);setSelectedScenario(String(result.scenario_id));
@@ -71,12 +76,13 @@ export default function Simulator({ notify, session }) {
    const result=await apiRequest(scenarioDetailPath(selectedScenario,requestId),{},session.token);
    if(selection!==activeSelection.current)return;
    if(result.credit_request_number!==scenarioRequestNumber(requestId))throw new Error('This scenario belongs to another credit request.');
-   setScenario(result);setScenarioName(result.scenario_name);setInputs(result.inputs);setError('');
+   setScenario(result);setScenarioName(result.scenario_name);setInputs(result.inputs);setPolicyAssumptions(result.results.policy_assumptions||{});setError('');
    notify(`Scenario "${result.scenario_name}" loaded for ${requestId}`);
   }catch(e){if(selection===activeSelection.current){if([403,404].includes(e.status)&&/credit request|account/i.test(e.message))await recoverSelection();else setLoadError(e.message)}}
   finally{if(selection===activeSelection.current)setLoadingScenario(false)}
  }
  const results=scenario?.results,currency=inputs.currency||baseline?.currency||'USD';
+ const scenarioOptions=baseline?.policy_playpen ? [...savedScenarios].sort((a,b)=>a.scenario_name.localeCompare(b.scenario_name)) : savedScenarios;
  const disabled=!baseline||loadingContext||running||loadingScenario;
  return <>
   <Heading page="simulator"/>
@@ -105,13 +111,25 @@ export default function Simulator({ notify, session }) {
      <Slider label="Pricing (bps)" value={inputs.pricing_bps} set={v=>setInput('pricing_bps',v)} min={0} max={10000} display={`${inputs.pricing_bps}`}/>
      <Slider label="Tenor (years)" value={inputs.tenor_years} set={v=>setInput('tenor_years',v)} min={0.01} max={50} display={`${displayNumber(inputs.tenor_years)}yr`}/>
      <label className="field">Covenants<select value={inputs.covenants} onChange={e=>setInput('covenants',e.target.value)}><option>Partial</option><option>Full</option><option>None</option></select></label>
+     {baseline?.policy_assumption_units&&<details>
+      <summary>Policy assumptions</summary>
+      <p>Blank fields use the original assessment values. These inputs only affect the policy checks below.</p>
+      {Object.entries(baseline.policy_assumption_units).map(([field,unit])=><label className="field" key={field}>
+       {fieldLabel(field)} ({unit})
+       <input type="number" min="0" step="any" value={policyAssumptions[field]??''} onChange={event=>{
+        const value=event.target.value;
+        setPolicyAssumptions(current=>({...current,[field]:value===''?'':Number(value)}));
+        setScenario(null);setSelectedScenario('');
+       }}/>
+      </label>)}
+     </details>}
      <button className="btn secondary" type="button" onClick={resetInputs}>Reset to request baseline</button>
      <button className="btn primary run" onClick={run}><Play size={15}/>{running?'Calculating & saving...':'Run Scenario'}</button>
     </fieldset>
     {error&&<p className="data-message error simulator-error" role="alert">{error}</p>}
    </Card>
    <div className="simulator-workspace"><div className="simulator-results-row"><div className="scenario-results">
-    <div className="card scenario-loader"><label>Saved scenarios for {requestId||'selected request'}<select value={selectedScenario} disabled={disabled} onChange={e=>setSelectedScenario(e.target.value)}><option value="">Select a saved scenario</option>{savedScenarios.map(item=><option key={item.scenario_id} value={item.scenario_id}>{item.scenario_name}</option>)}</select></label>
+    <div className="card scenario-loader"><label>Saved scenarios for {requestId||'selected request'}<select value={selectedScenario} disabled={disabled} onChange={e=>setSelectedScenario(e.target.value)}><option value="">Select a saved scenario</option>{scenarioOptions.map(item=><option key={item.scenario_id} value={item.scenario_id}>{item.scenario_name}</option>)}</select></label>
      <button className="btn secondary" type="button" disabled={!selectedScenario||disabled} onClick={loadScenario}>{loadingScenario?'Loading...':'Display Scenario'}</button>
      {loadError&&<p className="data-message error" role="alert">{loadError}</p>}
      {baseline&&!savedScenarios.length&&<p>No scenarios saved for this request yet.</p>}
@@ -127,14 +145,24 @@ export default function Simulator({ notify, session }) {
      <Output label="Concentration Impact" value={results?`${results.concentration_impact.toFixed(1)}%`:'--'} numeric={results?.concentration_impact} tone="warn"/>
      <Output label="Risk Appetite Score" value={results?.risk_appetite_score??'--'} numeric={results?.risk_appetite_score} tone={!results?'':results.risk_appetite_score<70?'danger':'good'}/>
     </div>
-   </div><Card className="recommendations" title="AI Recommendations" action={<Sparkles size={16}/>}>
+   </div><Card className="recommendations" title={baseline?.policy_playpen?"Scenario review notes":"AI Recommendations"} action={<Sparkles size={16}/>}>
     <div className="recommendations-scroll" tabIndex={0} role="region" aria-label="AI recommendations">
-     {!scenario&&<p className="simulator-placeholder">Choose a request and run a named scenario to generate recommendations.</p>}
+     {!scenario&&<p className="simulator-placeholder">Load a saved scenario or run a new one to see its results.</p>}
      {scenario?.recommendations.map((recommendation,i)=><div className="recommend" key={i}><CheckCircle2 size={15}/><p>{recommendation}</p></div>)}
-     <small className="disclaimer">Scenario simulation. AI recommendations require human approval to enact.</small>
+     <small className="disclaimer">Scenario changes require human approval to enact.</small>
     </div>
    </Card></div>
    <Card className="sensitivity-card" title="Sensitivity Analysis - Facility Amount" sub={`EL and ECL by facility size (${currency} millions)`} action={<div className="legend"><i/>EL <i className="green-dot"/>ECL</div>}><SensitivityChart points={results?.sensitivity||[]} currency={currency}/></Card>
+   {results?.risk_changes&&<Card title="Risk change from request baseline">
+    <ul>{Object.entries(results.risk_changes).map(([key,value])=><li key={key}>{fieldLabel(key)} {value>0?'+':''}{displayNumber(value)} {key==='risk_appetite_score'?'points':key==='concentration_impact'?'percentage points':`${currency}M`}</li>)}</ul>
+   </Card>}
+   {results?.policy_comparison&&<Card title="Original breach findings under this scenario" sub="What-if results for analyst review.">
+    {results.policy_comparison.findings.map(finding=><details key={finding.rule_id}>
+     <summary>{finding.rule_name} · {finding.outcome}</summary>
+     <p>{finding.policy_name} · Clause {finding.source_clause}{finding.duty&&` · ${finding.duty}`}</p>
+     {finding.checks.map((check,index)=><p key={index}>{fieldLabel(check.metric)} {displayNumber(check.baseline)} → {displayNumber(check.scenario)} {check.unit} · Condition {operators[check.operator]||check.operator} {displayNumber(check.threshold)} {check.unit}</p>)}
+    </details>)}
+   </Card>}
   </div></div>
  </>;
 }

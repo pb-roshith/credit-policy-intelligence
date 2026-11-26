@@ -43,19 +43,19 @@ def evaluate(definition, proposal):
         return "Applicable", "WARNING", reason + "; metric cannot be evaluated", actual
     return "Applicable", "PASS" if passed else definition["severity"], reason, actual
 
-def assessment_request_context(request_number,user=None):
+def assessment_request_context(request_number,user=None,*,connection=None):
     from .assessment_request import normalize_request_id,deal_assessment_context
     request_number=normalize_request_id(request_number)
     is_local=request_number.startswith('CR-')
     if is_local:
-        proposal,_,_=GenerativeComplianceReviewAgent._context(request_number)
+        proposal,_,_=GenerativeComplianceReviewAgent._context(request_number,connection=connection)
         proposal['currency']='USD'  # Existing CPI synthetic monetary model is explicitly USD.
     else:
         if user is None:raise HTTPException(401,'Authentication required for Dossier requests')
         proposal=deal_assessment_context(request_number,user)
     if proposal.get('evidence') is None:proposal['evidence']=[]
     from .credit_data import load_record, project_record, ALIASES
-    record=load_record(request_number)
+    record=load_record(request_number,connection=connection)
     if record:
         for alias in ALIASES: proposal.pop(alias,None)
         proposal.pop('synthetic_fields',None)

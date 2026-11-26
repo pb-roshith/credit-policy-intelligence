@@ -9,19 +9,32 @@ from ..schemas import DecisionRequest, ScenarioRunRequest,ScenarioLinkRequest
 from ..security import current_user
 from ..services.scenario_simulator import ScenarioRecommendationAgent, calculate_metrics, recommended_case
 from ..services.scenario_requests import request_baseline,available_requests
+from ..services.scenario_policy import ASSUMPTIONS, compare_breaches
 
 router = APIRouter()
 
 
+def _risk_changes(results, baseline):
+    metrics = calculate_metrics({**baseline['inputs'], 'currency': baseline['currency']}, include_sensitivity=False)
+    return {key: round(results[key] - metrics[key], 6) for key in (
+        'expected_loss', 'ecl_impact', 'rwa_impact', 'capital_impact',
+        'concentration_impact', 'risk_appetite_score',
+    )}
+
+
 def _scenario_response(row: dict, user_id: str) -> dict:
+    results = row["results"]
+    snapshot = row.get("request_snapshot") or {}
+    if results.get("policy_comparison") and "risk_changes" not in results:
+        results = {**results, "risk_changes": _risk_changes(results, snapshot)}
     return {
         "scenario_id": row["scenario_id"],
         "scenario_name": row["scenario_name"],
         "credit_request_number": row.get('credit_request_number'),
-        "request_snapshot": row.get('request_snapshot') or {},
+        "request_snapshot": snapshot,
         "created_at": row["created_at"],
         "inputs": row["inputs"],
-        "results": row["results"],
+        "results": results,
         "recommendations": row["recommendations"],
         "agent": "Credit Decision Scenario Recommendation Agent",
         "saved_by": user_id,
@@ -46,7 +59,11 @@ def run_scenario(request: ScenarioRunRequest, user: dict = Depends(current_user)
     request_id=baseline['credit_request_number']
     if request.currency and request.currency!=baseline['currency']:
         raise HTTPException(409,'Request currency changed. Reset to the current request before running a scenario.')
-    inputs = {**request.model_dump(exclude={"scenario_name","credit_request_number","currency"}),'currency':baseline['currency']}
+    assumptions = request.policy_assumptions or {}
+    if assumptions and (not baseline.get('policy_playpen') or
+                        any(key not in ASSUMPTIONS or value < 0 or value > 1e15 for key, value in assumptions.items())):
+        raise HTTPException(422, 'Use supported, non-negative policy assumptions for the demo request.')
+    inputs = {**request.model_dump(exclude={"scenario_name","credit_request_number","currency","policy_assumptions"}),'currency':baseline['currency']}
     with db_connection() as connection:
         duplicate = connection.execute(
             "SELECT 1 FROM decision_scenarios WHERE credit_request_number=%s AND lower(btrim(scenario_name)) = lower(btrim(%s))",
@@ -60,9 +77,26 @@ def run_scenario(request: ScenarioRunRequest, user: dict = Depends(current_user)
 
     results = calculate_metrics(inputs)
     improved_inputs, improved_results = recommended_case(inputs)
-    agent_id, recommendations = ScenarioRecommendationAgent().run(
-        inputs, results, improved_inputs, improved_results, user["user_id"],request_context=baseline
-    )
+    if baseline.get('policy_playpen'):
+        from ..services.compliance_agent import latest_stored_compliance_review
+        review = latest_stored_compliance_review(request_id, user=user)
+        if not review:
+            raise HTTPException(409, 'Run a current Compliance Review before simulating policy checks.')
+        try:
+            results['policy_comparison'] = compare_breaches(review, inputs, assumptions)
+        except (ValueError, ArithmeticError) as error:
+            raise HTTPException(422, 'A scenario assumption is incompatible with the published metric unit.') from error
+        results['policy_assumptions'] = assumptions
+        results['risk_changes'] = _risk_changes(results, baseline)
+        agent_id, recommendations = 'synthetic-policy-scenario', [
+            'Compare the policy check values with the original assessment.',
+            'Review any triggered approval or escalation requirements.',
+            'Use the risk outputs to compare the proposed terms before deciding whether to change the request.',
+        ]
+    else:
+        agent_id, recommendations = ScenarioRecommendationAgent().run(
+            inputs, results, improved_inputs, improved_results, user["user_id"],request_context=baseline
+        )
     stored_results = {
         **results,
         'scenario_changes':{field:{'baseline':baseline['inputs'].get(field),'scenario':value}

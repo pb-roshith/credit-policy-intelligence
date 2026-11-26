@@ -28,6 +28,64 @@ If a port is already occupied, stop its existing server before starting again.
 | Credit Policy Intelligence (CPI) | http://localhost:5173 |
 | Data Manufacturing (DM) | http://localhost:5174 |
 
+## Cross-tab CPI demo
+
+The synthetic case is **CR-90001 — Harborline Aviation (Demo)**. To install it
+in a development database with the published policy graph, run this from the
+workspace root. Use the ID of an approved relationship manager account.
+
+```powershell
+.\cpi_server\backend\.venv\Scripts\python.exe cpi_server/backend/scripts/seed_cross_tab_demo.py --account sky
+```
+
+1. In **Credit Requests**, search for **CR-90001** and select the case. It is a
+   $20M aircraft financing request with $40M in existing exposure. Open its
+   policy mapping to show which policies and rules apply and why.
+2. In **Compliance Review**, select **CR-90001** and open the saved assessment.
+   Filter the findings to **1.2 Spread Grid**. The manufactured currency risk
+   adjustment passes at **40 bps** against a **50 bps maximum**. The total
+   spread breaches at **80 bps** against a **100 bps minimum**.
+3. Click **View Request Exceptions** to see one workflow for each of the 13
+   recorded breach findings. Open **EX-DEMO-HARBORLINE** for the spread
+   floor. Sign in as a credit analyst and use **Approve**, then **Remediate**
+   to demonstrate the path from **Pending Approval** to **Closed**.
+4. Click **Simulate Request** in Compliance Review. Load **01 Original
+   request**, **02 Reprice to 100 bps**, **04 Resize to USD 12M**, then
+   **17 Combined remediation package**. Compare the risk changes and expand
+   the original breach findings for the measured values. To experiment,
+   change the terms or expand **Policy assumptions**, give the scenario a new
+   name, and run it. The saved stress and approval-band cases show conditions
+   that call for analyst review.
+5. As the analyst, open **Portfolio Analytics** and refresh after workflow
+   actions. The case contributes **$40M** to the USD **Aviation** and
+   **US Northeast** concentrations and one open count per open workflow.
+   Closing a workflow reduces each open count by one and records remediation
+   in the trend.
+
+The seed command preserves existing workflow status and saved scenarios on
+repeat runs.
+
+## Interactive assessment graph
+
+For a saved review, open **Compliance Review**, choose a credit request,
+and click **Open graph**. Use the policies and rule list to focus a path.
+Select a rule for its source clause, threshold, observed value, and rationale.
+The **Exceptions** filter shows rules with registered exceptions. For
+Harborline Aviation, choose **CR-90001**.
+
+The **ABC Steel Limited** sample runs without a database or sign-in. With
+the CPI frontend running, open [the standalone sample](http://localhost:5173/assessment-graph.html).
+It is also available under **Risk Knowledge → Policy Knowledge Graph**
+through **Open assessment graph sample**. The sample shows a BBB rating
+passing the India Lending Policy and 4.2x leverage breaching the Metal
+Sector Policy's 3.5x limit.
+
+Run the export script after changing the Python sample:
+
+```powershell
+.\cpi_server\backend\.venv\Scripts\python.exe cpi_server/backend/scripts/export_assessment_graph_sample.py
+```
+
 ## First-time setup
 
 Use Python 3.10+, Node.js 20.19+ in the 20 series or 22.12+ in the 22 series or later, and PostgreSQL. Windows Terminal is required for the combined launcher. Run the following from the workspace root in PowerShell.

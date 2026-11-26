@@ -6,6 +6,28 @@ from ..security import audit_export, current_user
 
 router = APIRouter()
 
+LIVE_AI_TRIGGERS = (
+    ('Executive Dashboard', 'portfolio_insights', 'Portfolio Insights'),
+    ('Policy Intelligence', 'semantic_policy_copilot', 'Policy Copilot'),
+    ('Compliance Review', 'compliance_copilot', 'Compliance Copilot'),
+    ('Exception Management', 'exception_rationale', 'AI Exception Rationale'),
+    ('Decision Simulator', 'scenario_recommendations', 'Scenario Recommendations'),
+    ('Portfolio Analytics', 'portfolio_copilot', 'Portfolio Analytics Copilot'),
+    ('Risk Knowledge', 'semantic_policy_extraction', 'Semantic Rule Extraction'),
+    ('Risk Knowledge', 'semantic_policy_scope', 'Policy Scope Extraction'),
+    ('Compliance Review', 'graph_rag_explanation', 'Graph Evidence Explanation'),
+)
+
+LIVE_SPANS = """
+    WITH catalog AS (
+        SELECT * FROM unnest(%s::text[], %s::text[], %s::text[])
+            AS triggers(feature, operation, display_name)
+    ), live_spans AS (
+        SELECT spans.* FROM "user".current_ai_observability_spans spans
+        JOIN catalog USING (feature, operation)
+    )
+"""
+
 
 @router.get("/api/observability")
 def observability(_: dict = Depends(current_user)):
@@ -21,9 +43,10 @@ def export_observability(request: Request, user: dict = Depends(current_user)):
 
 def observability_snapshot(*, include_traces: bool):
     """Aggregate account-scoped OpenTelemetry spans for user-facing AI features."""
+    catalog_columns = tuple(map(list, zip(*LIVE_AI_TRIGGERS)))
     with db_connection() as connection:
         connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
-        overview = dict(connection.execute("""
+        overview = dict(connection.execute(LIVE_SPANS + """
             SELECT COUNT(*) AS total_requests,
                    COUNT(*) FILTER (WHERE status = 'success') AS successful,
                    COUNT(*) FILTER (WHERE status = 'failed') AS failed,
@@ -31,22 +54,10 @@ def observability_snapshot(*, include_traces: bool):
                    COALESCE(SUM(input_tokens), 0) AS input_tokens,
                    COALESCE(SUM(output_tokens), 0) AS output_tokens,
                    COALESCE(SUM(total_tokens), 0) AS total_tokens
-            FROM "user".current_ai_observability_spans
-        """).fetchone())
-        features = connection.execute("""
-            WITH catalog(feature, operation, display_name) AS (VALUES
-              ('Executive Dashboard', 'portfolio_insights', 'Portfolio Insights'),
-              ('Policy Intelligence', 'semantic_policy_copilot', 'Policy Copilot'),
-              ('Compliance Review', 'compliance_copilot', 'Compliance Copilot'),
-              ('Exception Management', 'exception_rationale', 'AI Exception Rationale'),
-              ('Decision Simulator', 'scenario_recommendations', 'Scenario Recommendations'),
-              ('Portfolio Analytics', 'portfolio_copilot', 'Portfolio Analytics Copilot'),
-              ('Risk Knowledge', 'semantic_policy_extraction', 'Semantic Rule Extraction'),
-              ('Risk Knowledge', 'semantic_policy_scope', 'Policy Scope Extraction'),
-              ('Compliance Review', 'graph_rag_explanation', 'Graph Evidence Explanation'),
-              ('Policy Intelligence', 'policy_generation', 'Policy Document Generation'),
-              ('Policy Intelligence', 'policy_summary', 'Policy Summary Generation')
-            ), aggregate AS (
+            FROM live_spans
+        """, catalog_columns).fetchone())
+        features = connection.execute(LIVE_SPANS + """
+            , aggregate AS (
               SELECT feature, operation, COUNT(*) AS total_requests,
                      COUNT(*) FILTER (WHERE status='success') AS successful,
                      COUNT(*) FILTER (WHERE status='failed') AS failed,
@@ -55,17 +66,7 @@ def observability_snapshot(*, include_traces: bool):
                      COALESCE(SUM(output_tokens), 0) AS output_tokens,
                      COALESCE(SUM(total_tokens), 0) AS total_tokens,
                      MAX(started_at) AS last_request_at
-              FROM "user".current_ai_observability_spans GROUP BY feature, operation
-            )
-            , discovered_catalog AS (
-              SELECT * FROM catalog
-              UNION
-              SELECT feature, operation, INITCAP(REPLACE(operation, '_', ' '))
-              FROM aggregate a
-              -- Retired operations remain in historical traces, not active cards.
-              WHERE NOT (a.feature='Compliance Review' AND a.operation='compliance_agent')
-              AND NOT EXISTS (
-                SELECT 1 FROM catalog c WHERE c.feature=a.feature AND c.operation=a.operation)
+              FROM live_spans GROUP BY feature, operation
             )
             SELECT catalog.feature, catalog.operation, catalog.display_name,
                    COALESCE(aggregate.total_requests, 0) AS total_requests,
@@ -76,17 +77,17 @@ def observability_snapshot(*, include_traces: bool):
                    COALESCE(aggregate.output_tokens, 0) AS output_tokens,
                    COALESCE(aggregate.total_tokens, 0) AS total_tokens,
                    aggregate.last_request_at
-            FROM discovered_catalog catalog LEFT JOIN aggregate USING (feature, operation)
+            FROM catalog LEFT JOIN aggregate USING (feature, operation)
             ORDER BY catalog.feature, catalog.operation
-        """).fetchall()
-        traces = connection.execute("""
+        """, catalog_columns).fetchall()
+        traces = connection.execute(LIVE_SPANS + """
             SELECT span_id, trace_id, feature, operation, model, target, status,
                    latency_ms, input_tokens, output_tokens, total_tokens,
                    started_at, ended_at, input_payload, output_payload,
                    retrieved_sources, flow_steps
-            FROM "user".current_ai_observability_spans
+            FROM live_spans
             ORDER BY started_at DESC LIMIT 200
-        """).fetchall() if include_traces else []
+        """, catalog_columns).fetchall() if include_traces else []
         generated_at = connection.execute("SELECT CURRENT_TIMESTAMP AS value").fetchone()["value"]
     for trace in traces:
         trace["input_payload"] = decrypt_text(trace["input_payload"])

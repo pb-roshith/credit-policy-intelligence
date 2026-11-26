@@ -1,0 +1,10 @@
+Synthetic Demonstration - Upload Demo Facility Policy
+Policy code: DEMO-UPLOAD-WORKFLOW
+Version: 1.0
+Effective date: 2026-11-26
+
+1. Scope
+This policy applies only to credit requests for the Upload Demo Facility product.
+
+2. Facility Limit
+The requested loan amount for the Upload Demo Facility must not exceed USD 2,000,000.

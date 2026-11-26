@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.ai_provider import AIClient as Mistral
 from ..access_control import has_permission
 from ..config import MISTRAL_API_KEY, MISTRAL_TIMEOUT_MS, MISTRAL_POLICY_MODEL
-from ..database import db_connection
+from ..database import account_user_id, db_connection
 from ..manufacture_data.policy_generation_service import _json_object
 from ..schemas import ComplianceCopilotRequest, ComplianceReviewRequest
 from ..security import current_user
@@ -15,6 +15,31 @@ from mistralai.client.utils import BackoffStrategy, RetryConfig
 from time import sleep
 
 router = APIRouter()
+
+@router.get('/api/compliance-review/{credit_request_number}/assessment-graph')
+def request_assessment_graph(credit_request_number: str, review_id: int, user: dict = Depends(current_user)):
+    from ..services.assessment_paths import assessment_graph
+    from ..services.current_knowledge import current_review
+    request_id = normalize_request_id(credit_request_number)
+    owner = account_user_id.get() or user['user_id']
+    with db_connection() as db:
+        saved = db.execute("""
+            SELECT review FROM ai_compliance_reviews
+            WHERE user_id=%s AND review_id=%s AND COALESCE(source_request_id,credit_request_number)=%s
+        """, (owner, review_id, request_id)).fetchone()
+        if not saved or not current_review(saved['review']):
+            raise HTTPException(404, 'This assessment is unavailable for the selected request.')
+        review = saved['review']
+        exceptions = []
+        if has_permission(user, 'exceptions.read'):
+            exceptions = db.execute("""
+                SELECT exception_id AS id,status,rationale FROM credit_request_exceptions
+                WHERE user_id=%s AND COALESCE(source_request_id,credit_request_number)=%s
+                  AND rationale->'knowledge_context'->>'knowledge_fingerprint'=%s
+                ORDER BY exception_id
+            """, (owner, request_id, review['knowledge_fingerprint'])).fetchall()
+    return assessment_graph(review, exceptions)
+
 
 @router.get('/api/compliance-review/{credit_request_number}/policy-mapping')
 def request_policy_mapping(credit_request_number: str,user: dict = Depends(current_user)):

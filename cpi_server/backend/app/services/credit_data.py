@@ -364,10 +364,11 @@ def resolve_actual(rule, record, *, entity_id=None, period=None, as_of=None, tax
             'evaluation': evaluation, 'engine_data': data}
 
 
-def load_record(request_id):
+def load_record(request_id, *, connection=None):
+    from contextlib import nullcontext
     from ..database import db_connection
     from ..data_encryption import decode_record
-    with db_connection() as c:
+    with (db_connection() if connection is None else nullcontext(connection)) as c:
         row = c.execute('SELECT data,revision FROM credit_data_records WHERE request_id=%s', (request_id,)).fetchone()
     return {**decode_record(row['data']), 'revision': row['revision']} if row else None
 

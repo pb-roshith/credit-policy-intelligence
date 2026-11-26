@@ -87,7 +87,7 @@ export default function Exceptions({ session, notify }) {
       .then((data) => {
         setExceptions(data);
         const searched = sessionStorage.getItem("exceptionRegistrySearch");
-        setSelected(data.find((item) => item.credit_request_number === searched) || data[0] || null);
+        setSelected(filterExceptions(data, "All", searched || "")[0] || data[0] || null);
         sessionStorage.removeItem("exceptionRegistrySearch");
       })
       .catch((error) => { setLoadError(error.message); notify(`Could not load exception registry: ${error.message}`); })
@@ -209,7 +209,7 @@ export default function Exceptions({ session, notify }) {
               ),
             )}
           </div>
-          <h3>{row.rationale.generation_status === "pending" ? "AI Exception Rationale — Pending" : "AI Exception Rationale"}</h3>
+          <h3>{row.rationale.generation_status === "demo" ? "Demo Exception Rationale" : row.rationale.generation_status === "pending" ? "AI Exception Rationale — Pending" : "AI Exception Rationale"}</h3>
           {row.rationale.generation_status === "pending" && <p className="exception-rationale-notice" role="status">{row.rationale.generation_notice}</p>}
           <Rationale title="Why detected">
             {row.rationale.synthetic?row.rationale.why_detected.replace(/a synthetic /g,'a '):row.rationale.why_detected}

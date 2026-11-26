@@ -7,6 +7,7 @@ from fastapi.encoders import jsonable_encoder
 from ..database import db_connection
 from .rule_assessment import assessment_request_context
 from .scenario_simulator import PD_BY_RATING
+from .scenario_policy import ASSUMPTIONS
 
 
 def available_requests(user):
@@ -49,10 +50,15 @@ def create_request_scenario_schema(connection):
 def request_baseline(request_number,user):
     from .assessment_request import normalize_request_id
     request_id=normalize_request_id(request_number)
+    playpen = False
     if request_id.startswith('CR-'):
         # A request can be simulated before any compliance assessment exists.
         with db_connection() as connection:
             row=connection.execute('SELECT * FROM credit_requests WHERE credit_request_number=%s',(request_id,)).fetchone()
+            playpen = bool(connection.execute("""
+                SELECT 1 FROM credit_request_compliance
+                WHERE credit_request_number=%s AND synthetic_assessment_data @> '{"scenario_policy_playpen": true}'
+            """, (request_id,)).fetchone())
         if not row:raise HTTPException(404,'The selected credit request is unavailable for this account')
         proposal={**dict(row),'currency':'USD'}  # Native CPI requests use the USD manufacturing model.
         from .credit_data import load_record,project_record
@@ -109,4 +115,5 @@ def request_baseline(request_number,user):
         'tenure','tenor_months','facility_tenor_months','recommended_tenor_years','tenor_years','covenants')})
     return {'credit_request_number':request_id,'borrower_name':proposal.get('borrower_name'),'facility':proposal.get('facility'),
             'currency':currency,'inputs':inputs,'assumptions':assumptions,'missing_fields':sorted(set(missing)),
-            'request_facts':facts,'captured_at':datetime.now(timezone.utc).isoformat()}
+            'request_facts':facts,'captured_at':datetime.now(timezone.utc).isoformat(),
+            **({'policy_playpen': True, 'policy_assumption_units': ASSUMPTIONS} if playpen else {})}

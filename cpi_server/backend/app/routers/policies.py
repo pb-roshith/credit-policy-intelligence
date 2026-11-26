@@ -10,17 +10,59 @@ from ..telemetry import observe_ai
 
 router = APIRouter()
 
+
+def uploaded_policy_summary(extracted):
+    if not extracted:
+        return 'The summary will appear after rule extraction processes this version.'
+
+    def excerpt(value):
+        text = ' '.join((value or '').split())
+        return text if len(text) <= 350 else text[:347].rsplit(' ', 1)[0] + '…'
+
+    scope = extracted.get('policy_scope') or {}
+    scope_quotes = list(dict.fromkeys(excerpt(source.get('quote')) for source in scope.get('sources', [])))
+    scope_quotes = [quote for quote in scope_quotes if quote]
+    parts = [
+        'Scope\n' + ('\n'.join(scope_quotes[:3]) if scope.get('status') == 'APPROVED' and scope_quotes
+                    else 'The extracted policy scope is awaiting review.')
+    ]
+    rules = [item['extracted'] for item in extracted.get('rules', []) if item['status'] == 'APPROVED']
+    if not rules:
+        parts.append('Published rules\nNo rules have been published for this version yet.')
+    else:
+        requirements = [f"• {rule['name']} — {excerpt(rule.get('source_quote'))}" for rule in rules[:6]]
+        if len(rules) > 6:
+            requirements.append(f'View policy evidence for all {len(rules)} published rules.')
+        parts.append('Published rules\n' + '\n'.join(requirements))
+    return '\n\n'.join(parts)
+
+
 @router.get("/api/policies")
 def policies(_: dict = Depends(current_user)):
     with shared_policy_connection() as connection:
         rows = connection.execute("""
-            SELECT policy_id, library_policy_id, policy_code, title, version, policy_category,
-                   parent_policy, clause_number, display_order, effective_date, status,
-                   summary, page_count, file_name, document_format, source_type,
-                   policy_type, mistral_document_id,
-                   mistral_library_id, created_at
-            FROM policy_documents ORDER BY display_order, policy_id LIMIT 1000
+            WITH catalog AS (
+                SELECT p.*,
+                    (p.mistral_document_id LIKE 'local-upload:%' OR
+                     replace(p.local_pdf_path, chr(92), '/') LIKE '%/inventory_sources/policy_uploads/%') AS uploaded
+                FROM policy_documents p ORDER BY p.display_order, p.policy_id LIMIT 1000
+            )
+            SELECT p.policy_id, p.library_policy_id, p.policy_code, p.title, p.version, p.policy_category,
+                   p.parent_policy, p.clause_number, p.display_order, p.effective_date, p.status,
+                   p.summary, p.page_count, p.file_name, p.document_format, p.source_type,
+                   p.policy_type, p.mistral_document_id, p.mistral_library_id, p.created_at,
+                   p.uploaded, extraction.payload AS extracted
+            FROM catalog p
+            LEFT JOIN risk_knowledge_objects extraction
+              ON p.uploaded AND extraction.kind='metadata' AND extraction.owner_id=''
+              AND extraction.id='SEMANTIC-POLICY-' || p.policy_id::text
+              AND extraction.payload->>'policy_version'=p.version
+            ORDER BY p.display_order, p.policy_id
         """).fetchall()
+    for row in rows:
+        extracted = row.pop('extracted')
+        if row.pop('uploaded'):
+            row['summary'] = uploaded_policy_summary(extracted)
     return rows
 
 

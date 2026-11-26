@@ -80,7 +80,7 @@ function Heat({ title, data }) {
       const tone = intensity >= 0.67 ? "heat-high" : intensity >= 0.34 ? "heat-medium" : "heat-low";
       return <div key={`${row.currency}-${row.label}`} className={tone} title={`${row.currency || "USD"} ${(Number(row.exposure)/1000000).toFixed(2)}M exposure / deal amount`}>
         <strong>{row.label} ({row.currency || "USD"})</strong>
-        <span>{Number(row.exposure_percent).toFixed(1)}% exposure - {row.breaches} breach{Number(row.breaches) === 1 ? "" : "es"}</span>
+        <span>{Number(row.exposure_percent).toFixed(1)}% exposure · {row.breaches} open exception{Number(row.breaches) === 1 ? "" : "s"}</span>
       </div>;
     })}</div> : <Empty />}
   </Card>;

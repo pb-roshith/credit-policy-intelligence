@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from datetime import datetime, timezone
 import json
 from fastapi import HTTPException
@@ -58,8 +59,8 @@ class GenerativeComplianceReviewAgent:
             return agent.id
 
     @staticmethod
-    def _context(request_number: str) -> tuple[dict, list[dict], list[dict]]:
-        with db_connection() as connection:
+    def _context(request_number: str, *, connection=None) -> tuple[dict, list[dict], list[dict]]:
+        with (db_connection() if connection is None else nullcontext(connection)) as connection:
             proposal = connection.execute("""
                 SELECT cr.credit_request_number, cr.borrower_name, cr.industry, cr.geography, cr.facility,
                        cr.collateral_coverage, cr.recommended_pricing_bps, cr.recommended_tenor_years,

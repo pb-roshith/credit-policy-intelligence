@@ -118,14 +118,15 @@ def run_rule_assessment(request_number,user_id,*,user=None):
     result=build_assessment(request_id,proposal,matcher,manufacture_missing=True)
     from .semantic_rag import explain_assessment
     result['graph_rag_explanation']=explain_assessment(result)
-    serialized=json.dumps(result,default=str)
-    def persist(connection):
-        row=connection.execute('INSERT INTO ai_compliance_reviews(credit_request_number,source_request_id,agent_id,review,created_by) VALUES (%s,%s,%s,%s::jsonb,%s) RETURNING review_id',
-            (request_id if request_id.startswith('CR-') else None,request_id,'semantic-graph-assessment',serialized,user_id)).fetchone()
-        # Semantic IDs are URIs, not foreign keys into the legacy numeric rule
-        # inventory. The immutable JSON snapshot stores decisions and graph traces.
-        connection.execute('INSERT INTO rule_assessment_runs(review_id,request_id,workflow_stage,engine_version) VALUES (%s,%s,%s,%s)',
-            (row['review_id'],request_id,proposal.get('status'),ENGINE_VERSION))
-        return row
-    result['review_id']=run_db_transaction(persist)['review_id']
+    result['review_id']=run_db_transaction(
+        lambda connection: persist_assessment(connection,request_id,result,user_id))
     return json.loads(json.dumps(result,default=str))
+
+
+def persist_assessment(connection, request_id, result, user_id):
+    row=connection.execute('INSERT INTO ai_compliance_reviews(credit_request_number,source_request_id,agent_id,review,created_by) VALUES (%s,%s,%s,%s::jsonb,%s) RETURNING review_id',
+        (request_id if request_id.startswith('CR-') else None,request_id,'semantic-graph-assessment',json.dumps(result,default=str),user_id)).fetchone()
+    # The immutable JSON snapshot stores semantic decisions and graph traces.
+    connection.execute('INSERT INTO rule_assessment_runs(review_id,request_id,workflow_stage,engine_version) VALUES (%s,%s,%s,%s)',
+        (row['review_id'],request_id,result['credit_request'].get('status'),ENGINE_VERSION))
+    return row['review_id']

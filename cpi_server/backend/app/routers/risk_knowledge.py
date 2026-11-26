@@ -317,28 +317,41 @@ class PolicyExtractionInput(Model):
 
 
 @router.post('/policy-uploads', status_code=201)
-def upload_policy_source(file: UploadFile = File(), version: str = Form(min_length=1, max_length=24),
+def upload_policy_source(background: BackgroundTasks, file: UploadFile = File(), version: str = Form(min_length=1, max_length=24),
                          effective_date: date = Form(), policy_id: int | None = Form(default=None, gt=0),
                          code: str = Form(default='', max_length=80), title: str = Form(default='', max_length=200),
+                         process: bool = Form(default=False),
                          user=Depends(current_user)):
     from ..services.policy_uploads import stage_policy_upload
     if not has_permission(user, 'policy.update' if policy_id else 'policy.create'):
         raise HTTPException(403, 'Policy upload is unavailable for this role')
-    return stage_policy_upload(file, owner=user['user_id'], policy_id=policy_id, code=code, title=title,
-                               version=version, effective_date=effective_date)
+    if process and not has_permission(user, 'policy.extraction.execute'):
+        raise HTTPException(403, 'Rule extraction is unavailable for this role')
+    staged = stage_policy_upload(file, owner=user['user_id'], policy_id=policy_id, code=code, title=title,
+                                 version=version, effective_date=effective_date)
+    if process:
+        try:
+            staged['extraction_job'] = queue_uploaded_policy(staged['upload_id'], background, user)
+        except HTTPException as error:
+            staged['processing_error'] = error.detail
+    return staged
 
 
 @router.post('/policy-uploads/{upload_id}/rebuild', status_code=202)
 def rebuild_after_upload(upload_id: str, background: BackgroundTasks, user=Depends(current_user)):
     from uuid import UUID
-    from .rules import enqueue_inventory
-    from ..services.rule_extraction import run_background_inventory_job
     if not has_permission(user, 'policy.extraction.execute'):
         raise HTTPException(403, 'Rule extraction is unavailable for this role')
     try:
         identifier = str(UUID(upload_id))
     except ValueError:
         raise HTTPException(422, 'Invalid staged upload') from None
+    return queue_uploaded_policy(identifier, background, user)
+
+
+def queue_uploaded_policy(identifier, background, user):
+    from .rules import enqueue_inventory
+    from ..services.rule_extraction import run_background_inventory_job
     job = enqueue_inventory(user, staged_upload=identifier)
     if job['status'] == 'Queued':
         background.add_task(run_background_inventory_job, str(job['id']), user)

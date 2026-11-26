@@ -46,6 +46,7 @@ import {assessmentText,displayProvenance} from '../api/displayText';
 import { loadRequestList } from "../api/requestList";
 import { assessmentFindings } from "../api/assessmentResult";
 import GraphAssessmentTrace from "../components/GraphAssessmentTrace";
+import { SavedAssessmentGraph } from "../components/AssessmentGraphViews";
 import ComplianceFindingsTable from "../components/ComplianceFindingsTable";
 import {filterByRuleCategory} from "../api/policyRuleCategory";
 import { API, apiRequest } from "../api/client";
@@ -79,6 +80,7 @@ export default function Compliance({ notify, session }) {
   const [policiesExpanded, setPoliciesExpanded] = useState(false);
   useEffect(() => { setPoliciesExpanded(false); }, [selectedRequest]);
   const [assessmentPage,setAssessmentPage]=useState(1);
+  const [assessmentGraphOpen, setAssessmentGraphOpen] = useState(false);
   const [policyFilter,setPolicyFilter]=useState("");
   const [ruleCategory,setRuleCategory]=useState("ALL");
   useEffect(()=>{setRuleCategory("ALL");},[selectedRequest]);
@@ -245,6 +247,14 @@ export default function Compliance({ notify, session }) {
     <>
       <Heading page="compliance">
         <button className="btn tertiary" onClick={() => (location.hash = "requests")}>Back to Requests</button>
+        {selectedRequest && <button className="btn secondary" onClick={() => {
+          sessionStorage.setItem("exceptionRegistrySearch", selectedRequest);
+          location.hash = "exceptions";
+        }}>View Request Exceptions</button>}
+        {selectedRequest && <button className="btn secondary" onClick={() => {
+          sessionStorage.setItem(`simulatorRequestSelection:${session.user.user_id}`, selectedRequest);
+          location.hash = "simulator";
+        }}>Simulate Request</button>}
         {canCreateException && <button className="btn primary" disabled={!review} onClick={openExceptionForm}><Plus size={14} />Create Exception</button>}
       </Heading>
 
@@ -292,7 +302,16 @@ export default function Compliance({ notify, session }) {
         <ComplianceCount icon={ShieldAlert} label="Breach" value={resultCount("Breach")} tone="breach" />
         <ComplianceCount icon={AlertTriangle} label="Needs data / review" value={resultCount("Unable to Assess")+resultCount("Manual Review Required")} tone="unable-to-assess" />
       </div>}
-      {review?.assessment_scope==='current-semantic-graph'&&<GraphAssessmentTrace key={`matching:${review.review_id||selectedRequest}`} review={review} onEvidence={tracePolicy}/>}
+      {review?.assessment_scope === 'current-semantic-graph' && <>
+        <Card title="Assessment graph" sub="Follow the request facts through applicable policies, rule outcomes, and registered exceptions." action={
+          <button type="button" className="btn secondary" aria-expanded={assessmentGraphOpen} onClick={() => setAssessmentGraphOpen(value => !value)}>
+            {assessmentGraphOpen ? 'Close graph' : 'Open graph'}
+          </button>
+        }>
+          {assessmentGraphOpen && <SavedAssessmentGraph key={review.review_id} requestId={selectedRequest} reviewId={review.review_id} />}
+        </Card>
+        <GraphAssessmentTrace key={`matching:${review.review_id||selectedRequest}`} review={review} onEvidence={tracePolicy}/>
+      </>}
       {review&&review.assessment_scope!=='current-semantic-graph'&&<p>This saved review uses the earlier rule inventory. Run assessment to match this request against the current knowledge graph.</p>}
       {review?.applicability_report?.policy_mappings && <Card className="compliance-applicable-policies" title="Applicable policies" sub={`${review.applicability_report.policy_mappings.length} policies mapped to this credit request`} action={
         <button type="button" className="btn secondary" aria-expanded={policiesExpanded} aria-controls="applicable-policy-list" onClick={() => setPoliciesExpanded(value => !value)}>

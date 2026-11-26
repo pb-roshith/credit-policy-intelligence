@@ -1,0 +1,81 @@
+﻿.assessment-map {
+  color: #172a43;
+  background: #fff;
+  border: 1px solid #d7e2ee;
+  border-radius: 16px;
+  overflow: hidden;
+  font: 14px/1.45 system-ui, sans-serif;
+}
+.assessment-map h2, .assessment-map h3, .assessment-map p { margin: 0; color: inherit; }
+.assessment-map-tools, .assessment-map-pagination {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  padding: 16px 20px;
+}
+.assessment-map .assessment-map-head {
+  position: static;
+  z-index: auto;
+  height: auto;
+  display: grid;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #f4f8fc;
+  backdrop-filter: none;
+  border-bottom: 1px solid #dce6ef;
+}
+.assessment-map-head small { color: #52667f; font-size: 12px; }
+.assessment-map-head h2 { font-size: clamp(20px, 3vw, 28px); letter-spacing: -.035em; }
+.assessment-map-totals, .assessment-map-filters, .assessment-map-legend { display: flex; flex-wrap: wrap; gap: 8px; }
+.assessment-map-totals span, .assessment-result {
+  padding: 4px 9px; border-radius: 6px; background: #e8eef6; color: #304862; font-weight: 650;
+}
+.assessment-map .is-pass { background: #ddf4e6; color: #185c37; }
+.assessment-map .is-breach { background: #fde4e7; color: #9a2636; }
+.assessment-map-tools { border-bottom: 1px solid #dce6ef; }
+.assessment-map-tools label { display: flex; align-items: center; gap: 8px; color: #40556e; }
+.assessment-map button, .assessment-map select {
+  font: inherit; color: #223b55; border: 1px solid #cfdae6; border-radius: 7px;
+  padding: 6px 10px; background: #fff; cursor: pointer;
+}
+.assessment-map select { max-width: min(290px, 66vw); }
+.assessment-map button:hover, .assessment-map button[aria-pressed="true"] { background: #e9f2ff; border-color: #8aabd6; color: #174578; }
+.assessment-map button:focus-visible, .assessment-map select:focus-visible { outline: 2px solid #2563a6; outline-offset: 2px; }
+.assessment-map button:disabled { opacity: .5; cursor: default; }
+.assessment-map-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 20%); }
+.assessment-map-diagram { position: relative; min-width: 0; background: #f7fafd; }
+.assessment-canvas-wrap { position: relative; }
+.assessment-canvas { height: clamp(365px, 56vh, 635px); width: 100%; background-image: radial-gradient(#dce7f3 1px, transparent 1px); background-size: 18px 18px; }
+.assessment-zoom { position: absolute; top: 13px; left: 13px; display: grid; gap: 4px; }
+.assessment-zoom button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; }
+.assessment-hover {
+  position: absolute; bottom: 10px; left: 12px; max-width: min(320px, 85%); display: grid; gap: 4px;
+  background: #fff; border: 1px solid #cbd9e8; border-radius: 8px; box-shadow: 0 4px 20px #182d4420; padding: 9px 12px;
+  pointer-events: none;
+}
+.assessment-hover small, .assessment-map-list small { color: #516780; }
+.assessment-map-legend { padding: 10px 14px; gap: 9px 14px; background: #fff; border-top: 1px solid #dce6ef; }
+.assessment-map-legend span { display: inline-flex; gap: 5px; align-items: center; color: #40556e; font-size: 12px; }
+.assessment-map-legend i { display: inline-block; width: 11px; height: 11px; border: 1px solid; border-radius: 3px; }
+.assessment-map-aside {
+  overflow: auto; max-height: calc(clamp(365px, 56vh, 635px) + 60px);
+  border-left: 1px solid #dce6ef;
+}
+.assessment-map-detail, .assessment-map-list { padding: 14px; }
+.assessment-map-detail { display: grid; gap: 9px; border-bottom: 1px solid #dce6ef; }
+.assessment-map-detail h3, .assessment-map-list h3 { font-size: 15px; }
+.assessment-map-detail dl { margin: 0; }
+.assessment-map-detail dt { font-weight: 650; color: #294665; margin-top: 8px; }
+.assessment-map-detail dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.assessment-map-detail ul { margin: 0; padding-left: 18px; }
+.assessment-result { justify-self: start; }
+.assessment-map-list { display: grid; gap: 7px; }
+.assessment-map-list button { display: grid; gap: 3px; text-align: left; font-size: 13px; }
+.assessment-map-pagination { justify-content: flex-end; border-top: 1px solid #dce6ef; }
+.assessment-map-empty { position: absolute; top: 10px; left: 58px; padding: 5px 8px; background: #fff; border-radius: 5px; }
+.assessment-demo { max-width: 1700px; margin: auto; padding: clamp(12px, 3vw, 36px); }
+.assessment-demo h1 { color: #172a43; font: 650 clamp(23px, 4vw, 34px)/1.2 system-ui, sans-serif; margin: 0 0 16px; }
+@media (max-width: 740px) {
+  .assessment-map-body { grid-template-columns: 1fr; }
+  .assessment-map-aside { max-height: 370px; border-left: 0; border-top: 1px solid #dce6ef; }
+  .assessment-canvas { height: 365px; }
+  .assessment-map .assessment-map-head, .assessment-map-tools { padding-inline: 12px; }
+}

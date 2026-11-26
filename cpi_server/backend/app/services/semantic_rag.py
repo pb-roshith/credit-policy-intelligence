@@ -40,11 +40,12 @@ def llm_explanation(context):
     return GraphExplanation.model_validate_json(response.choices[0].message.content).model_dump()
 
 
-def explain_assessment(review,provider=None):
+def explain_assessment(review,provider=None,*,use_ai=True):
     context=explanation_context(review)
     fallback={'summary':review['executive_summary'],'rules':[],'source':'Deterministic graph explanation',
               'included_rules':context['included_rules'],'omitted_rules':context['omitted_rules'],'authoritative':False}
     if not context['rules']:return {**fallback,'status':'NO_MATCHED_RULES'}
+    if not use_ai:return {**fallback,'status':'DEMONSTRATION'}
     try:
         result=GraphExplanation.model_validate((provider or llm_explanation)(context)).model_dump()
         allowed={r['rule_id'] for r in context['rules']}
